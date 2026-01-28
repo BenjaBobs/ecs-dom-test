@@ -1,0 +1,16 @@
+{
+  "name": "ecs-test",
+  "module": "src/main.tsx",
+  "type": "module",
+  "private": true,
+  "exports": {
+    "./jsx-runtime": "./framework/jsx-runtime.ts",
+    "./jsx-dev-runtime": "./framework/jsx-runtime.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

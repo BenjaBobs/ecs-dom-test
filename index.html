@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ECS UI Test</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: system-ui, sans-serif;
+        padding: 2rem;
+        background: #1a1a2e;
+        color: #eee;
+      }
+
+      fieldset {
+        border: 1px solid #4a4a6a;
+        border-radius: 8px;
+        padding: 1rem;
+      }
+
+      legend {
+        padding: 0 0.5rem;
+        color: #8888aa;
+      }
+
+      label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+
+      label:hover {
+        background: #2a2a4e;
+      }
+
+      label.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Cat display */
+      .cat-display {
+        margin-top: 2rem;
+        padding: 1rem;
+        border: 1px solid #4a4a6a;
+        border-radius: 8px;
+      }
+
+      .cat-display button {
+        background: #4a4a8a;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+
+      .cat-display button:hover {
+        background: #5a5a9a;
+      }
+
+      .cat-image {
+        display: block;
+        max-width: 300px;
+        margin-top: 1rem;
+        border-radius: 8px;
+      }
+
+      .loading {
+        color: #8888aa;
+        font-style: italic;
+      }
+
+      .error {
+        color: #ff6666;
+      }
+
+      .radio {
+        width: 16px;
+        height: 16px;
+        border: 2px solid #6a6a8a;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .radio.selected::after {
+        content: '';
+        width: 8px;
+        height: 8px;
+        background: #66aaff;
+        border-radius: 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./src/main.tsx"></script>
+  </body>
+</html>
