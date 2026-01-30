@@ -19,15 +19,35 @@ import {
   Disabled,
 } from "./components.ts";
 
-/** Map from entity ID to actual DOM element */
-const domElements = new Map<EntityId, Element>();
+/** Per-world DOM element storage */
+const worldDOMElements = new WeakMap<World, Map<EntityId, Element>>();
 
-/** Map from entity ID to click handler (for removal) */
-const clickHandlers = new Map<EntityId, () => void>();
+/** Per-world click handler storage */
+const worldClickHandlers = new WeakMap<World, Map<EntityId, () => void>>();
 
-/** Get the DOM element for an entity */
-export function getDOMElement(entity: EntityId): Element | undefined {
-  return domElements.get(entity);
+/** Get or create the DOM elements map for a world */
+function getDOMElements(world: World): Map<EntityId, Element> {
+  let map = worldDOMElements.get(world);
+  if (!map) {
+    map = new Map();
+    worldDOMElements.set(world, map);
+  }
+  return map;
+}
+
+/** Get or create the click handlers map for a world */
+function getClickHandlers(world: World): Map<EntityId, () => void> {
+  let map = worldClickHandlers.get(world);
+  if (!map) {
+    map = new Map();
+    worldClickHandlers.set(world, map);
+  }
+  return map;
+}
+
+/** Get the DOM element for an entity in a world */
+export function getDOMElement(world: World, entity: EntityId): Element | undefined {
+  return getDOMElements(world).get(entity);
 }
 
 /**
@@ -37,6 +57,8 @@ export function getDOMElement(entity: EntityId): Element | undefined {
 export const DOMCreateSystem = defineReactiveSystem({
   triggers: [added(DOMElement)],
   execute(entities, world) {
+    const domElements = getDOMElements(world);
+
     for (const entity of entities) {
       const spec = world.get(entity, DOMElement);
       if (!spec) continue;
@@ -61,7 +83,10 @@ export const DOMCreateSystem = defineReactiveSystem({
  */
 export const DOMRemoveSystem = defineReactiveSystem({
   triggers: [removed(DOMElement)],
-  execute(entities) {
+  execute(entities, world) {
+    const domElements = getDOMElements(world);
+    const clickHandlers = getClickHandlers(world);
+
     for (const entity of entities) {
       const el = domElements.get(entity);
       if (el) {
@@ -79,6 +104,9 @@ export const DOMRemoveSystem = defineReactiveSystem({
 export const ClickableAddSystem = defineReactiveSystem({
   triggers: [added(Clickable)],
   execute(entities, world) {
+    const domElements = getDOMElements(world);
+    const clickHandlers = getClickHandlers(world);
+
     for (const entity of entities) {
       const el = domElements.get(entity);
       if (!el) continue;
@@ -108,7 +136,10 @@ export const ClickableAddSystem = defineReactiveSystem({
  */
 export const ClickableRemoveSystem = defineReactiveSystem({
   triggers: [removed(Clickable)],
-  execute(entities) {
+  execute(entities, world) {
+    const domElements = getDOMElements(world);
+    const clickHandlers = getClickHandlers(world);
+
     for (const entity of entities) {
       const el = domElements.get(entity);
       const handler = clickHandlers.get(entity);
@@ -127,7 +158,9 @@ export const ClickableRemoveSystem = defineReactiveSystem({
  */
 export const DisabledAddSystem = defineReactiveSystem({
   triggers: [added(Disabled)],
-  execute(entities) {
+  execute(entities, world) {
+    const domElements = getDOMElements(world);
+
     for (const entity of entities) {
       const el = domElements.get(entity);
       if (el) {
@@ -142,7 +175,9 @@ export const DisabledAddSystem = defineReactiveSystem({
  */
 export const DisabledRemoveSystem = defineReactiveSystem({
   triggers: [removed(Disabled)],
-  execute(entities) {
+  execute(entities, world) {
+    const domElements = getDOMElements(world);
+
     for (const entity of entities) {
       const el = domElements.get(entity);
       if (el) {
@@ -158,6 +193,8 @@ export const DisabledRemoveSystem = defineReactiveSystem({
 export const TextContentSystem = defineReactiveSystem({
   triggers: [addedOrReplaced(TextContent)],
   execute(entities, world) {
+    const domElements = getDOMElements(world);
+
     for (const entity of entities) {
       const el = domElements.get(entity);
       const text = world.get(entity, TextContent);
@@ -174,6 +211,8 @@ export const TextContentSystem = defineReactiveSystem({
 export const ClassesSystem = defineReactiveSystem({
   triggers: [addedOrReplaced(Classes)],
   execute(entities, world) {
+    const domElements = getDOMElements(world);
+
     for (const entity of entities) {
       const el = domElements.get(entity);
       const classes = world.get(entity, Classes);
@@ -201,8 +240,8 @@ export function registerDOMSystems(world: World): void {
 /**
  * Mount the root entity's DOM element to a container.
  */
-export function mount(rootEntity: EntityId, container: Element): void {
-  const el = domElements.get(rootEntity);
+export function mount(world: World, rootEntity: EntityId, container: Element): void {
+  const el = getDOMElement(world, rootEntity);
   if (el) {
     container.appendChild(el);
   }

@@ -120,7 +120,7 @@ const ImageSrcSystem = defineReactiveSystem({
   execute(entities, world) {
     for (const entity of entities) {
       const src = world.get(entity, ImageSrc);
-      const el = getDOMElement(entity);
+      const el = getDOMElement(world, entity);
 
       if (src && el && el.tagName === "IMG") {
         (el as HTMLImageElement).src = src.url;
@@ -200,7 +200,7 @@ const ButtonDisableOnLoadSystem = defineReactiveSystem({
       const button = findChildWithComponent(entity, FetchCatButton, world);
       if (button !== undefined) {
         world.set(button, Disabled());
-        const el = getDOMElement(button);
+        const el = getDOMElement(world, button);
         if (el && el instanceof HTMLButtonElement) {
           el.disabled = true;
         }
@@ -221,7 +221,7 @@ const ButtonEnableOnLoadEndSystem = defineReactiveSystem({
       const button = findChildWithComponent(entity, FetchCatButton, world);
       if (button !== undefined) {
         world.remove(button, Disabled);
-        const el = getDOMElement(button);
+        const el = getDOMElement(world, button);
         if (el && el instanceof HTMLButtonElement) {
           el.disabled = false;
         }

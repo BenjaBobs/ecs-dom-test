@@ -108,7 +108,7 @@ world.flush();
 // Mount to DOM
 const container = document.getElementById("root");
 if (container && rootEntity && !Array.isArray(rootEntity)) {
-  mount(rootEntity, container);
+  mount(world, rootEntity, container);
   console.log("Mounted! Try the radio buttons and cat fetcher.");
 } else {
   console.error("Failed to mount - check root entity");
