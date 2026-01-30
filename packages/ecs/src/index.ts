@@ -1,5 +1,7 @@
 /**
- * Core ECS module.
+ * @ecs-test/ecs - Core ECS engine
+ *
+ * Pure Entity Component System primitives for building UI frameworks.
  */
 
 // Component
@@ -36,3 +38,15 @@ export {
   defineBundle,
   isBundle,
 } from "./bundle.ts";
+
+// JSX
+export {
+  Entity,
+  Fragment,
+  isJSXEntity,
+  type JSXChild,
+  type JSXEntity,
+} from "./jsx-runtime.ts";
+
+// Materialization
+export { materialize } from "./materialize.ts";

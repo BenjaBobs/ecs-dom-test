@@ -2,7 +2,7 @@
  * Cat fetcher components.
  */
 
-import { defineComponent, defineMarker } from "../../framework/index.ts";
+import { defineComponent, defineMarker } from "@ecs-test/ecs";
 
 /** Trigger to fetch a cat */
 export const FetchCat = defineMarker("FetchCat");

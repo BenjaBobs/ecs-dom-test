@@ -2,7 +2,8 @@
  * Cat fetcher bundles.
  */
 
-import { defineBundle, DOMElement, Clickable, TextContent, Classes } from "../../framework/index.ts";
+import { defineBundle } from "@ecs-test/ecs";
+import { DOMElement, Clickable, TextContent, Classes } from "@ecs-test/dom";
 import { FetchCatButton, CatDisplayMarker } from "./components.ts";
 
 /**

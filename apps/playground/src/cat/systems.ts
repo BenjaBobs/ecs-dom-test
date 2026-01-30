@@ -10,13 +10,15 @@ import {
   added,
   addedOrReplaced,
   removed,
+} from "@ecs-test/ecs";
+import {
   DOMElement,
   TextContent,
   Classes,
   Clicked,
   Disabled,
   getDOMElement,
-} from "../../framework/index.ts";
+} from "@ecs-test/dom";
 import {
   FetchCat,
   Loading,

@@ -2,7 +2,7 @@
  * DOM-related components.
  */
 
-import { defineComponent, defineMarker } from "../ecs/index.ts";
+import { defineComponent, defineMarker } from "@ecs-test/ecs";
 
 /** Specifies the HTML element tag to render */
 export const DOMElement = defineComponent<{

@@ -10,10 +10,8 @@ import {
   added,
   addedOrReplaced,
   removed,
-  Classes,
-  Clicked,
-  Disabled,
-} from "../../framework/index.ts";
+} from "@ecs-test/ecs";
+import { Classes, Clicked, Disabled } from "@ecs-test/dom";
 import { Selection, SelectedValue, Value, Selected, Radio, Name } from "./components.ts";
 
 /**

@@ -2,7 +2,7 @@
  * Radio group components.
  */
 
-import { defineComponent, defineMarker } from "../../framework/index.ts";
+import { defineComponent, defineMarker } from "@ecs-test/ecs";
 
 /** Marks an entity as managing selection among its children */
 export const Selection = defineMarker("Selection");

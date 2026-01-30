@@ -1,5 +1,7 @@
 /**
- * DOM rendering layer.
+ * @ecs-test/dom - DOM rendering layer for ECS
+ *
+ * Components and systems for rendering ECS entities to the DOM.
  */
 
 // Components
@@ -17,6 +19,10 @@ export {
   getDOMElement,
   DOMCreateSystem,
   DOMRemoveSystem,
+  ClickableAddSystem,
+  ClickableRemoveSystem,
+  DisabledAddSystem,
+  DisabledRemoveSystem,
   TextContentSystem,
   ClassesSystem,
   registerDOMSystems,

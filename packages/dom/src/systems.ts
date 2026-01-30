@@ -9,7 +9,7 @@ import {
   added,
   removed,
   addedOrReplaced,
-} from "../ecs/index.ts";
+} from "@ecs-test/ecs";
 import {
   DOMElement,
   TextContent,

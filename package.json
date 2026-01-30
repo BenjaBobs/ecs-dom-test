@@ -1,16 +1,13 @@
 {
-  "name": "ecs-test",
-  "module": "src/main.tsx",
-  "type": "module",
+  "name": "ecs-test-monorepo",
   "private": true,
-  "exports": {
-    "./jsx-runtime": "./framework/jsx-runtime.ts",
-    "./jsx-dev-runtime": "./framework/jsx-runtime.ts"
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "dev": "bun run --cwd apps/playground dev"
   },
   "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
+    "@types/bun": "latest",
     "typescript": "^5"
   }
 }

@@ -2,7 +2,8 @@
  * Radio group bundles.
  */
 
-import { defineBundle, DOMElement, Clickable, TextContent, Classes } from "../../framework/index.ts";
+import { defineBundle } from "@ecs-test/ecs";
+import { DOMElement, Clickable, TextContent, Classes } from "@ecs-test/dom";
 import { Selection, Value, Radio, Name } from "./components.ts";
 
 /**

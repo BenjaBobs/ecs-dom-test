@@ -2,17 +2,15 @@
  * Main entry point - ECS UI Demo
  */
 
+import { World, Entity, materialize } from "@ecs-test/ecs";
 import {
-  World,
   registerDOMSystems,
   mount,
-  materialize,
-  Entity,
   DOMElement,
   Classes,
   Clickable,
   Disabled,
-} from "../framework/index.ts";
+} from "@ecs-test/dom";
 
 import {
   registerRadioSystems,

@@ -4,9 +4,9 @@
  * JSX produces a declarative tree that gets materialized into ECS entities.
  */
 
-import type { ComponentInstance } from "./ecs/index.ts";
-import type { BundleResult } from "./ecs/index.ts";
-import { isBundle } from "./ecs/index.ts";
+import type { ComponentInstance } from "./component.ts";
+import type { BundleResult } from "./bundle.ts";
+import { isBundle } from "./bundle.ts";
 
 // =============================================================================
 // Types
