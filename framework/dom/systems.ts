@@ -22,6 +22,9 @@ import {
 /** Map from entity ID to actual DOM element */
 const domElements = new Map<EntityId, Element>();
 
+/** Map from entity ID to click handler (for removal) */
+const clickHandlers = new Map<EntityId, () => void>();
+
 /** Get the DOM element for an entity */
 export function getDOMElement(entity: EntityId): Element | undefined {
   return domElements.get(entity);
@@ -29,6 +32,7 @@ export function getDOMElement(entity: EntityId): Element | undefined {
 
 /**
  * Creates DOM elements when DOMElement component is added.
+ * Only creates the node - other systems handle behavior.
  */
 export const DOMCreateSystem = defineReactiveSystem({
   triggers: [added(DOMElement)],
@@ -38,24 +42,6 @@ export const DOMCreateSystem = defineReactiveSystem({
       if (!spec) continue;
 
       const el = document.createElement(spec.tag);
-      if (spec.class) {
-        el.className = spec.class;
-      }
-
-      // Set up click handling if Clickable
-      if (world.has(entity, Clickable) && !world.has(entity, Disabled)) {
-        el.addEventListener("click", () => {
-          world.add(entity, Clicked());
-          world.flush();
-        });
-        (el as HTMLElement).style.cursor = "pointer";
-      }
-
-      // Apply disabled styling
-      if (world.has(entity, Disabled)) {
-        el.classList.add("disabled");
-      }
-
       domElements.set(entity, el);
 
       // Attach to parent's DOM element
@@ -81,6 +67,86 @@ export const DOMRemoveSystem = defineReactiveSystem({
       if (el) {
         el.remove();
         domElements.delete(entity);
+      }
+      clickHandlers.delete(entity);
+    }
+  },
+});
+
+/**
+ * Attaches click handler when Clickable is added.
+ */
+export const ClickableAddSystem = defineReactiveSystem({
+  triggers: [added(Clickable)],
+  execute(entities, world) {
+    for (const entity of entities) {
+      const el = domElements.get(entity);
+      if (!el) continue;
+
+      // Remove existing handler if any
+      const existingHandler = clickHandlers.get(entity);
+      if (existingHandler) {
+        el.removeEventListener("click", existingHandler);
+      }
+
+      const handler = () => {
+        if (!world.has(entity, Disabled)) {
+          world.set(entity, Clicked());
+          world.flush();
+        }
+      };
+
+      el.addEventListener("click", handler);
+      clickHandlers.set(entity, handler);
+      (el as HTMLElement).style.cursor = "pointer";
+    }
+  },
+});
+
+/**
+ * Removes click handler when Clickable is removed.
+ */
+export const ClickableRemoveSystem = defineReactiveSystem({
+  triggers: [removed(Clickable)],
+  execute(entities) {
+    for (const entity of entities) {
+      const el = domElements.get(entity);
+      const handler = clickHandlers.get(entity);
+
+      if (el && handler) {
+        el.removeEventListener("click", handler);
+        (el as HTMLElement).style.cursor = "";
+      }
+      clickHandlers.delete(entity);
+    }
+  },
+});
+
+/**
+ * Adds disabled class when Disabled is added.
+ */
+export const DisabledAddSystem = defineReactiveSystem({
+  triggers: [added(Disabled)],
+  execute(entities) {
+    for (const entity of entities) {
+      const el = domElements.get(entity);
+      if (el) {
+        el.classList.add("disabled");
+      }
+    }
+  },
+});
+
+/**
+ * Removes disabled class when Disabled is removed.
+ */
+export const DisabledRemoveSystem = defineReactiveSystem({
+  triggers: [removed(Disabled)],
+  execute(entities) {
+    for (const entity of entities) {
+      const el = domElements.get(entity);
+      if (el) {
+        el.classList.remove("disabled");
       }
     }
   },
@@ -124,6 +190,10 @@ export const ClassesSystem = defineReactiveSystem({
 export function registerDOMSystems(world: World): void {
   world.registerSystem(DOMCreateSystem);
   world.registerSystem(DOMRemoveSystem);
+  world.registerSystem(ClickableAddSystem);
+  world.registerSystem(ClickableRemoveSystem);
+  world.registerSystem(DisabledAddSystem);
+  world.registerSystem(DisabledRemoveSystem);
   world.registerSystem(TextContentSystem);
   world.registerSystem(ClassesSystem);
 }

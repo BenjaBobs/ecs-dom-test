@@ -7,7 +7,6 @@ import { defineComponent, defineMarker } from "../ecs/index.ts";
 /** Specifies the HTML element tag to render */
 export const DOMElement = defineComponent<{
   tag: keyof HTMLElementTagNameMap;
-  class?: string;
 }>("DOMElement");
 
 /** Text content for an element */

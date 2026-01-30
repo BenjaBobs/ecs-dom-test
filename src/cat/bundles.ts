@@ -2,7 +2,7 @@
  * Cat fetcher bundles.
  */
 
-import { defineBundle, DOMElement, Clickable, TextContent } from "../../framework/index.ts";
+import { defineBundle, DOMElement, Clickable, TextContent, Classes } from "../../framework/index.ts";
 import { FetchCatButton, CatDisplayMarker } from "./components.ts";
 
 /**
@@ -19,6 +19,7 @@ export const FetchCatBtn = defineBundle(({ label }: { label: string }) => [
  * CatDisplay bundle - container for displaying a cat.
  */
 export const CatDisplay = defineBundle(() => [
-  DOMElement({ tag: "div", class: "cat-display" }),
+  DOMElement({ tag: "div" }),
+  Classes({ list: ["cat-display"] }),
   CatDisplayMarker(),
 ]);

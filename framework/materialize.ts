@@ -77,10 +77,20 @@ function materializeEntity(
 ): EntityId {
   const entityId = world.createEntity(parent);
 
-  // Process children - components get added to this entity,
-  // child entities become children
+  // Two-pass materialization:
+  // Pass 1: Add components and bundles to this entity first
+  // This ensures DOMElement exists before child entities try to attach
   for (const child of entity.children) {
-    materialize(world, child, entityId);
+    if (isComponentInstance(child) || isBundle(child)) {
+      materialize(world, child, entityId);
+    }
+  }
+
+  // Pass 2: Create child entities (and handle arrays/primitives)
+  for (const child of entity.children) {
+    if (!isComponentInstance(child) && !isBundle(child)) {
+      materialize(world, child, entityId);
+    }
   }
 
   return entityId;

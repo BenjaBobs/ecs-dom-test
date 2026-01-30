@@ -9,6 +9,7 @@ import {
   materialize,
   Entity,
   DOMElement,
+  Classes,
   Clickable,
   Disabled,
 } from "../framework/index.ts";
@@ -38,7 +39,8 @@ registerCatSystems(world);
 // Define the UI using JSX
 const ui = (
   <Entity>
-    <DOMElement tag="div" class="app" />
+    <DOMElement tag="div" />
+    <Classes list={["app"]} />
 
     {/* Radio Group Demo */}
     <Entity>

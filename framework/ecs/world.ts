@@ -14,6 +14,7 @@ export class World {
   private nextEntityId = 1;
   private entities = new Set<EntityId>();
   private components = new Map<EntityId, Map<string, ComponentInstance>>();
+  private componentIndex = new Map<string, Set<EntityId>>();
   private parents = new Map<EntityId, EntityId>();
   private childrenMap = new Map<EntityId, Set<EntityId>>();
   private mutations: Mutation[] = [];
@@ -47,6 +48,9 @@ export class World {
     const entityComponents = this.components.get(id);
     if (entityComponents) {
       for (const [tag] of entityComponents) {
+        // Update component index
+        this.componentIndex.get(tag)?.delete(id);
+
         this.mutations.push({ entity: id, componentTag: tag, type: "removed" });
       }
     }
@@ -80,6 +84,12 @@ export class World {
     }
 
     entityComponents.set(component._tag, component);
+
+    // Update component index
+    const indexed = this.componentIndex.get(component._tag) ?? new Set();
+    indexed.add(entity);
+    this.componentIndex.set(component._tag, indexed);
+
     this.mutations.push({
       entity,
       componentTag: component._tag,
@@ -100,6 +110,13 @@ export class World {
     const existing = entityComponents.has(component._tag);
     entityComponents.set(component._tag, component);
 
+    // Update component index (only if newly added)
+    if (!existing) {
+      const indexed = this.componentIndex.get(component._tag) ?? new Set();
+      indexed.add(entity);
+      this.componentIndex.set(component._tag, indexed);
+    }
+
     this.mutations.push({
       entity,
       componentTag: component._tag,
@@ -115,6 +132,10 @@ export class World {
     const componentTag = getTag(component);
     if (entityComponents.has(componentTag)) {
       entityComponents.delete(componentTag);
+
+      // Update component index
+      this.componentIndex.get(componentTag)?.delete(entity);
+
       this.mutations.push({ entity, componentTag, type: "removed" });
     }
   }
@@ -148,16 +169,33 @@ export class World {
 
   /** Query entities that have all specified components */
   query(...componentTags: string[]): EntityId[] {
+    if (componentTags.length === 0) {
+      return Array.from(this.entities);
+    }
+
+    // Get the sets for each component tag
+    const sets = componentTags
+      .map((tag) => this.componentIndex.get(tag))
+      .filter((set): set is Set<EntityId> => set !== undefined);
+
+    // If any component has no entities, result is empty
+    if (sets.length !== componentTags.length || sets.length === 0) {
+      return [];
+    }
+
+    // Start with smallest set for efficiency
+    sets.sort((a, b) => a.size - b.size);
+    const smallest = sets[0]!;
+    const rest = sets.slice(1);
+
+    // Intersect with remaining sets
     const result: EntityId[] = [];
-    for (const entity of this.entities) {
-      const entityComponents = this.components.get(entity);
-      if (
-        entityComponents &&
-        componentTags.every((tag) => entityComponents.has(tag))
-      ) {
+    for (const entity of smallest) {
+      if (rest.every((set) => set.has(entity))) {
         result.push(entity);
       }
     }
+
     return result;
   }
 

@@ -2,7 +2,7 @@
  * Radio group bundles.
  */
 
-import { defineBundle, DOMElement, Clickable, TextContent } from "../../framework/index.ts";
+import { defineBundle, DOMElement, Clickable, TextContent, Classes } from "../../framework/index.ts";
 import { Selection, Value, Radio, Name } from "./components.ts";
 
 /**
@@ -27,7 +27,8 @@ export const RadioOption = defineBundle(({ value }: { value: string }) => [
  * RadioIndicator bundle - the visual radio circle.
  */
 export const RadioIndicator = defineBundle(() => [
-  DOMElement({ tag: "span", class: "radio" }),
+  DOMElement({ tag: "span" }),
+  Classes({ list: ["radio"] }),
   Radio(),
 ]);
 
