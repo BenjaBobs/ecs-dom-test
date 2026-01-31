@@ -41,6 +41,38 @@ Removed `class` from `DOMElement`. All CSS classes go through `Classes` componen
 
 **Why:** Two systems writing to `el.className` will fight. One source of truth eliminates the conflict.
 
+### Value-Centric Data Binding
+Data flows through a single `Value` component on an entity. External systems (DOM, forms, etc.) bind to `Value` rather than to each other.
+
+**Why:**
+- Avoids tight coupling between DOM input state and form state
+- Enables non-DOM entities to participate in data flows (e.g., pure data entities, future renderers)
+- Supports multi-step transformations across boundaries (DOM ↔ Value ↔ Form) without mixing concerns
+
+**Implementation direction:**
+- `DOMElement` stays a renderer primitive (no binding logic)
+- DOM bindings live in separate components/systems (e.g., `DOMBinding`, `DOMTrigger`)
+- Form bindings translate between form fields and `Value`, optionally with transforms when types differ
+- Bundles can hide extra components for ergonomics while keeping the model explicit
+
+**Example (conceptual):**
+```tsx
+<Entity>
+  <DOMElement tag="input" />
+  <Value value={0} />
+  <DOMBinding
+    trigger="input"
+    toValue={(el) => parseFloat((el as HTMLInputElement).value)}
+    fromValue={(v) => String(v)}
+  />
+  <FormBinding
+    field={f.age}
+    toValue={(formValue) => formValue}
+    fromValue={(value) => value}
+  />
+</Entity>
+```
+
 ### World Isolation
 Each `World` instance is fully independent. Multiple worlds can coexist in the same DOM (e.g., two app roots).
 
