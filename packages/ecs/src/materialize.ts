@@ -6,6 +6,7 @@ import type { World, EntityId } from "./world.ts";
 import type { ComponentInstance } from "./component.ts";
 import type { JSXChild, JSXEntity } from "./jsx-runtime.ts";
 import { isJSXEntity, isBundle } from "./jsx-runtime.ts";
+import { assert } from "./assert.ts";
 
 /**
  * Materialize a JSX tree into entities in the world.
@@ -44,18 +45,14 @@ export function materialize(
 
   // Handle component instances - add to parent entity
   if (isComponentInstance(jsx)) {
-    if (parent === undefined) {
-      throw new Error("Component must be inside an <Entity>");
-    }
+    assert(parent !== undefined, "Component must be inside an <Entity>");
     world.add(parent, jsx);
     return undefined;
   }
 
   // Handle bundles - add all components to parent entity
   if (isBundle(jsx)) {
-    if (parent === undefined) {
-      throw new Error("Bundle must be inside an <Entity>");
-    }
+    assert(parent !== undefined, "Bundle must be inside an <Entity>");
     for (const component of jsx.components) {
       world.add(parent, component);
     }

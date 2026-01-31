@@ -6,11 +6,15 @@
     "apps/*"
   ],
   "scripts": {
+    "lint": "biome check .",
+    "format": "biome format . --write",
+    "test:ci": "bun test --concurrent --only-failures",
     "typecheck": "tsc --noEmit",
     "dev": "bun --watch apps/playground/index.html"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@biomejs/biome": "latest",
     "typescript": "^5"
   }
 }

@@ -38,6 +38,7 @@
   },
   "include": [
     "packages/*/src/**/*",
+    "packages/*/src/**/*.test.ts",
     "apps/*/src/**/*"
   ]
 }

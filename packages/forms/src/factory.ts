@@ -13,6 +13,7 @@ import type {
   ValidationSchema,
   ComputedSchema,
 } from "./types.ts";
+import { assert } from "./assert.ts";
 
 /**
  * Create a form factory for a given type.
@@ -35,6 +36,8 @@ import type {
 export function createFormFactory<T extends object>(
   config: FormFactoryConfig<T>
 ): FormFactory<T> {
+  assert(!!config, "Form factory config is required");
+  assert(config.initialValues !== undefined && config.initialValues !== null, "initialValues is required");
   const { initialValues, validate, computed } = config;
 
   // Create unbound field accessors (for UI binding)
@@ -203,6 +206,55 @@ function createFormInstance<T extends object>(
     itemKeys.set(arrayPath, newKeys);
   };
 
+  const swapKeys = (arrayPath: string, indexA: number, indexB: number): void => {
+    const pathKeys = itemKeys.get(arrayPath);
+    if (!pathKeys) return;
+    const keyA = pathKeys.get(indexA);
+    const keyB = pathKeys.get(indexB);
+    if (keyA !== undefined) {
+      pathKeys.set(indexB, keyA);
+    } else {
+      pathKeys.delete(indexB);
+    }
+    if (keyB !== undefined) {
+      pathKeys.set(indexA, keyB);
+    } else {
+      pathKeys.delete(indexA);
+    }
+  };
+
+  const moveKey = (arrayPath: string, fromIndex: number, toIndex: number): void => {
+    if (fromIndex === toIndex) return;
+    const pathKeys = itemKeys.get(arrayPath);
+    if (!pathKeys) return;
+
+    const movingKey = pathKeys.get(fromIndex);
+    const newKeys = new Map<number, string>();
+
+    for (const [index, key] of pathKeys) {
+      if (index === fromIndex) continue;
+      if (fromIndex < toIndex) {
+        if (index > fromIndex && index <= toIndex) {
+          newKeys.set(index - 1, key);
+        } else {
+          newKeys.set(index, key);
+        }
+      } else {
+        if (index >= toIndex && index < fromIndex) {
+          newKeys.set(index + 1, key);
+        } else {
+          newKeys.set(index, key);
+        }
+      }
+    }
+
+    if (movingKey !== undefined) {
+      newKeys.set(toIndex, movingKey);
+    }
+
+    itemKeys.set(arrayPath, newKeys);
+  };
+
   // Create bound field accessor
   const createBoundAccessor = (path: readonly (string | number)[]): unknown => {
     const pathStr = path.join(".");
@@ -281,6 +333,7 @@ function createFormInstance<T extends object>(
               const arr = getArray();
               [arr[index - 1], arr[index]] = [arr[index], arr[index - 1]];
               setAtPath(path, arr);
+              swapKeys(pathStr, index - 1, index);
             }
           },
           moveDown: () => {
@@ -288,6 +341,7 @@ function createFormInstance<T extends object>(
             if (index < arr.length - 1) {
               [arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
               setAtPath(path, arr);
+              swapKeys(pathStr, index, index + 1);
             }
           },
           get isFirst() {
@@ -368,6 +422,7 @@ function createFormInstance<T extends object>(
         const [item] = arr.splice(fromIndex, 1);
         arr.splice(toIndex, 0, item);
         setAtPath(path, arr);
+        moveKey(pathStr, fromIndex, toIndex);
       },
 
       clear: (): void => {

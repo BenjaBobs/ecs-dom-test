@@ -6,13 +6,13 @@ Architectural decisions for this ECS UI framework, including what we chose NOT t
 
 This framework targets browser UI, not games. This context shapes every decision:
 
-| Aspect | Game ECS | UI ECS |
-|--------|----------|--------|
-| Execution | 60+ FPS game loop | Event-driven |
-| Entity count | Thousands | Hundreds |
+| Aspect           | Game ECS                       | UI ECS                          |
+| ---------------- | ------------------------------ | ------------------------------- |
+| Execution        | 60+ FPS game loop              | Event-driven                    |
+| Entity count     | Thousands                      | Hundreds                        |
 | Read:write ratio | Read-heavy (query every frame) | Balanced (query only on events) |
-| Component churn | Low (stable archetypes) | High (dynamic state changes) |
-| Between events | Systems still run | Nothing happens |
+| Component churn  | Low (stable archetypes)        | High (dynamic state changes)    |
+| Between events   | Systems still run              | Nothing happens                 |
 
 ## What We Do
 
@@ -73,6 +73,14 @@ Data flows through a single `Value` component on an entity. External systems (DO
 </Entity>
 ```
 
+### Feature-First Structure (Including Styles)
+Features should own their components, systems, and styles together (folder per feature). Styles are applied via `Classes` and are kept in feature-scoped CSS files imported by that feature's entry module.
+
+**Why:**
+- ECS behavior and styling evolve together; co-locating avoids cross-folder churn
+- Encourages reusable feature modules that can be moved into packages later
+- Bundles can provide default `Classes` while `except={[Classes]}` lets consumers override
+- 
 ### World Isolation
 Each `World` instance is fully independent. Multiple worlds can coexist in the same DOM (e.g., two app roots).
 

@@ -2,9 +2,14 @@
  * ECS World - the container for all entities and components.
  */
 
-import type { ComponentType, ComponentInstance, ComponentRef } from "./component.ts";
+import type {
+  ComponentType,
+  ComponentInstance,
+  ComponentRef,
+} from "./component.ts";
 import { getTag } from "./component.ts";
 import type { Mutation, ReactiveSystem } from "./system.ts";
+import { assert } from "./assert.ts";
 
 /** Unique identifier for entities */
 export type EntityId = number & { readonly __brand: unique symbol };
@@ -22,6 +27,13 @@ export class World {
 
   /** Create a new entity */
   createEntity(parent?: EntityId): EntityId {
+    if (parent !== undefined) {
+      assert(
+        this.entities.has(parent),
+        `Parent entity ${parent} does not exist`
+      );
+    }
+
     const id = this.nextEntityId++ as EntityId;
     this.entities.add(id);
     this.components.set(id, new Map());
@@ -73,15 +85,12 @@ export class World {
    */
   add<T>(entity: EntityId, component: ComponentInstance<T>): void {
     const entityComponents = this.components.get(entity);
-    if (!entityComponents) {
-      throw new Error(`Entity ${entity} does not exist`);
-    }
+    assert(!!entityComponents, `Entity ${entity} does not exist`);
 
-    if (entityComponents.has(component._tag)) {
-      throw new Error(
-        `Component "${component._tag}" already exists on entity ${entity}. Use set() to replace.`
-      );
-    }
+    assert(
+      !entityComponents.has(component._tag),
+      `Component "${component._tag}" already exists on entity ${entity}. Use set() to replace.`
+    );
 
     entityComponents.set(component._tag, component);
 
@@ -103,9 +112,7 @@ export class World {
    */
   set<T>(entity: EntityId, component: ComponentInstance<T>): void {
     const entityComponents = this.components.get(entity);
-    if (!entityComponents) {
-      throw new Error(`Entity ${entity} does not exist`);
-    }
+    assert(!!entityComponents, `Entity ${entity} does not exist`);
 
     const existing = entityComponents.has(component._tag);
     entityComponents.set(component._tag, component);

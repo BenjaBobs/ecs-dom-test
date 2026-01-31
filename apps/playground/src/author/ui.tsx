@@ -143,5 +143,7 @@ import { defineMarker, defineComponent } from "@ecs-test/ecs";
 export const BookListMarker = defineMarker("BookListMarker");
 export const AddBookButton = defineMarker("AddBookButton");
 export const SubmitButton = defineMarker("SubmitButton");
-export const BookItem = defineComponent<{ index: number; key: string }>("BookItem");
+export const BookItem = defineComponent<{ index: number; key: string }>(
+  "BookItem"
+);
 export const RemoveBookButton = defineMarker("RemoveBookButton");

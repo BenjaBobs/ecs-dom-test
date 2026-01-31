@@ -50,3 +50,6 @@ export {
 
 // Materialization
 export { materialize } from "./materialize.ts";
+
+// Assertions
+export { assert } from "./assert.ts";
