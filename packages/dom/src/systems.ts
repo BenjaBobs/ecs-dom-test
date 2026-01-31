@@ -2,7 +2,6 @@
  * DOM rendering systems.
  */
 
-import { DomRootComponent } from '@ecs-test/dom/DomRootComponent.ts';
 import {
   added,
   addedOrReplaced,
@@ -18,93 +17,65 @@ import {
   Clicked,
   Disabled,
   DOMElement,
+  DomRuntime,
   Draggable,
+  type DragHandlers,
   DragOver,
+  type DragState,
+  type DropHandlers,
   Droppable,
   Dropped,
   TextContent,
 } from './components.ts';
 
-/** Per-world DOM element storage */
-const worldDOMElements = new WeakMap<World, Map<EntityId, Element>>();
-
-/** Per-world click handler storage */
-const worldClickHandlers = new WeakMap<World, Map<EntityId, () => void>>();
-
-/** Per-world drag handler storage */
-type DragHandlers = {
-  dragstart: (e: DragEvent) => void;
-  dragend: (e: DragEvent) => void;
-};
-const worldDragHandlers = new WeakMap<World, Map<EntityId, DragHandlers>>();
-
-/** Per-world drop handler storage */
-type DropHandlers = {
-  dragover: (e: DragEvent) => void;
-  dragleave: (e: DragEvent) => void;
-  drop: (e: DragEvent) => void;
-};
-const worldDropHandlers = new WeakMap<World, Map<EntityId, DropHandlers>>();
-
-/** Current drag state per world */
-type DragState = {
-  entity: EntityId;
-  type: string;
-  data: unknown;
-};
-const worldDragState = new WeakMap<World, DragState | null>();
+function getRuntime(world: World) {
+  const runtimeId = world.getRuntimeEntity();
+  let runtime = world.get(runtimeId, DomRuntime);
+  if (!runtime) {
+    runtime = {
+      elements: new Map(),
+      clickHandlers: new Map(),
+      dragHandlers: new Map(),
+      dropHandlers: new Map(),
+      dragState: null,
+    };
+    world.add(runtimeId, DomRuntime(runtime));
+  }
+  return runtime;
+}
 
 /** Get or create the DOM elements map for a world */
 function getDOMElements(world: World): Map<EntityId, Element> {
-  let map = worldDOMElements.get(world);
-  if (!map) {
-    map = new Map();
-    worldDOMElements.set(world, map);
-  }
-  return map;
+  return getRuntime(world).elements as Map<EntityId, Element>;
 }
 
-function getDomComponent(world: World) {
-  const domRootEnts = world.query(DomRootComponent);
-  assert(
-    domRootEnts.length === 1,
-    `There should always be exactly one DomRoot entity, but there were ${domRootEnts.length}`,
-  );
-
-  const domRoot = world.get(domRootEnts[0]!, DomRootComponent);
-  assert(!!domRoot, 'domRoot entity should have a DomRootComponent');
-
-  return domRoot;
+function getCreateElement(world: World): (tag: string) => Element {
+  const externals = world.getExternals();
+  assert(!!externals.createElement, 'World externals missing createElement');
+  return externals.createElement;
 }
 
 /** Get or create the click handlers map for a world */
 function getClickHandlers(world: World): Map<EntityId, () => void> {
-  let map = worldClickHandlers.get(world);
-  if (!map) {
-    map = new Map();
-    worldClickHandlers.set(world, map);
-  }
-  return map;
+  return getRuntime(world).clickHandlers as Map<EntityId, () => void>;
 }
 
 /** Get or create the drag handlers map for a world */
 function getDragHandlers(world: World): Map<EntityId, DragHandlers> {
-  let map = worldDragHandlers.get(world);
-  if (!map) {
-    map = new Map();
-    worldDragHandlers.set(world, map);
-  }
-  return map;
+  return getRuntime(world).dragHandlers as Map<EntityId, DragHandlers>;
 }
 
 /** Get or create the drop handlers map for a world */
 function getDropHandlers(world: World): Map<EntityId, DropHandlers> {
-  let map = worldDropHandlers.get(world);
-  if (!map) {
-    map = new Map();
-    worldDropHandlers.set(world, map);
-  }
-  return map;
+  return getRuntime(world).dropHandlers as Map<EntityId, DropHandlers>;
+}
+
+function getDragState(world: World): DragState | null {
+  return getRuntime(world).dragState as DragState | null;
+}
+
+function setDragState(world: World, state: DragState | null): void {
+  getRuntime(world).dragState = state as DragState | null;
 }
 
 /** Get the DOM element for an entity in a world */
@@ -120,13 +91,13 @@ export const DOMCreateSystem = defineReactiveSystem({
   triggers: [added(DOMElement)],
   execute(entities, world) {
     const domElements = getDOMElements(world);
-    const domComponent = getDomComponent(world);
+    const createElement = getCreateElement(world);
 
     for (const entity of entities) {
       const spec = world.get(entity, DOMElement);
       if (!spec) continue;
 
-      const el = domComponent.elementFactory(spec.tag);
+      const el = createElement(spec.tag);
       domElements.set(entity, el);
 
       // Attach to parent's DOM element
@@ -305,7 +276,7 @@ export const DraggableAddSystem = defineReactiveSystem({
 
       const handlers: DragHandlers = {
         dragstart: (e: DragEvent) => {
-          worldDragState.set(world, {
+          setDragState(world, {
             entity,
             type: draggable.type,
             data: draggable.data,
@@ -314,7 +285,7 @@ export const DraggableAddSystem = defineReactiveSystem({
           e.dataTransfer?.setData('text/plain', draggable.type);
         },
         dragend: () => {
-          worldDragState.set(world, null);
+          setDragState(world, null);
           el.style.opacity = '';
         },
       };
@@ -366,7 +337,7 @@ export const DroppableAddSystem = defineReactiveSystem({
 
       const handlers: DropHandlers = {
         dragover: (e: DragEvent) => {
-          const dragState = worldDragState.get(world);
+          const dragState = getDragState(world);
           if (!dragState) return;
 
           // Check if this drop target accepts the dragged type
@@ -386,7 +357,7 @@ export const DroppableAddSystem = defineReactiveSystem({
         },
         drop: (e: DragEvent) => {
           e.preventDefault();
-          const dragState = worldDragState.get(world);
+          const dragState = getDragState(world);
           if (!dragState) return;
 
           // Check if this drop target accepts the dragged type
@@ -478,19 +449,7 @@ export const DragOverRemoveSystem = defineReactiveSystem({
 /**
  * Registers all DOM systems with the world.
  */
-export function registerDOMSystems(
-  world: World,
-  externalDeps: { rootElement: Element; elementFactory: (tag: string) => Element },
-): void {
-  const domRootEnt = world.createEntity();
-  world.add(
-    domRootEnt,
-    DomRootComponent({
-      root: externalDeps.rootElement,
-      elementFactory: externalDeps.elementFactory,
-    }),
-  );
-
+export function registerDOMSystems(world: World): void {
   world.registerSystem(DOMCreateSystem);
   world.registerSystem(DOMRemoveSystem);
   world.registerSystem(ClickableAddSystem);

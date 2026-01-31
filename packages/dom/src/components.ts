@@ -50,3 +50,28 @@ export const Dropped = defineComponent<{
   /** Source entity if available */
   sourceEntity?: number;
 }>('Dropped');
+
+export type DragHandlers = {
+  dragstart: (e: DragEvent) => void;
+  dragend: (e: DragEvent) => void;
+};
+
+export type DropHandlers = {
+  dragover: (e: DragEvent) => void;
+  dragleave: (e: DragEvent) => void;
+  drop: (e: DragEvent) => void;
+};
+
+export type DragState = {
+  entity: number;
+  type: string;
+  data: unknown;
+};
+
+export const DomRuntime = defineComponent<{
+  elements: Map<number, Element>;
+  clickHandlers: Map<number, () => void>;
+  dragHandlers: Map<number, DragHandlers>;
+  dropHandlers: Map<number, DropHandlers>;
+  dragState: DragState | null;
+}>('DomRuntime');

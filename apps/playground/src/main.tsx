@@ -31,10 +31,12 @@ type PlaygroundDeps = {
 
 export function startPlayground({ doc, fetchFn }: PlaygroundDeps): void {
   // Create the world
-  const world = new World();
+  const world = new World({
+    createElement: doc.createElement.bind(doc),
+  });
 
   // Register systems (order matters!)
-  registerDOMSystems(world, { elementFactory: doc.createElement.bind(doc), rootElement: doc.body });
+  registerDOMSystems(world);
   registerFormSystems(world);
   registerRadioSystems(world);
   registerCatSystems(world, { fetchFn });

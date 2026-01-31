@@ -6,6 +6,7 @@ import { assert } from './assert.ts';
 import type { ComponentInstance, ComponentRef, ComponentType } from './component.ts';
 import { getTag } from './component.ts';
 import type { Mutation, ReactiveSystem } from './system.ts';
+import type { WorldExternals } from './world-externals.ts';
 
 /** Unique identifier for entities */
 export type EntityId = number & { readonly __brand: unique symbol };
@@ -20,6 +21,25 @@ export class World {
   private childrenMap = new Map<EntityId, Set<EntityId>>();
   private mutations: Mutation[] = [];
   private systems: ReactiveSystem[] = [];
+  private externals: WorldExternals;
+  private runtimeEntityId?: EntityId;
+
+  constructor(externals: WorldExternals = {}) {
+    this.externals = externals;
+  }
+
+  getExternals(): WorldExternals {
+    return this.externals;
+  }
+
+  getRuntimeEntity(): EntityId {
+    if (this.runtimeEntityId !== undefined && this.exists(this.runtimeEntityId)) {
+      return this.runtimeEntityId;
+    }
+    const id = this.createEntity();
+    this.runtimeEntityId = id;
+    return id;
+  }
 
   /** Create a new entity */
   createEntity(parent?: EntityId): EntityId {

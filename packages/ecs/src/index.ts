@@ -47,3 +47,4 @@ export {
 } from './system.ts';
 // World
 export { type EntityId, World } from './world.ts';
+export type { WorldExternals } from './world-externals.ts';

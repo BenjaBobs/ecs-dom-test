@@ -42,7 +42,7 @@ Removed `class` from `DOMElement`. All CSS classes go through `Classes` componen
 **Why:** Two systems writing to `el.className` will fight. One source of truth eliminates the conflict.
 
 ### Value-Centric Data Binding
-Data flows through a single `Value` component on an entity. External systems (DOM, forms, etc.) bind to `Value` rather than to each other.
+Data flows through a single `Value` component on an entity. External systems (DOM, forms, etc.) bind to `Value` rather than to each other. This is a design direction; not fully implemented yet.
 
 **Why:**
 - Avoids tight coupling between DOM input state and form state
@@ -80,13 +80,34 @@ Features should own their components, systems, and styles together (folder per f
 - ECS behavior and styling evolve together; co-locating avoids cross-folder churn
 - Encourages reusable feature modules that can be moved into packages later
 - Bundles can provide default `Classes` while `except={[Classes]}` lets consumers override
-- 
+
+### World Externals (Escape Hatches)
+Worlds can receive external dependencies (DOM factories, fetch, etc.) at construction time via `WorldExternals`. Packages extend the externals interface via module augmentation.
+
+**Why:**
+- Keeps non-ECS dependencies explicit and world-scoped
+- Avoids hidden globals while remaining ergonomic in browser/runtime entry points
+- Supports swapping dependencies for tests and non-DOM environments
+
+**Example (conceptual):**
+```ts
+const world = new World({ createElement: document.createElement.bind(document) });
+```
+
+### Runtime Entity (World-Owned Runtime State)
+Each world has a single runtime entity for system-owned runtime state (e.g., DOM handler maps). Systems attach runtime-only components (like `DomRuntime`) to this entity.
+
+**Why:**
+- Keeps runtime wiring inside the world instead of in global WeakMaps
+- Preserves ECS ownership without adding per-entity overhead
+- Provides O(1) access to runtime state via a single entity
+
 ### World Isolation
 Each `World` instance is fully independent. Multiple worlds can coexist in the same DOM (e.g., two app roots).
 
 **Why:** Enables micro-frontends, isolated widgets, testing without cleanup.
 
-**Implementation:** DOM element storage uses `WeakMap<World, Map<EntityId, Element>>`. When a world is garbage collected, its DOM mappings are automatically cleaned up.
+**Implementation:** Runtime-only state is stored on the world's runtime entity (e.g., `DomRuntime`). External dependencies live in `WorldExternals`.
 
 ## What We Don't Do (and Why)
 
