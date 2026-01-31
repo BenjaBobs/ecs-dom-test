@@ -26,21 +26,21 @@
 
 // Components
 export {
-  FormData,
-  FormBinding,
-  FormDisplay,
   FieldError,
-  TextInput,
-  NumberInput,
+  FormBinding,
+  FormData,
+  FormDisplay,
   FormInstance,
+  NumberInput,
+  TextInput,
 } from './components.ts';
 
 // Systems
 export {
-  FormDataInitSystem,
-  TextInputBindingSystem,
-  NumberInputBindingSystem,
-  FormDisplaySystem,
   FieldErrorSystem,
+  FormDataInitSystem,
+  FormDisplaySystem,
+  NumberInputBindingSystem,
   registerFormSystems,
+  TextInputBindingSystem,
 } from './systems.ts';

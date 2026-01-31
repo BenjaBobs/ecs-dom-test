@@ -2,10 +2,10 @@
  * ECS World - the container for all entities and components.
  */
 
-import type { ComponentType, ComponentInstance, ComponentRef } from './component.ts';
+import { assert } from './assert.ts';
+import type { ComponentInstance, ComponentRef, ComponentType } from './component.ts';
 import { getTag } from './component.ts';
 import type { Mutation, ReactiveSystem } from './system.ts';
-import { assert } from './assert.ts';
 
 /** Unique identifier for entities */
 export type EntityId = number & { readonly __brand: unique symbol };

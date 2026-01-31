@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'bun:test';
 import {
-  World,
+  added,
+  addedOrReplaced,
   defineComponent,
   defineMarker,
   defineReactiveSystem,
-  added,
   removed,
-  addedOrReplaced,
+  World,
 } from './index.ts';
 
 const Position = defineComponent<{ x: number; y: number }>('Position');

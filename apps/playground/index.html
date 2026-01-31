@@ -183,6 +183,24 @@
         gap: 1rem;
       }
 
+      .book-item {
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .book-item.drag-over {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(74, 144, 217, 0.3);
+        border-color: #4a90d9;
+      }
+
+      .book-item[draggable="true"] {
+        cursor: grab;
+      }
+
+      .book-item[draggable="true"]:active {
+        cursor: grabbing;
+      }
+
       .author-form .book-item {
         background: #fafafa;
         border: 1px solid #eee;
@@ -217,29 +235,13 @@
       .author-form .submit:hover {
         background: #357abd;
       }
-
-      /* Drag and drop styles */
-      .book-item {
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
-      }
-
-      .book-item.drag-over {
-        transform: scale(1.02);
-        box-shadow: 0 4px 12px rgba(74, 144, 217, 0.3);
-        border-color: #4a90d9;
-      }
-
-      .book-item[draggable="true"] {
-        cursor: grab;
-      }
-
-      .book-item[draggable="true"]:active {
-        cursor: grabbing;
-      }
     </style>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./src/main.tsx"></script>
+    <script type="module">
+      import { startPlayground } from './src/main.tsx';
+      startPlayground({ document, fetch });
+    </script>
   </body>
 </html>

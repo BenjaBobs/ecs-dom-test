@@ -2,23 +2,22 @@
  * Radio Group feature - selection components, systems, and bundles.
  */
 
-// Components
-export {
-  Selection,
-  SelectedValue,
-  Value,
-  Selected,
-  Radio,
-  Name,
-} from './components.ts';
-
 // Bundles
 export {
   RadioGroup,
-  RadioOption,
   RadioIndicator,
+  RadioOption,
   TextSpan,
 } from './bundles.ts';
+// Components
+export {
+  Name,
+  Radio,
+  Selected,
+  SelectedValue,
+  Selection,
+  Value,
+} from './components.ts';
 
 // Systems
 export { registerRadioSystems } from './systems.ts';

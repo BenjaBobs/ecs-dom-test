@@ -31,21 +31,21 @@
 export { createFormFactory } from './factory.ts';
 
 export type {
+  BoundArrayAccessor,
+  BoundArrayItemAccessor,
+  BoundFieldAccessor,
+  BoundFieldAccessors,
+  ComputedSchema,
   // Core types
   FormFactory,
   FormFactoryConfig,
   FormInstance,
   FormSubscriber,
-  // Validation
-  ValidateFn,
-  ValidationSchema,
-  ComputedSchema,
+  UnboundArrayAccessor,
   // Accessors
   UnboundFieldAccessor,
   UnboundFieldAccessors,
-  UnboundArrayAccessor,
-  BoundFieldAccessor,
-  BoundFieldAccessors,
-  BoundArrayAccessor,
-  BoundArrayItemAccessor,
+  // Validation
+  ValidateFn,
+  ValidationSchema,
 } from './types.ts';

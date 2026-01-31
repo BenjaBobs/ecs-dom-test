@@ -2,9 +2,9 @@
  * Cat fetcher bundles.
  */
 
+import { Classes, Clickable, DOMElement, TextContent } from '@ecs-test/dom';
 import { defineBundle } from '@ecs-test/ecs';
-import { DOMElement, Clickable, TextContent, Classes } from '@ecs-test/dom';
-import { FetchCatButton, CatDisplayMarker } from './components.ts';
+import { CatDisplayMarker, FetchCatButton } from './components.ts';
 
 /**
  * FetchCatBtn bundle - a button that triggers cat fetch on parent CatDisplay.

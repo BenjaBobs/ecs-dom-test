@@ -2,9 +2,9 @@
  * Radio group bundles.
  */
 
+import { Classes, Clickable, DOMElement, TextContent } from '@ecs-test/dom';
 import { defineBundle } from '@ecs-test/ecs';
-import { DOMElement, Clickable, TextContent, Classes } from '@ecs-test/dom';
-import { Selection, Value, Radio, Name } from './components.ts';
+import { Name, Radio, Selection, Value } from './components.ts';
 
 /**
  * RadioGroup bundle - creates a selection container.

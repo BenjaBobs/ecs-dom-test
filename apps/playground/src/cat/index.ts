@@ -2,19 +2,18 @@
  * Cat Fetcher feature - async data fetching demo.
  */
 
+// Bundles
+export { CatDisplay, FetchCatBtn } from './bundles.ts';
 // Components
 export {
-  FetchCat,
-  Loading,
   CatData,
+  CatDisplayMarker,
+  FetchCat,
+  FetchCatButton,
   FetchError,
   ImageSrc,
-  FetchCatButton,
-  CatDisplayMarker,
+  Loading,
 } from './components.ts';
-
-// Bundles
-export { FetchCatBtn, CatDisplay } from './bundles.ts';
 
 // Systems
 export { registerCatSystems } from './systems.ts';

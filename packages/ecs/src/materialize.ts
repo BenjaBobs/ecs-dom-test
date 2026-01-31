@@ -2,11 +2,11 @@
  * Materializes JSX trees into ECS entities.
  */
 
-import type { World, EntityId } from './world.ts';
+import { assert } from './assert.ts';
 import type { ComponentInstance } from './component.ts';
 import type { JSXChild, JSXEntity } from './jsx-runtime.ts';
-import { isJSXEntity, isBundle } from './jsx-runtime.ts';
-import { assert } from './assert.ts';
+import { isBundle, isJSXEntity } from './jsx-runtime.ts';
+import type { EntityId, World } from './world.ts';
 
 /**
  * Materialize a JSX tree into entities in the world.

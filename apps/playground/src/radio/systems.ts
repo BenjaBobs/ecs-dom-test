@@ -2,17 +2,17 @@
  * Radio group systems.
  */
 
+import { Classes, Clicked, Disabled } from '@ecs-test/dom';
 import {
-  type World,
-  type EntityId,
-  type ComponentRef,
-  defineReactiveSystem,
   added,
   addedOrReplaced,
+  type ComponentRef,
+  defineReactiveSystem,
+  type EntityId,
   removed,
+  type World,
 } from '@ecs-test/ecs';
-import { Classes, Clicked, Disabled } from '@ecs-test/dom';
-import { Selection, SelectedValue, Value, Selected, Radio, Name } from './components.ts';
+import { Name, Radio, Selected, SelectedValue, Selection, Value } from './components.ts';
 
 /**
  * When a child with Value is clicked, update the parent's SelectedValue.

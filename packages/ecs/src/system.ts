@@ -2,10 +2,9 @@
  * Reactive system definitions.
  */
 
-import type { EntityId } from './world.ts';
-import type { World } from './world.ts';
-import type { ComponentType, ComponentRef } from './component.ts';
+import type { ComponentRef, ComponentType } from './component.ts';
 import { getTag } from './component.ts';
+import type { EntityId, World } from './world.ts';
 
 /** Mutation types for reactive systems */
 export type MutationType = 'added' | 'removed' | 'replaced';

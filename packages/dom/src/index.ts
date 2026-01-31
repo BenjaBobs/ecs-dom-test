@@ -6,35 +6,35 @@
 
 // Components
 export {
-  DOMElement,
-  TextContent,
   Classes,
   Clickable,
   Clicked,
   Disabled,
+  DOMElement,
   Draggable,
-  Droppable,
   DragOver,
+  Droppable,
   Dropped,
+  TextContent,
 } from './components.ts';
 
 // Systems
 export {
-  getDOMElement,
-  DOMCreateSystem,
-  DOMRemoveSystem,
+  ClassesSystem,
   ClickableAddSystem,
   ClickableRemoveSystem,
   DisabledAddSystem,
   DisabledRemoveSystem,
-  TextContentSystem,
-  ClassesSystem,
+  DOMCreateSystem,
+  DOMRemoveSystem,
   DraggableAddSystem,
   DraggableRemoveSystem,
-  DroppableAddSystem,
-  DroppableRemoveSystem,
   DragOverAddSystem,
   DragOverRemoveSystem,
-  registerDOMSystems,
+  DroppableAddSystem,
+  DroppableRemoveSystem,
+  getDOMElement,
   mount,
+  registerDOMSystems,
+  TextContentSystem,
 } from './systems.ts';

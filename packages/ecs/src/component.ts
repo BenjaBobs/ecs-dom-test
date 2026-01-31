@@ -17,8 +17,7 @@ export type ComponentInstance<T = unknown> = {
 };
 
 /** Component type or tag string - used where we need to reference a component type */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ComponentRef = ComponentType<any> | string;
+export type ComponentRef = ComponentType<unknown> | string;
 
 /** Extract the tag string from a ComponentRef */
 export function getTag(ref: ComponentRef): string {
