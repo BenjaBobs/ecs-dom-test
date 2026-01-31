@@ -167,6 +167,11 @@ export class World {
     return Array.from(this.childrenMap.get(entity) ?? []);
   }
 
+  /** Check if an entity exists */
+  exists(entity: EntityId): boolean {
+    return this.entities.has(entity);
+  }
+
   /** Query entities that have all specified components */
   query(...componentTags: string[]): EntityId[] {
     if (componentTags.length === 0) {

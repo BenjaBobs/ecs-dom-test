@@ -10,6 +10,8 @@ This is a monorepo with the following packages:
 packages/
   ecs/          # @ecs-test/ecs - Core ECS engine
   dom/          # @ecs-test/dom - DOM renderer
+  forms/        # @ecs-test/forms - Type-safe form state (zero dependencies)
+  forms-ui/     # @ecs-test/forms-ui - ECS bindings for forms
   ui/           # @ecs-test/ui - Reusable UI components (planned)
 
 apps/
@@ -26,6 +28,34 @@ Pure ECS primitives with no DOM dependency:
 - **Bundles** - Reusable groups of components with `except`/`only` filtering
 - **JSX Runtime** - Custom JSX that produces entity trees
 - **Materialization** - Converts JSX trees into ECS entities
+
+### @ecs-test/forms
+
+Pure TypeScript form state management (zero dependencies):
+- **Form factories** - Define form schema once, create isolated instances
+- **Type-safe accessors** - `f.name`, `f.books.at(0).title` with full autocomplete
+- **Validation** - Per-field and computed validation with error messages
+- **Computed fields** - Derived values that auto-update
+- **Array operations** - append, remove, reorder with stable keys
+
+```ts
+const AuthorForm = createFormFactory<Author>({
+  initialValues: { name: "", age: 0, books: [] },
+  validate: { name: (v) => !v ? "Required" : undefined },
+  computed: {
+    averageScore: (d) => d.books.reduce((s, b) => s + b.score, 0) / d.books.length
+  }
+});
+
+// Fully testable - no DOM, no ECS
+const form = AuthorForm.create();
+form.fields.name.set("Alice");
+form.fields.books.append({ title: "Book 1", score: 5 });
+```
+
+### @ecs-test/forms-ui
+
+ECS/DOM bindings for forms - connects `@ecs-test/forms` to the UI.
 
 ### @ecs-test/dom
 

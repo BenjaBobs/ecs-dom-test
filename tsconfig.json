@@ -28,6 +28,10 @@
       "@ecs-test/ecs/*": ["./packages/ecs/src/*"],
       "@ecs-test/dom": ["./packages/dom/src/index.ts"],
       "@ecs-test/dom/*": ["./packages/dom/src/*"],
+      "@ecs-test/forms": ["./packages/forms/src/index.ts"],
+      "@ecs-test/forms/*": ["./packages/forms/src/*"],
+      "@ecs-test/forms-ui": ["./packages/forms-ui/src/index.ts"],
+      "@ecs-test/forms-ui/*": ["./packages/forms-ui/src/*"],
       "@ecs-test/ui": ["./packages/ui/src/index.ts"],
       "@ecs-test/ui/*": ["./packages/ui/src/*"]
     }

@@ -10,7 +10,9 @@ import {
   Classes,
   Clickable,
   Disabled,
+  TextContent,
 } from "@ecs-test/dom";
+import { registerFormSystems } from "@ecs-test/forms-ui";
 
 import {
   registerRadioSystems,
@@ -26,13 +28,20 @@ import {
   FetchCatBtn,
 } from "./cat/index.ts";
 
+import {
+  registerAuthorSystems,
+  AuthorFormUI,
+} from "./author/index.ts";
+
 // Create the world
 const world = new World();
 
 // Register systems (order matters!)
 registerDOMSystems(world);
+registerFormSystems(world);
 registerRadioSystems(world);
 registerCatSystems(world);
+registerAuthorSystems(world);
 
 // Define the UI using JSX
 const ui = (
@@ -40,58 +49,91 @@ const ui = (
     <DOMElement tag="div" />
     <Classes list={["app"]} />
 
+    {/* Author Form Demo */}
+    <Entity>
+      <DOMElement tag="section" />
+      <Classes list={["demo-section"]} />
+
+      <Entity>
+        <DOMElement tag="h1" />
+        <TextContent value="Author Form Demo" />
+      </Entity>
+
+      <AuthorFormUI />
+    </Entity>
+
     {/* Radio Group Demo */}
     <Entity>
-      <RadioGroup name="Size" />
+      <DOMElement tag="section" />
+      <Classes list={["demo-section"]} />
 
       <Entity>
-        <RadioOption value="small" />
-        <Entity>
-          <RadioIndicator />
-        </Entity>
-        <Entity>
-          <TextSpan content="Small" />
-        </Entity>
+        <DOMElement tag="h1" />
+        <TextContent value="Radio Group Demo" />
       </Entity>
 
       <Entity>
-        <RadioOption value="medium" />
-        <Entity>
-          <RadioIndicator />
-        </Entity>
-        <Entity>
-          <TextSpan content="Medium" />
-        </Entity>
-      </Entity>
+        <RadioGroup name="Size" />
 
-      <Entity>
-        <RadioOption value="large" />
         <Entity>
-          <RadioIndicator />
+          <RadioOption value="small" />
+          <Entity>
+            <RadioIndicator />
+          </Entity>
+          <Entity>
+            <TextSpan content="Small" />
+          </Entity>
         </Entity>
-        <Entity>
-          <TextSpan content="Large" />
-        </Entity>
-      </Entity>
 
-      <Entity>
-        <RadioOption value="xlarge" except={[Clickable]} />
-        <Disabled />
         <Entity>
-          <RadioIndicator />
+          <RadioOption value="medium" />
+          <Entity>
+            <RadioIndicator />
+          </Entity>
+          <Entity>
+            <TextSpan content="Medium" />
+          </Entity>
         </Entity>
+
         <Entity>
-          <TextSpan content="X-Large (sold out)" />
+          <RadioOption value="large" />
+          <Entity>
+            <RadioIndicator />
+          </Entity>
+          <Entity>
+            <TextSpan content="Large" />
+          </Entity>
+        </Entity>
+
+        <Entity>
+          <RadioOption value="xlarge" except={[Clickable]} />
+          <Disabled />
+          <Entity>
+            <RadioIndicator />
+          </Entity>
+          <Entity>
+            <TextSpan content="X-Large (sold out)" />
+          </Entity>
         </Entity>
       </Entity>
     </Entity>
 
     {/* Cat Fetcher Demo */}
     <Entity>
-      <CatDisplay />
+      <DOMElement tag="section" />
+      <Classes list={["demo-section"]} />
 
       <Entity>
-        <FetchCatBtn label="Fetch a Cat!" />
+        <DOMElement tag="h1" />
+        <TextContent value="Cat Fetcher Demo" />
+      </Entity>
+
+      <Entity>
+        <CatDisplay />
+
+        <Entity>
+          <FetchCatBtn label="Fetch a Cat!" />
+        </Entity>
       </Entity>
     </Entity>
   </Entity>
@@ -107,7 +149,7 @@ world.flush();
 const container = document.getElementById("root");
 if (container && rootEntity && !Array.isArray(rootEntity)) {
   mount(world, rootEntity, container);
-  console.log("Mounted! Try the radio buttons and cat fetcher.");
+  console.log("Mounted! Try the demos.");
 } else {
   console.error("Failed to mount - check root entity");
 }

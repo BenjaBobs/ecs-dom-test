@@ -1,10 +1,13 @@
 {
   "name": "ecs-test-monorepo",
   "private": true,
-  "workspaces": ["packages/*", "apps/*"],
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "dev": "bun run --cwd apps/playground dev"
+    "dev": "bun --watch apps/playground/index.html"
   },
   "devDependencies": {
     "@types/bun": "latest",

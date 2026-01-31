@@ -61,4 +61,20 @@
 1. **Testing setup** - Get bun test + happy-dom working
 2. **World inspection** - Add `getEntities()`, `inspect()`, `inspectAll()`
 3. **First tests** - World core + one integration test
+4. **Forms tests** - Test the forms package in isolation (no ECS needed)
+
+## Recently Completed
+
+- [x] Forms package (`@ecs-test/forms`) - Pure form state management
+  - Form factory pattern (define once, create isolated instances)
+  - Type-safe field accessors with full path inference
+  - Array operations (append, remove, reorder) with stable keys
+  - Validation and computed fields
+  - Zero dependencies - works with any UI framework
+
+- [x] Forms UI package (`@ecs-test/forms-ui`) - ECS bindings
+  - FormData component (creates form instance)
+  - FormBinding component (connects inputs to form fields)
+  - TextInput, NumberInput markers
+  - FormDisplay, FieldError components
 

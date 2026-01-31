@@ -23,3 +23,30 @@ export const Clicked = defineMarker("Clicked");
 
 /** Marks an entity as disabled */
 export const Disabled = defineMarker("Disabled");
+
+/** Marks an element as draggable */
+export const Draggable = defineComponent<{
+  /** Data type identifier (e.g., "book", "item") */
+  type: string;
+  /** Data payload to transfer */
+  data: unknown;
+}>("Draggable");
+
+/** Marks an element as a drop target */
+export const Droppable = defineComponent<{
+  /** Accepted data types */
+  accepts: string[];
+}>("Droppable");
+
+/** Added when dragging over a valid drop target */
+export const DragOver = defineMarker("DragOver");
+
+/** Added when something is dropped on a Droppable entity */
+export const Dropped = defineComponent<{
+  /** The type of data dropped */
+  type: string;
+  /** The data payload */
+  data: unknown;
+  /** Source entity if available */
+  sourceEntity?: number;
+}>("Dropped");

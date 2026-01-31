@@ -99,6 +99,143 @@
         opacity: 0.5;
         cursor: not-allowed;
       }
+
+      /* Demo sections */
+      .demo-section {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .demo-section h1 {
+        margin-top: 0;
+        font-size: 1.5rem;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 0.5rem;
+      }
+
+      /* Author form styles */
+      .author-form {
+        max-width: 500px;
+      }
+
+      .author-form h2 {
+        margin-top: 0;
+      }
+
+      .author-form .field {
+        margin-bottom: 1rem;
+      }
+
+      .author-form label {
+        display: block;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+      }
+
+      .author-form input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 1rem;
+        box-sizing: border-box;
+      }
+
+      .author-form input:focus {
+        outline: none;
+        border-color: #4a90d9;
+        box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.2);
+      }
+
+      .author-form .error {
+        color: #d32f2f;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+      }
+
+      .author-form .computed {
+        background: #f5f5f5;
+        padding: 0.75rem;
+        border-radius: 4px;
+      }
+
+      .author-form .computed .value {
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: #4a90d9;
+      }
+
+      .author-form .books-section {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #eee;
+      }
+
+      .author-form .books-section h3 {
+        margin-top: 0;
+      }
+
+      .author-form .book-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .author-form .book-item {
+        background: #fafafa;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        padding: 1rem;
+        display: grid;
+        grid-template-columns: 1fr 100px auto;
+        gap: 1rem;
+        align-items: start;
+      }
+
+      .author-form .book-item .field {
+        margin-bottom: 0;
+      }
+
+      .author-form .book-item button {
+        margin-top: 1.5rem;
+        background: #ffebee;
+        border-color: #ef9a9a;
+        color: #c62828;
+      }
+
+      .author-form .submit {
+        margin-top: 1.5rem;
+        background: #4a90d9;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+      }
+
+      .author-form .submit:hover {
+        background: #357abd;
+      }
+
+      /* Drag and drop styles */
+      .book-item {
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .book-item.drag-over {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(74, 144, 217, 0.3);
+        border-color: #4a90d9;
+      }
+
+      .book-item[draggable="true"] {
+        cursor: grab;
+      }
+
+      .book-item[draggable="true"]:active {
+        cursor: grabbing;
+      }
     </style>
   </head>
   <body>

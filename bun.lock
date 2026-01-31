@@ -15,6 +15,8 @@
       "dependencies": {
         "@ecs-test/dom": "workspace:*",
         "@ecs-test/ecs": "workspace:*",
+        "@ecs-test/forms": "workspace:*",
+        "@ecs-test/forms-ui": "workspace:*",
       },
     },
     "packages/dom": {
@@ -27,6 +29,19 @@
     "packages/ecs": {
       "name": "@ecs-test/ecs",
       "version": "0.0.1",
+    },
+    "packages/forms": {
+      "name": "@ecs-test/forms",
+      "version": "0.0.1",
+    },
+    "packages/forms-ui": {
+      "name": "@ecs-test/forms-ui",
+      "version": "0.0.1",
+      "dependencies": {
+        "@ecs-test/dom": "workspace:*",
+        "@ecs-test/ecs": "workspace:*",
+        "@ecs-test/forms": "workspace:*",
+      },
     },
     "packages/ui": {
       "name": "@ecs-test/ui",
@@ -41,6 +56,10 @@
     "@ecs-test/dom": ["@ecs-test/dom@workspace:packages/dom"],
 
     "@ecs-test/ecs": ["@ecs-test/ecs@workspace:packages/ecs"],
+
+    "@ecs-test/forms": ["@ecs-test/forms@workspace:packages/forms"],
+
+    "@ecs-test/forms-ui": ["@ecs-test/forms-ui@workspace:packages/forms-ui"],
 
     "@ecs-test/playground": ["@ecs-test/playground@workspace:apps/playground"],
 

@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "@ecs-test/ecs": "workspace:*",
-    "@ecs-test/dom": "workspace:*"
+    "@ecs-test/dom": "workspace:*",
+    "@ecs-test/forms": "workspace:*",
+    "@ecs-test/forms-ui": "workspace:*"
   }
 }
