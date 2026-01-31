@@ -28,7 +28,7 @@
  * ```
  */
 
-export { createFormFactory } from "./factory.ts";
+export { createFormFactory } from './factory.ts';
 
 export type {
   // Core types
@@ -36,12 +36,10 @@ export type {
   FormFactoryConfig,
   FormInstance,
   FormSubscriber,
-
   // Validation
   ValidateFn,
   ValidationSchema,
   ComputedSchema,
-
   // Accessors
   UnboundFieldAccessor,
   UnboundFieldAccessors,
@@ -50,4 +48,4 @@ export type {
   BoundFieldAccessors,
   BoundArrayAccessor,
   BoundArrayItemAccessor,
-} from "./types.ts";
+} from './types.ts';

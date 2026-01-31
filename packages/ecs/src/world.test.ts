@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from 'bun:test';
 import {
   World,
   defineComponent,
@@ -7,14 +7,14 @@ import {
   added,
   removed,
   addedOrReplaced,
-} from "./index.ts";
+} from './index.ts';
 
-const Position = defineComponent<{ x: number; y: number }>("Position");
-const Velocity = defineComponent<{ x: number; y: number }>("Velocity");
-const Selected = defineMarker("Selected");
+const Position = defineComponent<{ x: number; y: number }>('Position');
+const Velocity = defineComponent<{ x: number; y: number }>('Velocity');
+const Selected = defineMarker('Selected');
 
-describe("World", () => {
-  it("creates entities and manages components", () => {
+describe('World', () => {
+  it('creates entities and manages components', () => {
     const world = new World();
     const entity = world.createEntity();
 
@@ -29,7 +29,7 @@ describe("World", () => {
     expect(world.has(entity, Position)).toBe(false);
   });
 
-  it("queries entities by component tags", () => {
+  it('queries entities by component tags', () => {
     const world = new World();
     const e1 = world.createEntity();
     const e2 = world.createEntity();
@@ -45,7 +45,7 @@ describe("World", () => {
     expect(world.query(Position._tag, Velocity._tag)).toEqual([e1]);
   });
 
-  it("removes entities recursively", () => {
+  it('removes entities recursively', () => {
     const world = new World();
     const parent = world.createEntity();
     const child = world.createEntity(parent);
@@ -57,7 +57,7 @@ describe("World", () => {
     expect(world.exists(child)).toBe(false);
   });
 
-  it("runs reactive systems with triggers and filters", () => {
+  it('runs reactive systems with triggers and filters', () => {
     const world = new World();
     const entity = world.createEntity();
     let executed = 0;
@@ -69,7 +69,7 @@ describe("World", () => {
         execute(entities) {
           executed += entities.length;
         },
-      })
+      }),
     );
 
     world.add(entity, Position({ x: 1, y: 2 }));
@@ -79,7 +79,7 @@ describe("World", () => {
     expect(executed).toBe(1);
   });
 
-  it("dedupes entities across multiple matching mutations", () => {
+  it('dedupes entities across multiple matching mutations', () => {
     const world = new World();
     const entity = world.createEntity();
     let executions = 0;
@@ -90,7 +90,7 @@ describe("World", () => {
         execute(entities) {
           executions += entities.length;
         },
-      })
+      }),
     );
 
     world.add(entity, Position({ x: 0, y: 0 }));
@@ -100,7 +100,7 @@ describe("World", () => {
     expect(executions).toBe(1);
   });
 
-  it("supports removed triggers", () => {
+  it('supports removed triggers', () => {
     const world = new World();
     const entity = world.createEntity();
     let removedCount = 0;
@@ -111,7 +111,7 @@ describe("World", () => {
         execute(entities) {
           removedCount += entities.length;
         },
-      })
+      }),
     );
 
     world.add(entity, Position({ x: 2, y: 3 }));

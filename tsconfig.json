@@ -36,9 +36,5 @@
       "@ecs-test/ui/*": ["./packages/ui/src/*"]
     }
   },
-  "include": [
-    "packages/*/src/**/*",
-    "packages/*/src/**/*.test.ts",
-    "apps/*/src/**/*"
-  ]
+  "include": ["packages/*/src/**/*", "packages/*/src/**/*.test.ts", "apps/*/src/**/*"]
 }

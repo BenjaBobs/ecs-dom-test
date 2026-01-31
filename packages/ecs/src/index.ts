@@ -12,10 +12,10 @@ export {
   getTag,
   defineComponent,
   defineMarker,
-} from "./component.ts";
+} from './component.ts';
 
 // World
-export { type EntityId, World } from "./world.ts";
+export { type EntityId, World } from './world.ts';
 
 // System
 export {
@@ -29,7 +29,7 @@ export {
   removed,
   replaced,
   addedOrReplaced,
-} from "./system.ts";
+} from './system.ts';
 
 // Bundle
 export {
@@ -37,7 +37,7 @@ export {
   type BundleFn,
   defineBundle,
   isBundle,
-} from "./bundle.ts";
+} from './bundle.ts';
 
 // JSX
 export {
@@ -46,10 +46,10 @@ export {
   isJSXEntity,
   type JSXChild,
   type JSXEntity,
-} from "./jsx-runtime.ts";
+} from './jsx-runtime.ts';
 
 // Materialization
-export { materialize } from "./materialize.ts";
+export { materialize } from './materialize.ts';
 
 // Assertions
-export { assert } from "./assert.ts";
+export { assert } from './assert.ts';

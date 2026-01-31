@@ -122,10 +122,10 @@ export type BoundFieldAccessor<TValue> = {
   /** Is this a computed (read-only) field? */
   readonly isComputed: boolean;
 } & (TValue extends (infer Item)[]
-    ? BoundArrayAccessor<Item>
-    : TValue extends object
-      ? { readonly [K in keyof TValue]: BoundFieldAccessor<TValue[K]> }
-      : {});
+  ? BoundArrayAccessor<Item>
+  : TValue extends object
+    ? { readonly [K in keyof TValue]: BoundFieldAccessor<TValue[K]> }
+    : {});
 
 /** Bound array accessor */
 export type BoundArrayAccessor<TItem> = {

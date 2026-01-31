@@ -9,9 +9,9 @@ import {
   defineReactiveSystem,
   added,
   addedOrReplaced,
-} from "@ecs-test/ecs";
-import { DOMElement, TextContent, getDOMElement } from "@ecs-test/dom";
-import type { FormInstance as FormInstanceType, UnboundFieldAccessor } from "@ecs-test/forms";
+} from '@ecs-test/ecs';
+import { DOMElement, TextContent, getDOMElement } from '@ecs-test/dom';
+import type { FormInstance as FormInstanceType, UnboundFieldAccessor } from '@ecs-test/forms';
 import {
   FormData,
   FormBinding,
@@ -20,7 +20,7 @@ import {
   TextInput,
   NumberInput,
   FormInstance,
-} from "./components.ts";
+} from './components.ts';
 
 /**
  * Creates form instance when FormData is added.
@@ -51,7 +51,7 @@ export const TextInputBindingSystem = defineReactiveSystem({
 
       const formDataEntity = findAncestorWith(entity, FormData, world);
       if (!formDataEntity) {
-        console.warn("FormBinding without FormData ancestor");
+        console.warn('FormBinding without FormData ancestor');
         continue;
       }
 
@@ -65,15 +65,15 @@ export const TextInputBindingSystem = defineReactiveSystem({
       const boundAccessor = resolveBoundAccessor(formInstance.instance, binding.field);
 
       // Set initial value
-      el.value = String(boundAccessor.get() ?? "");
+      el.value = String(boundAccessor.get() ?? '');
 
       // Listen for input changes
-      el.addEventListener("input", () => {
+      el.addEventListener('input', () => {
         boundAccessor.set(el.value);
         boundAccessor.touch();
       });
 
-      el.addEventListener("blur", () => {
+      el.addEventListener('blur', () => {
         boundAccessor.touch();
       });
 
@@ -82,7 +82,7 @@ export const TextInputBindingSystem = defineReactiveSystem({
         // Entity may have been removed during re-render
         if (!world.exists(entity)) return;
 
-        const newValue = String(boundAccessor.get() ?? "");
+        const newValue = String(boundAccessor.get() ?? '');
         if (el.value !== newValue) {
           el.value = newValue;
         }
@@ -104,7 +104,7 @@ export const NumberInputBindingSystem = defineReactiveSystem({
 
       const formDataEntity = findAncestorWith(entity, FormData, world);
       if (!formDataEntity) {
-        console.warn("FormBinding without FormData ancestor");
+        console.warn('FormBinding without FormData ancestor');
         continue;
       }
 
@@ -114,7 +114,7 @@ export const NumberInputBindingSystem = defineReactiveSystem({
       const el = getDOMElement(world, entity);
       if (!el || !(el instanceof HTMLInputElement)) continue;
 
-      el.type = "number";
+      el.type = 'number';
 
       // Get bound accessor
       const boundAccessor = resolveBoundAccessor(formInstance.instance, binding.field);
@@ -123,13 +123,13 @@ export const NumberInputBindingSystem = defineReactiveSystem({
       el.value = String(boundAccessor.get() ?? 0);
 
       // Listen for input changes
-      el.addEventListener("input", () => {
+      el.addEventListener('input', () => {
         const num = parseFloat(el.value);
         boundAccessor.set(isNaN(num) ? 0 : num);
         boundAccessor.touch();
       });
 
-      el.addEventListener("blur", () => {
+      el.addEventListener('blur', () => {
         boundAccessor.touch();
       });
 
@@ -167,14 +167,14 @@ export const FormDisplaySystem = defineReactiveSystem({
       const boundAccessor = resolveBoundAccessor(formInstance.instance, display.field);
 
       // Set initial value
-      world.set(entity, TextContent({ value: String(boundAccessor.get() ?? "") }));
+      world.set(entity, TextContent({ value: String(boundAccessor.get() ?? '') }));
 
       // Subscribe to form changes
       formInstance.instance.subscribe(() => {
         // Entity may have been removed during re-render
         if (!world.exists(entity)) return;
 
-        world.set(entity, TextContent({ value: String(boundAccessor.get() ?? "") }));
+        world.set(entity, TextContent({ value: String(boundAccessor.get() ?? '') }));
         world.flush();
       });
     }
@@ -206,11 +206,11 @@ export const FieldErrorSystem = defineReactiveSystem({
         const touched = boundAccessor.touched;
         const showError = touched && error;
 
-        world.set(entity, TextContent({ value: showError ? error : "" }));
+        world.set(entity, TextContent({ value: showError ? error : '' }));
 
         const el = getDOMElement(world, entity);
         if (el) {
-          (el as HTMLElement).style.display = showError ? "" : "none";
+          (el as HTMLElement).style.display = showError ? '' : 'none';
         }
       };
 
@@ -246,7 +246,7 @@ export function registerFormSystems(world: World): void {
 function findAncestorWith(
   entity: EntityId,
   component: ComponentRef,
-  world: World
+  world: World,
 ): EntityId | undefined {
   let current = world.getParent(entity);
   while (current !== undefined) {
@@ -259,11 +259,14 @@ function findAncestorWith(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function resolveBoundAccessor(instance: FormInstanceType<any>, unbound: UnboundFieldAccessor<any, any>): any {
+function resolveBoundAccessor(
+  instance: FormInstanceType<any>,
+  unbound: UnboundFieldAccessor<any, any>,
+): any {
   // Navigate the path to get the bound accessor
   let accessor: unknown = instance.fields;
   for (const segment of unbound.path) {
-    if (typeof segment === "number") {
+    if (typeof segment === 'number') {
       accessor = (accessor as { at: (i: number) => unknown }).at(segment);
     } else {
       accessor = (accessor as Record<string, unknown>)[segment];

@@ -10,15 +10,8 @@ import {
   added,
   addedOrReplaced,
   removed,
-} from "@ecs-test/ecs";
-import {
-  DOMElement,
-  TextContent,
-  Classes,
-  Clicked,
-  Disabled,
-  getDOMElement,
-} from "@ecs-test/dom";
+} from '@ecs-test/ecs';
+import { DOMElement, TextContent, Classes, Clicked, Disabled, getDOMElement } from '@ecs-test/dom';
 import {
   FetchCat,
   Loading,
@@ -27,7 +20,7 @@ import {
   ImageSrc,
   FetchCatButton,
   CatDisplayMarker,
-} from "./components.ts";
+} from './components.ts';
 
 /**
  * Handles FetchCatButton clicks - adds FetchCat to parent CatDisplay.
@@ -59,14 +52,14 @@ const FetchCatSystem = defineReactiveSystem({
       world.set(entity, Loading());
       world.remove(entity, FetchError);
 
-      fetch("https://cataas.com/cat?json=true")
-        .then((res) => {
+      fetch('https://cataas.com/cat?json=true')
+        .then(res => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return res.json();
         })
-        .then((data) => {
-          console.log("Cat API response:", data);
-          const catId = data._id ?? data.id ?? data.url?.split("/").pop();
+        .then(data => {
+          console.log('Cat API response:', data);
+          const catId = data._id ?? data.id ?? data.url?.split('/').pop();
           if (!catId) {
             const fallbackId = `random-${Date.now()}`;
             world.remove(entity, Loading);
@@ -97,7 +90,7 @@ const CatImageRenderSystem = defineReactiveSystem({
       const catData = world.get(entity, CatData);
       if (!catData) continue;
 
-      const imgUrl = catData.id.startsWith("random-")
+      const imgUrl = catData.id.startsWith('random-')
         ? `https://cataas.com/cat?${catData.id}`
         : `https://cataas.com/cat/${catData.id}`;
 
@@ -105,8 +98,8 @@ const CatImageRenderSystem = defineReactiveSystem({
 
       if (imgEntity === undefined) {
         imgEntity = world.createEntity(entity);
-        world.add(imgEntity, DOMElement({ tag: "img" }));
-        world.add(imgEntity, Classes({ list: ["cat-image"] }));
+        world.add(imgEntity, DOMElement({ tag: 'img' }));
+        world.add(imgEntity, Classes({ list: ['cat-image'] }));
       }
 
       world.set(imgEntity, ImageSrc({ url: imgUrl }));
@@ -124,7 +117,7 @@ const ImageSrcSystem = defineReactiveSystem({
       const src = world.get(entity, ImageSrc);
       const el = getDOMElement(world, entity);
 
-      if (src && el && el.tagName === "IMG") {
+      if (src && el && el.tagName === 'IMG') {
         (el as HTMLImageElement).src = src.url;
       }
     }
@@ -138,16 +131,16 @@ const LoadingRenderSystem = defineReactiveSystem({
   triggers: [added(Loading)],
   execute(entities, world) {
     for (const entity of entities) {
-      let loadingEntity = findChildWithComponent(entity, "LoadingIndicator", world);
+      let loadingEntity = findChildWithComponent(entity, 'LoadingIndicator', world);
 
       if (loadingEntity === undefined) {
         loadingEntity = world.createEntity(entity);
-        world.add(loadingEntity, DOMElement({ tag: "span" }));
-        world.add(loadingEntity, { _tag: "LoadingIndicator", data: undefined });
+        world.add(loadingEntity, DOMElement({ tag: 'span' }));
+        world.add(loadingEntity, { _tag: 'LoadingIndicator', data: undefined });
       }
 
-      world.set(loadingEntity, TextContent({ value: "Loading..." }));
-      world.set(loadingEntity, Classes({ list: ["loading"] }));
+      world.set(loadingEntity, TextContent({ value: 'Loading...' }));
+      world.set(loadingEntity, Classes({ list: ['loading'] }));
     }
   },
 });
@@ -159,7 +152,7 @@ const LoadingRemoveSystem = defineReactiveSystem({
   triggers: [addedOrReplaced(CatData), addedOrReplaced(FetchError)],
   execute(entities, world) {
     for (const entity of entities) {
-      const loadingEntity = findChildWithComponent(entity, "LoadingIndicator", world);
+      const loadingEntity = findChildWithComponent(entity, 'LoadingIndicator', world);
       if (loadingEntity !== undefined) {
         world.removeEntity(loadingEntity);
       }
@@ -177,16 +170,16 @@ const ErrorRenderSystem = defineReactiveSystem({
       const error = world.get(entity, FetchError);
       if (!error) continue;
 
-      let errorEntity = findChildWithComponent(entity, "ErrorIndicator", world);
+      let errorEntity = findChildWithComponent(entity, 'ErrorIndicator', world);
 
       if (errorEntity === undefined) {
         errorEntity = world.createEntity(entity);
-        world.add(errorEntity, DOMElement({ tag: "span" }));
-        world.add(errorEntity, { _tag: "ErrorIndicator", data: undefined });
+        world.add(errorEntity, DOMElement({ tag: 'span' }));
+        world.add(errorEntity, { _tag: 'ErrorIndicator', data: undefined });
       }
 
       world.set(errorEntity, TextContent({ value: `Error: ${error.message}` }));
-      world.set(errorEntity, Classes({ list: ["error"] }));
+      world.set(errorEntity, Classes({ list: ['error'] }));
     }
   },
 });
@@ -254,7 +247,7 @@ export function registerCatSystems(world: World): void {
 function findChildWithComponent(
   entity: EntityId,
   component: ComponentRef,
-  world: World
+  world: World,
 ): EntityId | undefined {
   for (const child of world.getChildren(entity)) {
     if (world.has(child, component)) {
@@ -267,7 +260,7 @@ function findChildWithComponent(
 function findAncestorWithComponent(
   entity: EntityId,
   component: ComponentRef,
-  world: World
+  world: World,
 ): EntityId | undefined {
   let current = world.getParent(entity);
   while (current !== undefined) {

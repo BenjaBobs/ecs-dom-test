@@ -10,7 +10,7 @@ export {
   Selected,
   Radio,
   Name,
-} from "./components.ts";
+} from './components.ts';
 
 // Bundles
 export {
@@ -18,7 +18,7 @@ export {
   RadioOption,
   RadioIndicator,
   TextSpan,
-} from "./bundles.ts";
+} from './bundles.ts';
 
 // Systems
-export { registerRadioSystems } from "./systems.ts";
+export { registerRadioSystems } from './systems.ts';

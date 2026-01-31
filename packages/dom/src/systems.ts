@@ -9,7 +9,7 @@ import {
   added,
   removed,
   addedOrReplaced,
-} from "@ecs-test/ecs";
+} from '@ecs-test/ecs';
 import {
   DOMElement,
   TextContent,
@@ -21,7 +21,7 @@ import {
   Droppable,
   DragOver,
   Dropped,
-} from "./components.ts";
+} from './components.ts';
 
 /** Per-world DOM element storage */
 const worldDOMElements = new WeakMap<World, Map<EntityId, Element>>();
@@ -161,7 +161,7 @@ export const ClickableAddSystem = defineReactiveSystem({
       // Remove existing handler if any
       const existingHandler = clickHandlers.get(entity);
       if (existingHandler) {
-        el.removeEventListener("click", existingHandler);
+        el.removeEventListener('click', existingHandler);
       }
 
       const handler = () => {
@@ -171,9 +171,9 @@ export const ClickableAddSystem = defineReactiveSystem({
         }
       };
 
-      el.addEventListener("click", handler);
+      el.addEventListener('click', handler);
       clickHandlers.set(entity, handler);
-      (el as HTMLElement).style.cursor = "pointer";
+      (el as HTMLElement).style.cursor = 'pointer';
     }
   },
 });
@@ -192,8 +192,8 @@ export const ClickableRemoveSystem = defineReactiveSystem({
       const handler = clickHandlers.get(entity);
 
       if (el && handler) {
-        el.removeEventListener("click", handler);
-        (el as HTMLElement).style.cursor = "";
+        el.removeEventListener('click', handler);
+        (el as HTMLElement).style.cursor = '';
       }
       clickHandlers.delete(entity);
     }
@@ -211,7 +211,7 @@ export const DisabledAddSystem = defineReactiveSystem({
     for (const entity of entities) {
       const el = domElements.get(entity);
       if (el) {
-        el.classList.add("disabled");
+        el.classList.add('disabled');
       }
     }
   },
@@ -228,7 +228,7 @@ export const DisabledRemoveSystem = defineReactiveSystem({
     for (const entity of entities) {
       const el = domElements.get(entity);
       if (el) {
-        el.classList.remove("disabled");
+        el.classList.remove('disabled');
       }
     }
   },
@@ -264,7 +264,7 @@ export const ClassesSystem = defineReactiveSystem({
       const el = domElements.get(entity);
       const classes = world.get(entity, Classes);
       if (el && classes) {
-        el.className = classes.list.join(" ");
+        el.className = classes.list.join(' ');
       }
     }
   },
@@ -285,7 +285,7 @@ export const DraggableAddSystem = defineReactiveSystem({
       if (!el || !draggable) continue;
 
       el.draggable = true;
-      el.style.cursor = "grab";
+      el.style.cursor = 'grab';
 
       const handlers: DragHandlers = {
         dragstart: (e: DragEvent) => {
@@ -294,17 +294,17 @@ export const DraggableAddSystem = defineReactiveSystem({
             type: draggable.type,
             data: draggable.data,
           });
-          el.style.opacity = "0.5";
-          e.dataTransfer?.setData("text/plain", draggable.type);
+          el.style.opacity = '0.5';
+          e.dataTransfer?.setData('text/plain', draggable.type);
         },
         dragend: () => {
           worldDragState.set(world, null);
-          el.style.opacity = "";
+          el.style.opacity = '';
         },
       };
 
-      el.addEventListener("dragstart", handlers.dragstart);
-      el.addEventListener("dragend", handlers.dragend);
+      el.addEventListener('dragstart', handlers.dragstart);
+      el.addEventListener('dragend', handlers.dragend);
       dragHandlers.set(entity, handlers);
     }
   },
@@ -324,10 +324,10 @@ export const DraggableRemoveSystem = defineReactiveSystem({
       const handlers = dragHandlers.get(entity);
 
       if (el && handlers) {
-        el.removeEventListener("dragstart", handlers.dragstart);
-        el.removeEventListener("dragend", handlers.dragend);
+        el.removeEventListener('dragstart', handlers.dragstart);
+        el.removeEventListener('dragend', handlers.dragend);
         el.draggable = false;
-        el.style.cursor = "";
+        el.style.cursor = '';
       }
       dragHandlers.delete(entity);
     }
@@ -382,18 +382,21 @@ export const DroppableAddSystem = defineReactiveSystem({
           }
 
           // Add dropped event
-          world.set(entity, Dropped({
-            type: dragState.type,
-            data: dragState.data,
-            sourceEntity: dragState.entity,
-          }));
+          world.set(
+            entity,
+            Dropped({
+              type: dragState.type,
+              data: dragState.data,
+              sourceEntity: dragState.entity,
+            }),
+          );
           world.flush();
         },
       };
 
-      el.addEventListener("dragover", handlers.dragover);
-      el.addEventListener("dragleave", handlers.dragleave);
-      el.addEventListener("drop", handlers.drop);
+      el.addEventListener('dragover', handlers.dragover);
+      el.addEventListener('dragleave', handlers.dragleave);
+      el.addEventListener('drop', handlers.drop);
       dropHandlers.set(entity, handlers);
     }
   },
@@ -413,9 +416,9 @@ export const DroppableRemoveSystem = defineReactiveSystem({
       const handlers = dropHandlers.get(entity);
 
       if (el && handlers) {
-        el.removeEventListener("dragover", handlers.dragover);
-        el.removeEventListener("dragleave", handlers.dragleave);
-        el.removeEventListener("drop", handlers.drop);
+        el.removeEventListener('dragover', handlers.dragover);
+        el.removeEventListener('dragleave', handlers.dragleave);
+        el.removeEventListener('drop', handlers.drop);
       }
       dropHandlers.delete(entity);
     }
@@ -433,7 +436,7 @@ export const DragOverAddSystem = defineReactiveSystem({
     for (const entity of entities) {
       const el = domElements.get(entity) as HTMLElement;
       if (el) {
-        el.classList.add("drag-over");
+        el.classList.add('drag-over');
       }
     }
   },
@@ -450,7 +453,7 @@ export const DragOverRemoveSystem = defineReactiveSystem({
     for (const entity of entities) {
       const el = domElements.get(entity) as HTMLElement;
       if (el) {
-        el.classList.remove("drag-over");
+        el.classList.remove('drag-over');
       }
     }
   },

@@ -1,25 +1,65 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.3.10/schema.json",
   "files": {
-    "ignore": [
-      "node_modules",
-      "dist",
-      "build"
-    ]
+    "includes": ["**", "!**/node_modules", "!**/dist", "!**/build"]
   },
   "formatter": {
     "enabled": true,
+    "useEditorconfig": true,
+    "formatWithErrors": true,
     "indentStyle": "space",
     "indentWidth": 2,
-    "lineWidth": 100
+    "lineEnding": "lf",
+    "lineWidth": 100,
+    "attributePosition": "auto",
+    "bracketSpacing": true
   },
-  "organizeImports": {
-    "enabled": true
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
   },
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "style": {
+        "noNonNullAssertion": "off",
+        "noRestrictedGlobals": {
+          "level": "error",
+          "options": {
+            "deniedGlobals": {
+              "window": "Do not use global 'window'. It breaks isolation and makes concurrent tests racy.",
+              "globalThis": "Do not use 'globalThis'. It breaks isolation and makes concurrent tests racy.",
+              "document": "Do not use global 'document'. It breaks isolation and makes concurrent tests racy.",
+              "location": "Do not use global 'location'. It breaks isolation and makes concurrent tests racy.",
+              "history": "Do not use global 'history'. It breaks isolation and makes concurrent tests racy.",
+              "localStorage": "Do not use global 'localStorage'. It breaks isolation and makes concurrent tests racy.",
+              "sessionStorage": "Do not use global 'sessionStorage'. It breaks isolation and makes concurrent tests racy.",
+              "navigator": "Do not use global 'navigator'. It breaks isolation and makes concurrent tests racy.",
+              "fetch": "Do not use global 'fetch'. It breaks isolation and makes concurrent tests racy."
+            }
+          }
+        }
+      },
+      "suspicious": {
+        "noConfusingVoidType": "off"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "trailingCommas": "all",
+      "semicolons": "always",
+      "arrowParentheses": "asNeeded",
+      "bracketSameLine": false,
+      "quoteStyle": "single",
+      "attributePosition": "auto",
+      "bracketSpacing": true
     }
   }
 }

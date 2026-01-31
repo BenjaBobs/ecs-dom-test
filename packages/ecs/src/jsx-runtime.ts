@@ -4,9 +4,9 @@
  * JSX produces a declarative tree that gets materialized into ECS entities.
  */
 
-import type { ComponentInstance } from "./component.ts";
-import type { BundleResult } from "./bundle.ts";
-import { isBundle } from "./bundle.ts";
+import type { ComponentInstance } from './component.ts';
+import type { BundleResult } from './bundle.ts';
+import { isBundle } from './bundle.ts';
 
 // =============================================================================
 // Types
@@ -39,7 +39,7 @@ type JSXElementType =
 // =============================================================================
 
 /** Fragment symbol for grouping without a wrapper */
-export const Fragment = Symbol.for("ecs.fragment");
+export const Fragment = Symbol.for('ecs.fragment');
 
 /** Entity marker component for JSX */
 export function Entity(_props: { children?: JSXChild | JSXChild[] }): JSXEntity {
@@ -55,7 +55,7 @@ export function Entity(_props: { children?: JSXChild | JSXChild[] }): JSXEntity 
  */
 export function jsx(
   type: JSXElementType,
-  props: Record<string, unknown> & { children?: JSXChild }
+  props: Record<string, unknown> & { children?: JSXChild },
 ): JSXChild {
   const { children, ...rest } = props;
   const childArray = normalizeChildren(children);
@@ -74,7 +74,7 @@ export function jsx(
   }
 
   // Component or Bundle function
-  if (typeof type === "function") {
+  if (typeof type === 'function') {
     return type(rest);
   }
 
@@ -100,10 +100,7 @@ function normalizeChildren(children: unknown): JSXChild[] {
 /** Check if a value is a JSX entity */
 export function isJSXEntity(value: unknown): value is JSXEntity {
   return (
-    typeof value === "object" &&
-    value !== null &&
-    "_isEntity" in value &&
-    value._isEntity === true
+    typeof value === 'object' && value !== null && '_isEntity' in value && value._isEntity === true
   );
 }
 

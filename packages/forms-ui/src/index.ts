@@ -33,7 +33,7 @@ export {
   TextInput,
   NumberInput,
   FormInstance,
-} from "./components.ts";
+} from './components.ts';
 
 // Systems
 export {
@@ -43,4 +43,4 @@ export {
   FormDisplaySystem,
   FieldErrorSystem,
   registerFormSystems,
-} from "./systems.ts";
+} from './systems.ts';

@@ -2,14 +2,10 @@
  * ECS World - the container for all entities and components.
  */
 
-import type {
-  ComponentType,
-  ComponentInstance,
-  ComponentRef,
-} from "./component.ts";
-import { getTag } from "./component.ts";
-import type { Mutation, ReactiveSystem } from "./system.ts";
-import { assert } from "./assert.ts";
+import type { ComponentType, ComponentInstance, ComponentRef } from './component.ts';
+import { getTag } from './component.ts';
+import type { Mutation, ReactiveSystem } from './system.ts';
+import { assert } from './assert.ts';
 
 /** Unique identifier for entities */
 export type EntityId = number & { readonly __brand: unique symbol };
@@ -28,10 +24,7 @@ export class World {
   /** Create a new entity */
   createEntity(parent?: EntityId): EntityId {
     if (parent !== undefined) {
-      assert(
-        this.entities.has(parent),
-        `Parent entity ${parent} does not exist`
-      );
+      assert(this.entities.has(parent), `Parent entity ${parent} does not exist`);
     }
 
     const id = this.nextEntityId++ as EntityId;
@@ -63,7 +56,7 @@ export class World {
         // Update component index
         this.componentIndex.get(tag)?.delete(id);
 
-        this.mutations.push({ entity: id, componentTag: tag, type: "removed" });
+        this.mutations.push({ entity: id, componentTag: tag, type: 'removed' });
       }
     }
 
@@ -89,7 +82,7 @@ export class World {
 
     assert(
       !entityComponents.has(component._tag),
-      `Component "${component._tag}" already exists on entity ${entity}. Use set() to replace.`
+      `Component "${component._tag}" already exists on entity ${entity}. Use set() to replace.`,
     );
 
     entityComponents.set(component._tag, component);
@@ -102,7 +95,7 @@ export class World {
     this.mutations.push({
       entity,
       componentTag: component._tag,
-      type: "added",
+      type: 'added',
     });
   }
 
@@ -127,7 +120,7 @@ export class World {
     this.mutations.push({
       entity,
       componentTag: component._tag,
-      type: existing ? "replaced" : "added",
+      type: existing ? 'replaced' : 'added',
     });
   }
 
@@ -143,7 +136,7 @@ export class World {
       // Update component index
       this.componentIndex.get(componentTag)?.delete(entity);
 
-      this.mutations.push({ entity, componentTag, type: "removed" });
+      this.mutations.push({ entity, componentTag, type: 'removed' });
     }
   }
 
@@ -187,7 +180,7 @@ export class World {
 
     // Get the sets for each component tag
     const sets = componentTags
-      .map((tag) => this.componentIndex.get(tag))
+      .map(tag => this.componentIndex.get(tag))
       .filter((set): set is Set<EntityId> => set !== undefined);
 
     // If any component has no entities, result is empty
@@ -203,7 +196,7 @@ export class World {
     // Intersect with remaining sets
     const result: EntityId[] = [];
     for (const entity of smallest) {
-      if (rest.every((set) => set.has(entity))) {
+      if (rest.every(set => set.has(entity))) {
         result.push(entity);
       }
     }

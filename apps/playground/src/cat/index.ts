@@ -11,10 +11,10 @@ export {
   ImageSrc,
   FetchCatButton,
   CatDisplayMarker,
-} from "./components.ts";
+} from './components.ts';
 
 // Bundles
-export { FetchCatBtn, CatDisplay } from "./bundles.ts";
+export { FetchCatBtn, CatDisplay } from './bundles.ts';
 
 // Systems
-export { registerCatSystems } from "./systems.ts";
+export { registerCatSystems } from './systems.ts';

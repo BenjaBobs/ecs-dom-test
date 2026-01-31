@@ -2,8 +2,8 @@
  * Author form UI components.
  */
 
-import { Entity } from "@ecs-test/ecs";
-import { DOMElement, Classes, TextContent, Clickable } from "@ecs-test/dom";
+import { Entity } from '@ecs-test/ecs';
+import { DOMElement, Classes, TextContent, Clickable } from '@ecs-test/dom';
 import {
   FormData,
   FormBinding,
@@ -11,8 +11,8 @@ import {
   FieldError,
   TextInput,
   NumberInput,
-} from "@ecs-test/forms-ui";
-import { AuthorForm, f } from "./form.ts";
+} from '@ecs-test/forms-ui';
+import { AuthorForm, f } from './form.ts';
 
 /**
  * Complete Author form UI.
@@ -21,7 +21,7 @@ export function AuthorFormUI() {
   return (
     <Entity>
       <DOMElement tag="div" />
-      <Classes list={["author-form"]} />
+      <Classes list={['author-form']} />
       <FormData factory={AuthorForm} />
 
       {/* Header */}
@@ -33,7 +33,7 @@ export function AuthorFormUI() {
       {/* Name field */}
       <Entity>
         <DOMElement tag="div" />
-        <Classes list={["field"]} />
+        <Classes list={['field']} />
 
         <Entity>
           <DOMElement tag="label" />
@@ -48,7 +48,7 @@ export function AuthorFormUI() {
 
         <Entity>
           <DOMElement tag="span" />
-          <Classes list={["error"]} />
+          <Classes list={['error']} />
           <FieldError field={f.name} />
         </Entity>
       </Entity>
@@ -56,7 +56,7 @@ export function AuthorFormUI() {
       {/* Age field */}
       <Entity>
         <DOMElement tag="div" />
-        <Classes list={["field"]} />
+        <Classes list={['field']} />
 
         <Entity>
           <DOMElement tag="label" />
@@ -71,7 +71,7 @@ export function AuthorFormUI() {
 
         <Entity>
           <DOMElement tag="span" />
-          <Classes list={["error"]} />
+          <Classes list={['error']} />
           <FieldError field={f.age} />
         </Entity>
       </Entity>
@@ -79,7 +79,7 @@ export function AuthorFormUI() {
       {/* Average score (computed, read-only) */}
       <Entity>
         <DOMElement tag="div" />
-        <Classes list={["field", "computed"]} />
+        <Classes list={['field', 'computed']} />
 
         <Entity>
           <DOMElement tag="label" />
@@ -88,7 +88,7 @@ export function AuthorFormUI() {
 
         <Entity>
           <DOMElement tag="span" />
-          <Classes list={["value"]} />
+          <Classes list={['value']} />
           <FormDisplay field={f.averageReviewScore} />
         </Entity>
       </Entity>
@@ -96,7 +96,7 @@ export function AuthorFormUI() {
       {/* Books section */}
       <Entity>
         <DOMElement tag="div" />
-        <Classes list={["books-section"]} />
+        <Classes list={['books-section']} />
 
         <Entity>
           <DOMElement tag="h3" />
@@ -105,14 +105,14 @@ export function AuthorFormUI() {
 
         <Entity>
           <DOMElement tag="span" />
-          <Classes list={["error"]} />
+          <Classes list={['error']} />
           <FieldError field={f.books} />
         </Entity>
 
         {/* Book list will be rendered dynamically by a system */}
         <Entity>
           <DOMElement tag="div" />
-          <Classes list={["book-list"]} />
+          <Classes list={['book-list']} />
           <BookListMarker />
         </Entity>
 
@@ -128,7 +128,7 @@ export function AuthorFormUI() {
       {/* Submit button */}
       <Entity>
         <DOMElement tag="button" />
-        <Classes list={["submit"]} />
+        <Classes list={['submit']} />
         <TextContent value="Submit" />
         <Clickable />
         <SubmitButton />
@@ -138,12 +138,10 @@ export function AuthorFormUI() {
 }
 
 // Markers and components for the systems to identify special entities
-import { defineMarker, defineComponent } from "@ecs-test/ecs";
+import { defineMarker, defineComponent } from '@ecs-test/ecs';
 
-export const BookListMarker = defineMarker("BookListMarker");
-export const AddBookButton = defineMarker("AddBookButton");
-export const SubmitButton = defineMarker("SubmitButton");
-export const BookItem = defineComponent<{ index: number; key: string }>(
-  "BookItem"
-);
-export const RemoveBookButton = defineMarker("RemoveBookButton");
+export const BookListMarker = defineMarker('BookListMarker');
+export const AddBookButton = defineMarker('AddBookButton');
+export const SubmitButton = defineMarker('SubmitButton');
+export const BookItem = defineComponent<{ index: number; key: string }>('BookItem');
+export const RemoveBookButton = defineMarker('RemoveBookButton');

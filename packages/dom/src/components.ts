@@ -2,27 +2,27 @@
  * DOM-related components.
  */
 
-import { defineComponent, defineMarker } from "@ecs-test/ecs";
+import { defineComponent, defineMarker } from '@ecs-test/ecs';
 
 /** Specifies the HTML element tag to render */
 export const DOMElement = defineComponent<{
   tag: keyof HTMLElementTagNameMap;
-}>("DOMElement");
+}>('DOMElement');
 
 /** Text content for an element */
-export const TextContent = defineComponent<{ value: string }>("TextContent");
+export const TextContent = defineComponent<{ value: string }>('TextContent');
 
 /** CSS classes on an element */
-export const Classes = defineComponent<{ list: string[] }>("Classes");
+export const Classes = defineComponent<{ list: string[] }>('Classes');
 
 /** Click handler marker */
-export const Clickable = defineMarker("Clickable");
+export const Clickable = defineMarker('Clickable');
 
 /** Marks an entity as clicked (transient, consumed by systems) */
-export const Clicked = defineMarker("Clicked");
+export const Clicked = defineMarker('Clicked');
 
 /** Marks an entity as disabled */
-export const Disabled = defineMarker("Disabled");
+export const Disabled = defineMarker('Disabled');
 
 /** Marks an element as draggable */
 export const Draggable = defineComponent<{
@@ -30,16 +30,16 @@ export const Draggable = defineComponent<{
   type: string;
   /** Data payload to transfer */
   data: unknown;
-}>("Draggable");
+}>('Draggable');
 
 /** Marks an element as a drop target */
 export const Droppable = defineComponent<{
   /** Accepted data types */
   accepts: string[];
-}>("Droppable");
+}>('Droppable');
 
 /** Added when dragging over a valid drop target */
-export const DragOver = defineMarker("DragOver");
+export const DragOver = defineMarker('DragOver');
 
 /** Added when something is dropped on a Droppable entity */
 export const Dropped = defineComponent<{
@@ -49,4 +49,4 @@ export const Dropped = defineComponent<{
   data: unknown;
   /** Source entity if available */
   sourceEntity?: number;
-}>("Dropped");
+}>('Dropped');

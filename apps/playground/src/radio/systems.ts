@@ -10,9 +10,9 @@ import {
   added,
   addedOrReplaced,
   removed,
-} from "@ecs-test/ecs";
-import { Classes, Clicked, Disabled } from "@ecs-test/dom";
-import { Selection, SelectedValue, Value, Selected, Radio, Name } from "./components.ts";
+} from '@ecs-test/ecs';
+import { Classes, Clicked, Disabled } from '@ecs-test/dom';
+import { Selection, SelectedValue, Value, Selected, Radio, Name } from './components.ts';
 
 /**
  * When a child with Value is clicked, update the parent's SelectedValue.
@@ -86,7 +86,7 @@ const RadioRenderSystem = defineReactiveSystem({
   filter: [Radio],
   execute(entities, world) {
     for (const entity of entities) {
-      world.set(entity, Classes({ list: ["radio", "selected"] }));
+      world.set(entity, Classes({ list: ['radio', 'selected'] }));
     }
   },
 });
@@ -99,7 +99,7 @@ const RadioInitSystem = defineReactiveSystem({
   execute(entities, world) {
     for (const entity of entities) {
       if (!world.has(entity, Selected)) {
-        world.set(entity, Classes({ list: ["radio"] }));
+        world.set(entity, Classes({ list: ['radio'] }));
       }
     }
   },
@@ -113,7 +113,7 @@ const RadioDeselectSystem = defineReactiveSystem({
   filter: [Radio],
   execute(entities, world) {
     for (const entity of entities) {
-      world.set(entity, Classes({ list: ["radio"] }));
+      world.set(entity, Classes({ list: ['radio'] }));
     }
   },
 });
@@ -129,9 +129,9 @@ const NameLegendSystem = defineReactiveSystem({
       if (!name) continue;
 
       const legendEntity = world.createEntity(entity);
-      world.add(legendEntity, { _tag: "DOMElement", data: { tag: "legend" } });
+      world.add(legendEntity, { _tag: 'DOMElement', data: { tag: 'legend' } });
       world.add(legendEntity, {
-        _tag: "TextContent",
+        _tag: 'TextContent',
         data: { value: name.value },
       });
     }
@@ -157,7 +157,7 @@ export function registerRadioSystems(world: World): void {
 function findAncestorWith(
   entity: EntityId,
   componentTag: ComponentRef,
-  world: World
+  world: World,
 ): EntityId | undefined {
   let current = world.getParent(entity);
   while (current !== undefined) {

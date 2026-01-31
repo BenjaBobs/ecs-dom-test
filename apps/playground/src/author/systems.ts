@@ -8,7 +8,7 @@ import {
   type ComponentRef,
   defineReactiveSystem,
   added,
-} from "@ecs-test/ecs";
+} from '@ecs-test/ecs';
 import {
   DOMElement,
   Classes,
@@ -19,7 +19,7 @@ import {
   Droppable,
   Dropped,
   getDOMElement,
-} from "@ecs-test/dom";
+} from '@ecs-test/dom';
 import {
   FormData,
   FormBinding,
@@ -27,16 +27,10 @@ import {
   TextInput,
   NumberInput,
   FormInstance,
-} from "@ecs-test/forms-ui";
-import type { FormInstance as FormInstanceType } from "@ecs-test/forms";
-import {
-  BookListMarker,
-  AddBookButton,
-  SubmitButton,
-  BookItem,
-  RemoveBookButton,
-} from "./ui.tsx";
-import { f, type Author } from "./form.ts";
+} from '@ecs-test/forms-ui';
+import type { FormInstance as FormInstanceType } from '@ecs-test/forms';
+import { BookListMarker, AddBookButton, SubmitButton, BookItem, RemoveBookButton } from './ui.tsx';
+import { f, type Author } from './form.ts';
 
 /**
  * Handles Add Book button clicks.
@@ -57,7 +51,7 @@ const AddBookClickSystem = defineReactiveSystem({
 
       // Add a new book
       const instance = formInstance.instance as FormInstanceType<Author>;
-      instance.fields.books.append({ title: "", reviewScore: 3 });
+      instance.fields.books.append({ title: '', reviewScore: 3 });
 
       // Trigger re-render of book list
       rerenderBookList(world, formDataEntity, instance);
@@ -86,10 +80,12 @@ const SubmitClickSystem = defineReactiveSystem({
       const result = instance.submit();
 
       if (result.ok) {
-        console.log("Form submitted successfully!", result.data);
-        alert(`Author: ${result.data.name}, ${result.data.age} years old, ${result.data.books.length} books, avg score: ${result.data.averageReviewScore}`);
+        console.log('Form submitted successfully!', result.data);
+        alert(
+          `Author: ${result.data.name}, ${result.data.age} years old, ${result.data.books.length} books, avg score: ${result.data.averageReviewScore}`,
+        );
       } else {
-        console.log("Form validation failed:", Object.fromEntries(result.errors));
+        console.log('Form validation failed:', Object.fromEntries(result.errors));
       }
 
       // Trigger re-render to show errors
@@ -126,7 +122,7 @@ const RemoveBookClickSystem = defineReactiveSystem({
       if (!bookItemEntity) continue;
 
       const bookItem = world.get(bookItemEntity, BookItem);
-      if (!bookItem || typeof bookItem.index !== "number") continue;
+      if (!bookItem || typeof bookItem.index !== 'number') continue;
 
       const index = bookItem.index;
       instance.fields.books.remove(index);
@@ -168,15 +164,19 @@ const BookListInitSystem = defineReactiveSystem({
 /**
  * Re-render the book list based on current form state.
  */
-function rerenderBookList(world: World, formDataEntity: EntityId, instance: FormInstanceType<Author>): void {
+function rerenderBookList(
+  world: World,
+  formDataEntity: EntityId,
+  instance: FormInstanceType<Author>,
+): void {
   // Find the BookListMarker entity
   const bookListEntity = findDescendantWith(formDataEntity, BookListMarker, world);
   if (!bookListEntity) return;
 
   // Remove existing book items
-  const existingBooks = world.getChildren(bookListEntity).filter(
-    child => world.has(child, BookItem)
-  );
+  const existingBooks = world
+    .getChildren(bookListEntity)
+    .filter(child => world.has(child, BookItem));
   for (const existing of existingBooks) {
     world.removeEntity(existing);
   }
@@ -198,58 +198,58 @@ function createBookItemEntity(
   parent: EntityId,
   formDataEntity: EntityId,
   index: number,
-  key: string
+  key: string,
 ): void {
   // Book item container
   const bookEntity = world.createEntity(parent);
-  world.add(bookEntity, DOMElement({ tag: "div" }));
-  world.add(bookEntity, Classes({ list: ["book-item"] }));
+  world.add(bookEntity, DOMElement({ tag: 'div' }));
+  world.add(bookEntity, Classes({ list: ['book-item'] }));
   world.add(bookEntity, BookItem({ index, key }));
-  world.add(bookEntity, Draggable({ type: "book", data: { index, key } }));
-  world.add(bookEntity, Droppable({ accepts: ["book"] }));
+  world.add(bookEntity, Draggable({ type: 'book', data: { index, key } }));
+  world.add(bookEntity, Droppable({ accepts: ['book'] }));
 
   // Title field
   const titleField = world.createEntity(bookEntity);
-  world.add(titleField, DOMElement({ tag: "div" }));
-  world.add(titleField, Classes({ list: ["field"] }));
+  world.add(titleField, DOMElement({ tag: 'div' }));
+  world.add(titleField, Classes({ list: ['field'] }));
 
   const titleLabel = world.createEntity(titleField);
-  world.add(titleLabel, DOMElement({ tag: "label" }));
-  world.add(titleLabel, TextContent({ value: "Title" }));
+  world.add(titleLabel, DOMElement({ tag: 'label' }));
+  world.add(titleLabel, TextContent({ value: 'Title' }));
 
   const titleInput = world.createEntity(titleField);
-  world.add(titleInput, DOMElement({ tag: "input" }));
+  world.add(titleInput, DOMElement({ tag: 'input' }));
   world.add(titleInput, TextInput());
   world.add(titleInput, FormBinding({ field: f.books.at(index).title }));
 
   const titleError = world.createEntity(titleField);
-  world.add(titleError, DOMElement({ tag: "span" }));
-  world.add(titleError, Classes({ list: ["error"] }));
+  world.add(titleError, DOMElement({ tag: 'span' }));
+  world.add(titleError, Classes({ list: ['error'] }));
   world.add(titleError, FieldError({ field: f.books.at(index).title }));
 
   // Score field
   const scoreField = world.createEntity(bookEntity);
-  world.add(scoreField, DOMElement({ tag: "div" }));
-  world.add(scoreField, Classes({ list: ["field"] }));
+  world.add(scoreField, DOMElement({ tag: 'div' }));
+  world.add(scoreField, Classes({ list: ['field'] }));
 
   const scoreLabel = world.createEntity(scoreField);
-  world.add(scoreLabel, DOMElement({ tag: "label" }));
-  world.add(scoreLabel, TextContent({ value: "Score (1-5)" }));
+  world.add(scoreLabel, DOMElement({ tag: 'label' }));
+  world.add(scoreLabel, TextContent({ value: 'Score (1-5)' }));
 
   const scoreInput = world.createEntity(scoreField);
-  world.add(scoreInput, DOMElement({ tag: "input" }));
+  world.add(scoreInput, DOMElement({ tag: 'input' }));
   world.add(scoreInput, NumberInput());
   world.add(scoreInput, FormBinding({ field: f.books.at(index).reviewScore }));
 
   const scoreError = world.createEntity(scoreField);
-  world.add(scoreError, DOMElement({ tag: "span" }));
-  world.add(scoreError, Classes({ list: ["error"] }));
+  world.add(scoreError, DOMElement({ tag: 'span' }));
+  world.add(scoreError, Classes({ list: ['error'] }));
   world.add(scoreError, FieldError({ field: f.books.at(index).reviewScore }));
 
   // Remove button
   const removeBtn = world.createEntity(bookEntity);
-  world.add(removeBtn, DOMElement({ tag: "button" }));
-  world.add(removeBtn, TextContent({ value: "Remove" }));
+  world.add(removeBtn, DOMElement({ tag: 'button' }));
+  world.add(removeBtn, TextContent({ value: 'Remove' }));
   world.add(removeBtn, Clickable());
   world.add(removeBtn, RemoveBookButton());
 }
@@ -265,7 +265,7 @@ const BookDropSystem = defineReactiveSystem({
       const dropped = world.get(entity, Dropped);
       world.remove(entity, Dropped);
 
-      if (!dropped || dropped.type !== "book") continue;
+      if (!dropped || dropped.type !== 'book') continue;
 
       const targetBookItem = world.get(entity, BookItem);
       if (!targetBookItem) continue;
@@ -311,7 +311,7 @@ export function registerAuthorSystems(world: World): void {
 function findAncestorWith(
   entity: EntityId,
   component: ComponentRef,
-  world: World
+  world: World,
 ): EntityId | undefined {
   let current = world.getParent(entity);
   while (current !== undefined) {
@@ -326,7 +326,7 @@ function findAncestorWith(
 function findDescendantWith(
   entity: EntityId,
   component: ComponentRef,
-  world: World
+  world: World,
 ): EntityId | undefined {
   const stack = [...world.getChildren(entity)];
   while (stack.length > 0) {

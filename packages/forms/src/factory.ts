@@ -12,8 +12,8 @@ import type {
   ValidateFn,
   ValidationSchema,
   ComputedSchema,
-} from "./types.ts";
-import { assert } from "./assert.ts";
+} from './types.ts';
+import { assert } from './assert.ts';
 
 /**
  * Create a form factory for a given type.
@@ -33,11 +33,12 @@ import { assert } from "./assert.ts";
  * const form = AuthorForm.create();
  * form.fields.name.set("Alice");
  */
-export function createFormFactory<T extends object>(
-  config: FormFactoryConfig<T>
-): FormFactory<T> {
-  assert(!!config, "Form factory config is required");
-  assert(config.initialValues !== undefined && config.initialValues !== null, "initialValues is required");
+export function createFormFactory<T extends object>(config: FormFactoryConfig<T>): FormFactory<T> {
+  assert(!!config, 'Form factory config is required');
+  assert(
+    config.initialValues !== undefined && config.initialValues !== null,
+    'initialValues is required',
+  );
   const { initialValues, validate, computed } = config;
 
   // Create unbound field accessors (for UI binding)
@@ -45,11 +46,7 @@ export function createFormFactory<T extends object>(
 
   return {
     create(overrides?: Partial<T>): FormInstance<T> {
-      return createFormInstance<T>(
-        { ...initialValues, ...overrides },
-        validate,
-        computed
-      );
+      return createFormInstance<T>({ ...initialValues, ...overrides }, validate, computed);
     },
     fields: unboundFields,
   };
@@ -62,7 +59,7 @@ export function createFormFactory<T extends object>(
 function createFormInstance<T extends object>(
   initialValues: T,
   validateSchema?: ValidationSchema<T>,
-  computedSchema?: ComputedSchema<T>
+  computedSchema?: ComputedSchema<T>,
 ): FormInstance<T> {
   // Internal state
   let data = structuredClone(initialValues);
@@ -100,7 +97,7 @@ function createFormInstance<T extends object>(
     for (let i = 0; i < path.length - 1; i++) {
       const segment = path[i]!;
       if (current[segment] == null) {
-        current[segment] = typeof path[i + 1] === "number" ? [] : {};
+        current[segment] = typeof path[i + 1] === 'number' ? [] : {};
       }
       current = current[segment] as Record<string | number, unknown>;
     }
@@ -115,7 +112,7 @@ function createFormInstance<T extends object>(
   const recompute = (): void => {
     if (!computedSchema) return;
     for (const [key, computeFn] of Object.entries(computedSchema)) {
-      if (typeof computeFn === "function") {
+      if (typeof computeFn === 'function') {
         (data as Record<string, unknown>)[key] = computeFn(data);
       }
     }
@@ -128,14 +125,14 @@ function createFormInstance<T extends object>(
     let schema: unknown = validateSchema;
     for (const segment of path) {
       if (schema == null) return undefined;
-      if (typeof segment === "number") {
+      if (typeof segment === 'number') {
         // For array items, schema applies to each item
         continue;
       }
       schema = (schema as Record<string, unknown>)[segment];
     }
 
-    if (typeof schema === "function") {
+    if (typeof schema === 'function') {
       const value = getAtPath(path);
       return (schema as ValidateFn<unknown>)(value);
     }
@@ -152,7 +149,7 @@ function createFormInstance<T extends object>(
 
       if (Array.isArray(obj)) {
         // Check array-level validation
-        const pathStr = path.join(".");
+        const pathStr = path.join('.');
         const error = validateField(path);
         if (error) errors.set(pathStr, error);
 
@@ -160,12 +157,12 @@ function createFormInstance<T extends object>(
         obj.forEach((_, index) => {
           collectErrors(obj[index], [...path, index]);
         });
-      } else if (typeof obj === "object") {
+      } else if (typeof obj === 'object') {
         for (const key of Object.keys(obj)) {
           collectErrors((obj as Record<string, unknown>)[key], [...path, key]);
         }
       } else {
-        const pathStr = path.join(".");
+        const pathStr = path.join('.');
         const error = validateField(path);
         if (error) errors.set(pathStr, error);
       }
@@ -257,8 +254,9 @@ function createFormInstance<T extends object>(
 
   // Create bound field accessor
   const createBoundAccessor = (path: readonly (string | number)[]): unknown => {
-    const pathStr = path.join(".");
-    const isComputedField = computedSchema && path.length === 1 && path[0] !== undefined && path[0] in computedSchema;
+    const pathStr = path.join('.');
+    const isComputedField =
+      computedSchema && path.length === 1 && path[0] !== undefined && path[0] in computedSchema;
 
     const accessor: Record<string, unknown> = {
       get: () => getAtPath(path),
@@ -294,7 +292,7 @@ function createFormInstance<T extends object>(
       Object.assign(accessor, createArrayAccessor(path, pathStr));
     }
     // Object accessors (but not arrays)
-    else if (currentValue != null && typeof currentValue === "object") {
+    else if (currentValue != null && typeof currentValue === 'object') {
       for (const key of Object.keys(currentValue)) {
         Object.defineProperty(accessor, key, {
           get: () => createBoundAccessor([...path, key]),
@@ -481,14 +479,14 @@ function createFormInstance<T extends object>(
       const markAllTouched = (obj: unknown, path: string[]): void => {
         if (obj == null) return;
         if (Array.isArray(obj)) {
-          touched.add(path.join("."));
+          touched.add(path.join('.'));
           obj.forEach((item, index) => markAllTouched(item, [...path, String(index)]));
-        } else if (typeof obj === "object") {
+        } else if (typeof obj === 'object') {
           for (const key of Object.keys(obj)) {
             markAllTouched((obj as Record<string, unknown>)[key], [...path, key]);
           }
         } else {
-          touched.add(path.join("."));
+          touched.add(path.join('.'));
         }
       };
       markAllTouched(data, []);
@@ -531,15 +529,16 @@ function createUnboundAccessors<T>(template: T): UnboundFieldAccessors<T> {
         });
       };
       // Add property accessors for array item fields
-      if (value.length > 0 && typeof value[0] === "object" && value[0] != null) {
+      if (value.length > 0 && typeof value[0] === 'object' && value[0] != null) {
         for (const key of Object.keys(value[0] as object)) {
           Object.defineProperty(accessor, key, {
-            get: () => createAccessor([...path, 0, key], (value[0] as Record<string, unknown>)[key]),
+            get: () =>
+              createAccessor([...path, 0, key], (value[0] as Record<string, unknown>)[key]),
             enumerable: true,
           });
         }
       }
-    } else if (value != null && typeof value === "object") {
+    } else if (value != null && typeof value === 'object') {
       for (const key of Object.keys(value)) {
         Object.defineProperty(accessor, key, {
           get: () => createAccessor([...path, key], (value as Record<string, unknown>)[key]),

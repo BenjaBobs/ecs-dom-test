@@ -2,7 +2,7 @@
  * Main entry point - ECS UI Demo
  */
 
-import { World, Entity, materialize } from "@ecs-test/ecs";
+import { World, Entity, materialize } from '@ecs-test/ecs';
 import {
   registerDOMSystems,
   mount,
@@ -11,8 +11,8 @@ import {
   Clickable,
   Disabled,
   TextContent,
-} from "@ecs-test/dom";
-import { registerFormSystems } from "@ecs-test/forms-ui";
+} from '@ecs-test/dom';
+import { registerFormSystems } from '@ecs-test/forms-ui';
 
 import {
   registerRadioSystems,
@@ -20,18 +20,11 @@ import {
   RadioOption,
   RadioIndicator,
   TextSpan,
-} from "./radio/index.ts";
+} from './radio/index.ts';
 
-import {
-  registerCatSystems,
-  CatDisplay,
-  FetchCatBtn,
-} from "./cat/index.ts";
+import { registerCatSystems, CatDisplay, FetchCatBtn } from './cat/index.ts';
 
-import {
-  registerAuthorSystems,
-  AuthorFormUI,
-} from "./author/index.ts";
+import { registerAuthorSystems, AuthorFormUI } from './author/index.ts';
 
 // Create the world
 const world = new World();
@@ -47,12 +40,12 @@ registerAuthorSystems(world);
 const ui = (
   <Entity>
     <DOMElement tag="div" />
-    <Classes list={["app"]} />
+    <Classes list={['app']} />
 
     {/* Author Form Demo */}
     <Entity>
       <DOMElement tag="section" />
-      <Classes list={["demo-section"]} />
+      <Classes list={['demo-section']} />
 
       <Entity>
         <DOMElement tag="h1" />
@@ -65,7 +58,7 @@ const ui = (
     {/* Radio Group Demo */}
     <Entity>
       <DOMElement tag="section" />
-      <Classes list={["demo-section"]} />
+      <Classes list={['demo-section']} />
 
       <Entity>
         <DOMElement tag="h1" />
@@ -121,7 +114,7 @@ const ui = (
     {/* Cat Fetcher Demo */}
     <Entity>
       <DOMElement tag="section" />
-      <Classes list={["demo-section"]} />
+      <Classes list={['demo-section']} />
 
       <Entity>
         <DOMElement tag="h1" />
@@ -146,10 +139,10 @@ const rootEntity = materialize(world, ui);
 world.flush();
 
 // Mount to DOM
-const container = document.getElementById("root");
+const container = document.getElementById('root');
 if (container && rootEntity && !Array.isArray(rootEntity)) {
   mount(world, rootEntity, container);
-  console.log("Mounted! Try the demos.");
+  console.log('Mounted! Try the demos.');
 } else {
-  console.error("Failed to mount - check root entity");
+  console.error('Failed to mount - check root entity');
 }

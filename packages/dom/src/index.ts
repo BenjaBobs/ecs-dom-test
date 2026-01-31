@@ -16,7 +16,7 @@ export {
   Droppable,
   DragOver,
   Dropped,
-} from "./components.ts";
+} from './components.ts';
 
 // Systems
 export {
@@ -37,4 +37,4 @@ export {
   DragOverRemoveSystem,
   registerDOMSystems,
   mount,
-} from "./systems.ts";
+} from './systems.ts';

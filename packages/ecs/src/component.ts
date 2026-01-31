@@ -2,7 +2,7 @@
  * Component definitions and helpers.
  */
 
-import { assert } from "./assert.ts";
+import { assert } from './assert.ts';
 
 /** Component type identifier - a factory function with a tag */
 export type ComponentType<T = unknown> = {
@@ -22,7 +22,7 @@ export type ComponentRef = ComponentType<any> | string;
 
 /** Extract the tag string from a ComponentRef */
 export function getTag(ref: ComponentRef): string {
-  return typeof ref === "string" ? ref : ref._tag;
+  return typeof ref === 'string' ? ref : ref._tag;
 }
 
 /**
@@ -33,7 +33,7 @@ export function getTag(ref: ComponentRef): string {
  * const instance = Position({ x: 10, y: 20 });
  */
 export function defineComponent<T>(tag: string): ComponentType<T> {
-  assert(tag.trim().length > 0, "Component tag must be a non-empty string");
+  assert(tag.trim().length > 0, 'Component tag must be a non-empty string');
   const factory = (data: T): ComponentInstance<T> => ({
     _tag: tag,
     data,
@@ -49,10 +49,8 @@ export function defineComponent<T>(tag: string): ComponentType<T> {
  * const Selected = defineMarker("Selected");
  * const instance = Selected();
  */
-export function defineMarker(
-  tag: string
-): ComponentType<void> & (() => ComponentInstance<void>) {
-  assert(tag.trim().length > 0, "Component tag must be a non-empty string");
+export function defineMarker(tag: string): ComponentType<void> & (() => ComponentInstance<void>) {
+  assert(tag.trim().length > 0, 'Component tag must be a non-empty string');
   const factory = (): ComponentInstance<void> => ({
     _tag: tag,
     data: undefined,
