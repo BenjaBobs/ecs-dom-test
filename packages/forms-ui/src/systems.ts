@@ -2,24 +2,23 @@
  * Form UI systems for ECS.
  */
 
+import { DOMElement, getDOMElement, TextContent } from '@ecs-test/dom';
 import {
-  type World,
-  type EntityId,
+  added,
   type ComponentRef,
   defineReactiveSystem,
-  added,
-  addedOrReplaced,
+  type EntityId,
+  type World,
 } from '@ecs-test/ecs';
-import { DOMElement, TextContent, getDOMElement } from '@ecs-test/dom';
 import type { FormInstance as FormInstanceType, UnboundFieldAccessor } from '@ecs-test/forms';
 import {
-  FormData,
-  FormBinding,
-  FormDisplay,
   FieldError,
-  TextInput,
-  NumberInput,
+  FormBinding,
+  FormData,
+  FormDisplay,
   FormInstance,
+  NumberInput,
+  TextInput,
 } from './components.ts';
 
 /**
@@ -125,7 +124,7 @@ export const NumberInputBindingSystem = defineReactiveSystem({
       // Listen for input changes
       el.addEventListener('input', () => {
         const num = parseFloat(el.value);
-        boundAccessor.set(isNaN(num) ? 0 : num);
+        boundAccessor.set(Number.isNaN(num) ? 0 : num);
         boundAccessor.touch();
       });
 
@@ -259,10 +258,18 @@ function findAncestorWith(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+type BoundAccessor = {
+  get(): unknown;
+  set(value: unknown): void;
+  touch(): void;
+  readonly error?: string;
+  readonly touched?: boolean;
+};
+
 function resolveBoundAccessor(
-  instance: FormInstanceType<any>,
-  unbound: UnboundFieldAccessor<any, any>,
-): any {
+  instance: FormInstanceType<unknown>,
+  unbound: UnboundFieldAccessor<unknown, unknown>,
+): BoundAccessor {
   // Navigate the path to get the bound accessor
   let accessor: unknown = instance.fields;
   for (const segment of unbound.path) {
@@ -272,5 +279,5 @@ function resolveBoundAccessor(
       accessor = (accessor as Record<string, unknown>)[segment];
     }
   }
-  return accessor;
+  return accessor as BoundAccessor;
 }

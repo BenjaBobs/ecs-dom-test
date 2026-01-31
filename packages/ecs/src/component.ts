@@ -17,7 +17,8 @@ export type ComponentInstance<T = unknown> = {
 };
 
 /** Component type or tag string - used where we need to reference a component type */
-export type ComponentRef = ComponentType<unknown> | string;
+// biome-ignore lint/suspicious/noExplicitAny: having any here allows use to query for component types without specifying their data type, and we only use the tag anyway.
+export type ComponentRef = ComponentType<any> | string;
 
 /** Extract the tag string from a ComponentRef */
 export function getTag(ref: ComponentRef): string {

@@ -2,18 +2,18 @@
  * Form factory implementation.
  */
 
+import { assert } from './assert.ts';
 import type {
+  BoundFieldAccessors,
+  ComputedSchema,
   FormFactory,
   FormFactoryConfig,
   FormInstance,
-  UnboundFieldAccessors,
-  BoundFieldAccessors,
   FormSubscriber,
+  UnboundFieldAccessors,
   ValidateFn,
   ValidationSchema,
-  ComputedSchema,
 } from './types.ts';
-import { assert } from './assert.ts';
 
 /**
  * Create a form factory for a given type.
@@ -361,7 +361,9 @@ function createFormInstance<T extends object>(
       forEach: (fn: (item: unknown, index: number) => void): void => {
         const arr = getArray();
         const accessor = createBoundAccessor(path) as { at: (i: number) => unknown };
-        arr.forEach((_, i) => fn(accessor.at(i), i));
+        arr.forEach((_, i) => {
+          fn(accessor.at(i), i);
+        });
       },
 
       [Symbol.iterator]: function* () {
@@ -480,7 +482,9 @@ function createFormInstance<T extends object>(
         if (obj == null) return;
         if (Array.isArray(obj)) {
           touched.add(path.join('.'));
-          obj.forEach((item, index) => markAllTouched(item, [...path, String(index)]));
+          obj.forEach((item, index) => {
+            markAllTouched(item, [...path, String(index)]);
+          });
         } else if (typeof obj === 'object') {
           for (const key of Object.keys(obj)) {
             markAllTouched((obj as Record<string, unknown>)[key], [...path, key]);

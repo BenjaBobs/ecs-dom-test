@@ -10,7 +10,9 @@ export {
   CatDisplayMarker,
   FetchCat,
   FetchCatButton,
+  FetchClient,
   FetchError,
+  type FetchFn,
   ImageSrc,
   Loading,
 } from './components.ts';

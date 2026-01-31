@@ -4,6 +4,8 @@
 
 import { defineComponent, defineMarker } from '@ecs-test/ecs';
 
+export type FetchFn = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+
 /** Trigger to fetch a cat */
 export const FetchCat = defineMarker('FetchCat');
 
@@ -24,3 +26,6 @@ export const FetchCatButton = defineMarker('FetchCatButton');
 
 /** Marker for a CatDisplay container */
 export const CatDisplayMarker = defineMarker('CatDisplayMarker');
+
+/** Holds a fetch implementation for the cat feature */
+export const FetchClient = defineComponent<{ fetchFn: FetchFn }>('FetchClient');

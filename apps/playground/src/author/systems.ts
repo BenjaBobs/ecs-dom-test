@@ -3,34 +3,33 @@
  */
 
 import {
-  type World,
-  type EntityId,
-  type ComponentRef,
-  defineReactiveSystem,
-  added,
-} from '@ecs-test/ecs';
-import {
-  DOMElement,
   Classes,
-  TextContent,
   Clickable,
   Clicked,
+  DOMElement,
   Draggable,
   Droppable,
   Dropped,
-  getDOMElement,
+  TextContent,
 } from '@ecs-test/dom';
 import {
-  FormData,
-  FormBinding,
-  FieldError,
-  TextInput,
-  NumberInput,
-  FormInstance,
-} from '@ecs-test/forms-ui';
+  added,
+  type ComponentRef,
+  defineReactiveSystem,
+  type EntityId,
+  type World,
+} from '@ecs-test/ecs';
 import type { FormInstance as FormInstanceType } from '@ecs-test/forms';
-import { BookListMarker, AddBookButton, SubmitButton, BookItem, RemoveBookButton } from './ui.tsx';
-import { f, type Author } from './form.ts';
+import {
+  FieldError,
+  FormBinding,
+  FormData,
+  FormInstance,
+  NumberInput,
+  TextInput,
+} from '@ecs-test/forms-ui';
+import { type Author, f } from './form.ts';
+import { AddBookButton, BookItem, BookListMarker, RemoveBookButton, SubmitButton } from './ui.tsx';
 
 /**
  * Handles Add Book button clicks.
@@ -185,7 +184,7 @@ function rerenderBookList(
   const books = instance.fields.books;
   let index = 0;
   for (const book of books) {
-    createBookItemEntity(world, bookListEntity, formDataEntity, index, book.key);
+    createBookItemEntity(world, bookListEntity, index, book.key);
     index++;
   }
 }
@@ -193,13 +192,7 @@ function rerenderBookList(
 /**
  * Create a book item entity with all its children.
  */
-function createBookItemEntity(
-  world: World,
-  parent: EntityId,
-  formDataEntity: EntityId,
-  index: number,
-  key: string,
-): void {
+function createBookItemEntity(world: World, parent: EntityId, index: number, key: string): void {
   // Book item container
   const bookEntity = world.createEntity(parent);
   world.add(bookEntity, DOMElement({ tag: 'div' }));

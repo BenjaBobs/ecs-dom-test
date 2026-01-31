@@ -10,14 +10,14 @@ import type { FormFactory, UnboundFieldAccessor } from '@ecs-test/forms';
  * Child entities can use FormBinding to connect to this form.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const FormData = defineComponent<{ factory: FormFactory<any> }>('FormData');
+export const FormData = defineComponent<{ factory: FormFactory<unknown> }>('FormData');
 
 /**
  * Binds an input element to a form field.
  * Must have a FormData ancestor in the entity hierarchy.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const FormBinding = defineComponent<{ field: UnboundFieldAccessor<any, any> }>(
+export const FormBinding = defineComponent<{ field: UnboundFieldAccessor<unknown, unknown> }>(
   'FormBinding',
 );
 
@@ -26,7 +26,7 @@ export const FormBinding = defineComponent<{ field: UnboundFieldAccessor<any, an
  * Must have a FormData ancestor in the entity hierarchy.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const FormDisplay = defineComponent<{ field: UnboundFieldAccessor<any, any> }>(
+export const FormDisplay = defineComponent<{ field: UnboundFieldAccessor<unknown, unknown> }>(
   'FormDisplay',
 );
 
@@ -35,7 +35,9 @@ export const FormDisplay = defineComponent<{ field: UnboundFieldAccessor<any, an
  * Only shows error if field is touched and has an error.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const FieldError = defineComponent<{ field: UnboundFieldAccessor<any, any> }>('FieldError');
+export const FieldError = defineComponent<{ field: UnboundFieldAccessor<unknown, unknown> }>(
+  'FieldError',
+);
 
 /**
  * Marker for text input elements.
@@ -52,7 +54,7 @@ export const NumberInput = defineMarker('NumberInput');
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const FormInstance = defineComponent<{
-  instance: import('@ecs-test/forms').FormInstance<any>;
+  instance: import('@ecs-test/forms').FormInstance<unknown>;
 }>('FormInstance');
 
 /**

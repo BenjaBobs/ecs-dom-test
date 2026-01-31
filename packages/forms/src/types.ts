@@ -88,15 +88,15 @@ export type UnboundFieldAccessor<TForm, TValue> = BaseAccessor & {
     ? UnboundArrayAccessor<TForm, Item>
     : TValue extends object
       ? { readonly [K in keyof TValue]: UnboundFieldAccessor<TForm, TValue[K]> }
-      : {});
+      : Record<string, never>);
 
 /** Unbound array accessor */
 export type UnboundArrayAccessor<TForm, TItem> = {
-  at(index: number): UnboundFieldAccessor<TForm, TItem> & UnboundArrayItemAccessor<TForm, TItem>;
+  at(index: number): UnboundFieldAccessor<TForm, TItem> & UnboundArrayItemAccessor;
 } & { readonly [K in keyof TItem]: UnboundFieldAccessor<TForm, TItem[K]> };
 
 /** Additional properties on array item accessors */
-export type UnboundArrayItemAccessor<TForm, TItem> = {
+export type UnboundArrayItemAccessor = {
   readonly _isArrayItem: true;
 };
 
@@ -125,7 +125,7 @@ export type BoundFieldAccessor<TValue> = {
   ? BoundArrayAccessor<Item>
   : TValue extends object
     ? { readonly [K in keyof TValue]: BoundFieldAccessor<TValue[K]> }
-    : {});
+    : Record<string, never>);
 
 /** Bound array accessor */
 export type BoundArrayAccessor<TItem> = {

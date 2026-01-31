@@ -2,25 +2,43 @@
  * Cat fetcher systems.
  */
 
+import { Classes, Clicked, Disabled, DOMElement, getDOMElement, TextContent } from '@ecs-test/dom';
 import {
-  type World,
-  type EntityId,
-  type ComponentRef,
-  defineReactiveSystem,
   added,
   addedOrReplaced,
+  type ComponentRef,
+  defineReactiveSystem,
+  type EntityId,
   removed,
+  type World,
 } from '@ecs-test/ecs';
-import { DOMElement, TextContent, Classes, Clicked, Disabled, getDOMElement } from '@ecs-test/dom';
 import {
-  FetchCat,
-  Loading,
   CatData,
-  FetchError,
-  ImageSrc,
-  FetchCatButton,
   CatDisplayMarker,
+  FetchCat,
+  FetchCatButton,
+  FetchClient,
+  FetchError,
+  type FetchFn,
+  ImageSrc,
+  Loading,
 } from './components.ts';
+
+type CatSystemOptions = {
+  fetchFn: FetchFn;
+};
+
+function getFetchClient(world: World): FetchFn {
+  const clients = world.query(FetchClient);
+  if (clients.length !== 1) {
+    throw new Error(`Expected exactly one FetchClient, found ${clients.length}`);
+  }
+  const client = world.get(clients[0]!, FetchClient);
+  if (!client) {
+    throw new Error('FetchClient entity missing component');
+  }
+  return client.fetchFn;
+}
 
 /**
  * Handles FetchCatButton clicks - adds FetchCat to parent CatDisplay.
@@ -47,12 +65,14 @@ const FetchCatButtonClickSystem = defineReactiveSystem({
 const FetchCatSystem = defineReactiveSystem({
   triggers: [added(FetchCat)],
   execute(entities, world) {
+    const fetchFn = getFetchClient(world);
+
     for (const entity of entities) {
       world.remove(entity, FetchCat);
       world.set(entity, Loading());
       world.remove(entity, FetchError);
 
-      fetch('https://cataas.com/cat?json=true')
+      fetchFn('https://cataas.com/cat?json=true')
         .then(res => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return res.json();
@@ -228,7 +248,9 @@ const ButtonEnableOnLoadEndSystem = defineReactiveSystem({
 /**
  * Register all cat-related systems with the world.
  */
-export function registerCatSystems(world: World): void {
+export function registerCatSystems(world: World, options: CatSystemOptions): void {
+  const fetchClientEnt = world.createEntity();
+  world.add(fetchClientEnt, FetchClient({ fetchFn: options.fetchFn }));
   world.registerSystem(FetchCatButtonClickSystem);
   world.registerSystem(FetchCatSystem);
   world.registerSystem(CatImageRenderSystem);

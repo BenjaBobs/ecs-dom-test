@@ -2,15 +2,15 @@
  * Author form UI components.
  */
 
+import { Classes, Clickable, DOMElement, TextContent } from '@ecs-test/dom';
 import { Entity } from '@ecs-test/ecs';
-import { DOMElement, Classes, TextContent, Clickable } from '@ecs-test/dom';
 import {
-  FormData,
-  FormBinding,
-  FormDisplay,
   FieldError,
-  TextInput,
+  FormBinding,
+  FormData,
+  FormDisplay,
   NumberInput,
+  TextInput,
 } from '@ecs-test/forms-ui';
 import { AuthorForm, f } from './form.ts';
 
@@ -138,7 +138,7 @@ export function AuthorFormUI() {
 }
 
 // Markers and components for the systems to identify special entities
-import { defineMarker, defineComponent } from '@ecs-test/ecs';
+import { defineComponent, defineMarker } from '@ecs-test/ecs';
 
 export const BookListMarker = defineMarker('BookListMarker');
 export const AddBookButton = defineMarker('AddBookButton');

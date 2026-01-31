@@ -173,14 +173,14 @@ export class World {
   }
 
   /** Query entities that have all specified components */
-  query(...componentTags: string[]): EntityId[] {
+  query(...componentTags: ComponentRef[]): EntityId[] {
     if (componentTags.length === 0) {
       return Array.from(this.entities);
     }
 
     // Get the sets for each component tag
     const sets = componentTags
-      .map(tag => this.componentIndex.get(tag))
+      .map(tag => this.componentIndex.get(getTag(tag)))
       .filter((set): set is Set<EntityId> => set !== undefined);
 
     // If any component has no entities, result is empty

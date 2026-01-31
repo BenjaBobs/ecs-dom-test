@@ -2,25 +2,27 @@
  * DOM rendering systems.
  */
 
+import { DomRootComponent } from '@ecs-test/dom/DomRootComponent.ts';
 import {
-  type World,
-  type EntityId,
-  defineReactiveSystem,
   added,
-  removed,
   addedOrReplaced,
+  assert,
+  defineReactiveSystem,
+  type EntityId,
+  removed,
+  type World,
 } from '@ecs-test/ecs';
 import {
-  DOMElement,
-  TextContent,
   Classes,
   Clickable,
   Clicked,
   Disabled,
+  DOMElement,
   Draggable,
-  Droppable,
   DragOver,
+  Droppable,
   Dropped,
+  TextContent,
 } from './components.ts';
 
 /** Per-world DOM element storage */
@@ -60,6 +62,19 @@ function getDOMElements(world: World): Map<EntityId, Element> {
     worldDOMElements.set(world, map);
   }
   return map;
+}
+
+function getDomComponent(world: World) {
+  const domRootEnts = world.query(DomRootComponent);
+  assert(
+    domRootEnts.length === 1,
+    `There should always be exactly one DomRoot entity, but there were ${domRootEnts.length}`,
+  );
+
+  const domRoot = world.get(domRootEnts[0]!, DomRootComponent);
+  assert(!!domRoot, 'domRoot entity should have a DomRootComponent');
+
+  return domRoot;
 }
 
 /** Get or create the click handlers map for a world */
@@ -105,12 +120,13 @@ export const DOMCreateSystem = defineReactiveSystem({
   triggers: [added(DOMElement)],
   execute(entities, world) {
     const domElements = getDOMElements(world);
+    const domComponent = getDomComponent(world);
 
     for (const entity of entities) {
       const spec = world.get(entity, DOMElement);
       if (!spec) continue;
 
-      const el = document.createElement(spec.tag);
+      const el = domComponent.elementFactory(spec.tag);
       domElements.set(entity, el);
 
       // Attach to parent's DOM element
@@ -462,7 +478,19 @@ export const DragOverRemoveSystem = defineReactiveSystem({
 /**
  * Registers all DOM systems with the world.
  */
-export function registerDOMSystems(world: World): void {
+export function registerDOMSystems(
+  world: World,
+  externalDeps: { rootElement: Element; elementFactory: (tag: string) => Element },
+): void {
+  const domRootEnt = world.createEntity();
+  world.add(
+    domRootEnt,
+    DomRootComponent({
+      root: externalDeps.rootElement,
+      elementFactory: externalDeps.elementFactory,
+    }),
+  );
+
   world.registerSystem(DOMCreateSystem);
   world.registerSystem(DOMRemoveSystem);
   world.registerSystem(ClickableAddSystem);
