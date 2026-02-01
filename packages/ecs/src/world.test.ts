@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import {
   added,
   addedOrReplaced,
+  createMicrotaskScheduler,
   defineComponent,
   defineMarker,
   defineReactiveSystem,
@@ -119,5 +120,29 @@ describe('World', () => {
     world.flush();
 
     expect(removedCount).toBe(1);
+  });
+
+  it('schedules async flushes and can await completion', async () => {
+    const world = new World({
+      scheduler: createMicrotaskScheduler(callback => Promise.resolve().then(callback)),
+    });
+    const entity = world.createEntity();
+    let executed = 0;
+
+    world.registerSystem(
+      defineReactiveSystem({
+        triggers: [added(Position)],
+        execute(entities) {
+          executed += entities.length;
+        },
+      }),
+    );
+
+    world.add(entity, Position({ x: 1, y: 2 }));
+    world.flush();
+
+    expect(executed).toBe(0);
+    await world.whenFlushed();
+    expect(executed).toBe(1);
   });
 });

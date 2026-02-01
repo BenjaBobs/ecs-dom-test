@@ -32,6 +32,13 @@ export {
 } from './jsx-runtime.ts';
 // Materialization
 export { materialize } from './materialize.ts';
+// Scheduler
+export {
+  createMicrotaskScheduler,
+  createRafScheduler,
+  createSyncScheduler,
+  type RafLike,
+} from './scheduler.ts';
 // System
 export {
   added,
@@ -46,5 +53,10 @@ export {
   type Trigger,
 } from './system.ts';
 // World
-export { type EntityId, World } from './world.ts';
+export {
+  type EntityId,
+  type FlushScheduler,
+  World,
+  type WorldOptions,
+} from './world.ts';
 export type { WorldExternals } from './world-externals.ts';

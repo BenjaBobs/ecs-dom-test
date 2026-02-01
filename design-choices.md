@@ -91,7 +91,9 @@ Worlds can receive external dependencies (DOM factories, fetch, etc.) at constru
 
 **Example (conceptual):**
 ```ts
-const world = new World({ createElement: document.createElement.bind(document) });
+const world = new World({
+  externals: { createElement: document.createElement.bind(document) },
+});
 ```
 
 ### Runtime Entity (World-Owned Runtime State)

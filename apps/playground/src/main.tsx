@@ -32,7 +32,7 @@ type PlaygroundDeps = {
 export function startPlayground({ doc, fetchFn }: PlaygroundDeps): void {
   // Create the world
   const world = new World({
-    createElement: doc.createElement.bind(doc),
+    externals: { createElement: doc.createElement.bind(doc) },
   });
 
   // Register systems (order matters!)

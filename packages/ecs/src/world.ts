@@ -5,6 +5,7 @@
 import { assert } from './assert.ts';
 import type { ComponentInstance, ComponentRef, ComponentType } from './component.ts';
 import { getTag } from './component.ts';
+import { createSyncScheduler } from './scheduler.ts';
 import type { Mutation, ReactiveSystem } from './system.ts';
 import type { WorldExternals } from './world-externals.ts';
 
@@ -12,6 +13,15 @@ import type { WorldExternals } from './world-externals.ts';
 export type EntityId = number & { readonly __brand: unique symbol };
 
 /** The ECS World - holds all entities and components */
+export type FlushScheduler = {
+  schedule: (callback: () => void) => Promise<void>;
+  whenIdle: () => Promise<void>;
+};
+export type WorldOptions = {
+  externals?: WorldExternals;
+  scheduler?: FlushScheduler;
+};
+
 export class World {
   private nextEntityId = 1;
   private entities = new Set<EntityId>();
@@ -23,9 +33,11 @@ export class World {
   private systems: ReactiveSystem[] = [];
   private externals: WorldExternals;
   private runtimeEntityId?: EntityId;
+  private scheduler: FlushScheduler;
 
-  constructor(externals: WorldExternals = {}) {
-    this.externals = externals;
+  constructor(options: WorldOptions = {}) {
+    this.externals = options.externals ?? {};
+    this.scheduler = options.scheduler ?? createSyncScheduler();
   }
 
   getExternals(): WorldExternals {
@@ -230,7 +242,20 @@ export class World {
   }
 
   /** Process all pending mutations through reactive systems */
-  flush(): void {
+  flush(): Promise<void> {
+    const scheduled = this.scheduler.schedule(() => {
+      this.flushImpl();
+    });
+
+    return scheduled;
+  }
+
+  /** Promise that resolves when any scheduled flush has completed */
+  whenFlushed(): Promise<void> {
+    return this.scheduler.whenIdle();
+  }
+
+  private flushImpl(): void {
     while (this.mutations.length > 0) {
       const currentMutations = this.mutations;
       this.mutations = [];
@@ -248,6 +273,10 @@ export class World {
           system.execute(Array.from(matchingEntities), this);
         }
       }
+    }
+
+    if (this.mutations.length > 0) {
+      void this.flush();
     }
   }
 }
