@@ -8,13 +8,17 @@
   "scripts": {
     "lint": "biome check .",
     "format": "biome format . --write",
-    "test:ci": "bun test --concurrent --only-failures",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:ci": "bun test",
     "typecheck": "tsc --noEmit",
+    "check:full": "bun run typecheck && bun run lint && bun test",
     "dev": "bun --watch apps/playground/index.html"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "@biomejs/biome": "latest",
+    "happy-dom": "^17.4.4",
     "typescript": "^5"
   }
 }

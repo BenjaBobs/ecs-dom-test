@@ -38,6 +38,7 @@ function getRuntime(world: World) {
       dragHandlers: new Map(),
       dropHandlers: new Map(),
       dragState: null,
+      rootContainer: undefined,
     };
     world.add(runtimeId, DomRuntime(runtime));
   }
@@ -84,13 +85,25 @@ export function getDOMElement(world: World, entity: EntityId): Element | undefin
 }
 
 /**
+ * Set the root container for auto-mounting root entities.
+ * Entities without a parent will be automatically appended to this container.
+ * @param world - The ECS world
+ * @param container - The DOM element to use as root container
+ */
+export function setRootContainer(world: World, container: Element): void {
+  getRuntime(world).rootContainer = container;
+}
+
+/**
  * Creates DOM elements when DOMElement component is added.
  * Only creates the node - other systems handle behavior.
+ * Root entities (no parent) are auto-mounted to rootContainer if set.
  */
 export const DOMCreateSystem = defineReactiveSystem({
   triggers: [added(DOMElement)],
   execute(entities, world) {
-    const domElements = getDOMElements(world);
+    const domRuntime = getRuntime(world);
+    const domElements = domRuntime.elements as Map<EntityId, Element>;
     const createElement = getCreateElement(world);
 
     for (const entity of entities) {
@@ -100,13 +113,15 @@ export const DOMCreateSystem = defineReactiveSystem({
       const el = createElement(spec.tag);
       domElements.set(entity, el);
 
-      // Attach to parent's DOM element
+      // Attach to parent's DOM element or root container
       const parentId = world.getParent(entity);
       if (parentId !== undefined) {
         const parentEl = domElements.get(parentId);
         if (parentEl) {
           parentEl.appendChild(el);
         }
+      } else if (domRuntime.rootContainer) {
+        domRuntime.rootContainer.appendChild(el);
       }
     }
   },

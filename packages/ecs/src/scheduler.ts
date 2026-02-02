@@ -7,9 +7,19 @@ export type TimeoutLike = (callback: () => void, ms: number) => void;
 const resolved = Promise.resolve();
 
 export function createSyncScheduler(): FlushScheduler {
+  let executing = false;
+
   return {
     schedule(callback) {
-      callback();
+      // If already executing, skip - mutations will be processed by the current flush
+      if (executing) return resolved;
+
+      executing = true;
+      try {
+        callback();
+      } finally {
+        executing = false;
+      }
       return resolved;
     },
     whenIdle() {

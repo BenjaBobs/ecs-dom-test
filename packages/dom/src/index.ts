@@ -40,5 +40,14 @@ export {
   getDOMElement,
   mount,
   registerDOMSystems,
+  setRootContainer,
   TextContentSystem,
 } from './systems.ts';
+
+// Test utilities
+export {
+  type TestWorldContext,
+  type TestWorldOptions,
+  type WindowLike,
+  withTestWorld,
+} from './test-utils.ts';

@@ -68,10 +68,13 @@ export type DragState = {
   data: unknown;
 };
 
+/** Runtime state for the DOM rendering layer */
 export const DomRuntime = defineComponent<{
   elements: Map<number, Element>;
   clickHandlers: Map<number, () => void>;
   dragHandlers: Map<number, DragHandlers>;
   dropHandlers: Map<number, DropHandlers>;
   dragState: DragState | null;
+  /** Optional root container for auto-mounting root entities */
+  rootContainer?: Element;
 }>('DomRuntime');

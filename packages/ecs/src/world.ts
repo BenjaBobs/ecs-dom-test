@@ -20,6 +20,12 @@ export type FlushScheduler = {
 export type WorldOptions = {
   externals?: WorldExternals;
   scheduler?: FlushScheduler;
+  /**
+   * Automatically flush after mutations (add, set, remove, removeEntity, createEntity with components).
+   * Enabled by default for convenience. Disable for manual batching control.
+   * @default true
+   */
+  autoFlush?: boolean;
 };
 
 export class World {
@@ -34,10 +40,13 @@ export class World {
   private externals: WorldExternals;
   private runtimeEntityId?: EntityId;
   private scheduler: FlushScheduler;
+  private autoFlush: boolean;
+  private batchDepth = 0;
 
   constructor(options: WorldOptions = {}) {
     this.externals = options.externals ?? {};
     this.scheduler = options.scheduler ?? createSyncScheduler();
+    this.autoFlush = options.autoFlush ?? true;
   }
 
   getExternals(): WorldExternals {
@@ -53,9 +62,14 @@ export class World {
     return id;
   }
 
-  /** Create a new entity */
-  createEntity(parent?: EntityId): EntityId {
-    if (parent !== undefined) {
+  /**
+   * Create a new entity, optionally with a parent and initial components.
+   * @param parent - Optional parent entity ID. Pass null or undefined for root entities.
+   * @param components - Optional array of components to add to the entity.
+   * @returns The newly created entity ID.
+   */
+  createEntity(parent?: EntityId | null, components?: ComponentInstance[]): EntityId {
+    if (parent !== undefined && parent !== null) {
       assert(this.entities.has(parent), `Parent entity ${parent} does not exist`);
     }
 
@@ -63,11 +77,17 @@ export class World {
     this.entities.add(id);
     this.components.set(id, new Map());
 
-    if (parent !== undefined) {
+    if (parent !== undefined && parent !== null) {
       this.parents.set(id, parent);
       const siblings = this.childrenMap.get(parent) ?? new Set();
       siblings.add(id);
       this.childrenMap.set(parent, siblings);
+    }
+
+    if (components) {
+      for (const component of components) {
+        this.add(id, component);
+      }
     }
 
     return id;
@@ -101,6 +121,8 @@ export class World {
     this.components.delete(id);
     this.parents.delete(id);
     this.childrenMap.delete(id);
+
+    if (this.autoFlush && this.batchDepth === 0) this.flush();
   }
 
   /**
@@ -129,6 +151,8 @@ export class World {
       componentTag: component._tag,
       type: 'added',
     });
+
+    if (this.autoFlush && this.batchDepth === 0) this.flush();
   }
 
   /**
@@ -154,6 +178,8 @@ export class World {
       componentTag: component._tag,
       type: existing ? 'replaced' : 'added',
     });
+
+    if (this.autoFlush && this.batchDepth === 0) this.flush();
   }
 
   /** Remove a component from an entity */
@@ -169,6 +195,8 @@ export class World {
       this.componentIndex.get(componentTag)?.delete(entity);
 
       this.mutations.push({ entity, componentTag, type: 'removed' });
+
+      if (this.autoFlush && this.batchDepth === 0) this.flush();
     }
   }
 
@@ -239,6 +267,25 @@ export class World {
   /** Register a reactive system */
   registerSystem(system: ReactiveSystem): void {
     this.systems.push(system);
+  }
+
+  /**
+   * Batch multiple mutations into a single flush.
+   * Useful when autoFlush is enabled but you need explicit batching.
+   * Supports nesting - only the outermost batch triggers a flush.
+   * @param fn - Function containing mutations to batch
+   * @returns The return value of the function
+   */
+  batch<T>(fn: () => T): T {
+    this.batchDepth++;
+    try {
+      return fn();
+    } finally {
+      this.batchDepth--;
+      if (this.batchDepth === 0 && this.autoFlush) {
+        this.flush();
+      }
+    }
   }
 
   /** Process all pending mutations through reactive systems */

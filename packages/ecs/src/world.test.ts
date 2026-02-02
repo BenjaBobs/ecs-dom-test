@@ -59,7 +59,7 @@ describe('World', () => {
   });
 
   it('runs reactive systems with triggers and filters', () => {
-    const world = new World();
+    const world = new World({ autoFlush: false });
     const entity = world.createEntity();
     let executed = 0;
 
@@ -81,7 +81,7 @@ describe('World', () => {
   });
 
   it('dedupes entities across multiple matching mutations', () => {
-    const world = new World();
+    const world = new World({ autoFlush: false });
     const entity = world.createEntity();
     let executions = 0;
 
@@ -120,6 +120,58 @@ describe('World', () => {
     world.flush();
 
     expect(removedCount).toBe(1);
+  });
+
+  it('batches mutations into single flush', () => {
+    const world = new World(); // autoFlush enabled by default
+    const entity = world.createEntity();
+    let executions = 0;
+
+    world.registerSystem(
+      defineReactiveSystem({
+        triggers: [addedOrReplaced(Position)],
+        execute(entities) {
+          executions += entities.length;
+        },
+      }),
+    );
+
+    world.batch(() => {
+      world.add(entity, Position({ x: 0, y: 0 }));
+      world.set(entity, Position({ x: 1, y: 1 }));
+      world.set(entity, Position({ x: 2, y: 2 }));
+    });
+
+    // All mutations batched into one flush, entity deduped
+    expect(executions).toBe(1);
+  });
+
+  it('supports nested batches', () => {
+    const world = new World();
+    const e1 = world.createEntity();
+    const e2 = world.createEntity();
+    let executions = 0;
+
+    world.registerSystem(
+      defineReactiveSystem({
+        triggers: [added(Position)],
+        execute(entities) {
+          executions += entities.length;
+        },
+      }),
+    );
+
+    world.batch(() => {
+      world.add(e1, Position({ x: 0, y: 0 }));
+      world.batch(() => {
+        world.add(e2, Position({ x: 1, y: 1 }));
+      });
+      // Inner batch doesn't flush
+      expect(executions).toBe(0);
+    });
+
+    // Outer batch flushes all, both entities processed
+    expect(executions).toBe(2);
   });
 
   it('schedules async flushes and can await completion', async () => {

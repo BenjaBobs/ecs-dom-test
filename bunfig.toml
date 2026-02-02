@@ -1,0 +1,6 @@
+[test]
+# No global preload - each test creates its own Window for isolation
+# Run tests in parallel for speed
+# Only print failures for cleaner output
+onlyFailures = true
+concurrent = true
