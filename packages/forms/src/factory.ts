@@ -35,10 +35,7 @@ import type {
  */
 export function createFormFactory<T extends object>(config: FormFactoryConfig<T>): FormFactory<T> {
   assert(!!config, 'Form factory config is required');
-  assert(
-    config.initialValues !== undefined && config.initialValues !== null,
-    'initialValues is required',
-  );
+  assert(config.initialValues != null, 'initialValues is required');
   const { initialValues, validate, computed } = config;
 
   // Create unbound field accessors (for UI binding)
