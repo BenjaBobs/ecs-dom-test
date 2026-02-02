@@ -30,7 +30,7 @@ import {
 
 function getRuntime(world: World) {
   const runtimeId = world.getRuntimeEntity();
-  let runtime = world.get(runtimeId, DomRuntime);
+  let runtime = world.getMutableAndHandleFlushYourself(runtimeId, DomRuntime);
   if (!runtime) {
     runtime = {
       elements: new Map(),
@@ -40,7 +40,7 @@ function getRuntime(world: World) {
       dragState: null,
       rootContainer: undefined,
     };
-    world.add(runtimeId, DomRuntime(runtime));
+    world.set(runtimeId, DomRuntime(runtime));
   }
   return runtime;
 }

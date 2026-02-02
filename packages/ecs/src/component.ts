@@ -3,6 +3,7 @@
  * @module
  */
 
+import type { DeepReadonly } from '@ecs-test/ecs/utility-types.ts';
 import { assert } from './assert.ts';
 
 /**
@@ -74,9 +75,9 @@ export function getTag(ref: ComponentRef): string {
  */
 export function defineComponent<T>(tag: string): ComponentType<T> {
   assert(tag.trim().length > 0, 'Component tag must be a non-empty string');
-  const factory = (data: T): ComponentInstance<T> => ({
+  const factory = (data: T | DeepReadonly<T>): ComponentInstance<T> => ({
     _tag: tag,
-    data,
+    data: data as T,
   });
   factory._tag = tag;
   return factory as ComponentType<T>;

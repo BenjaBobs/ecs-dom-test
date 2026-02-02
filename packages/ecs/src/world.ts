@@ -3,6 +3,7 @@
  * @module
  */
 
+import type { DeepReadonly } from '@ecs-test/ecs/utility-types.ts';
 import { assert } from './assert.ts';
 import type { ComponentInstance, ComponentRef, ComponentType } from './component.ts';
 import { getTag } from './component.ts';
@@ -289,8 +290,34 @@ export class World {
    * @param componentType - The component type to retrieve
    * @returns The component data, or undefined if not present
    */
-  get<T>(entity: EntityId, componentType: ComponentType<T>): T | undefined {
+  get<T>(entity: EntityId, componentType: ComponentType<T>): DeepReadonly<T> | undefined {
     const instance = this.components.get(entity)?.get(componentType._tag);
+    return instance?.data as DeepReadonly<T> | undefined;
+  }
+
+  /**
+   * Get a component's data from an entity, but mutable.
+   * This also automatically marks the component as replaced so it gets processed on next flush.
+   * You will have to do the flush yourself though.
+   *
+   * @typeParam T - The component's data type
+   * @param entity - The entity to get the component from
+   * @param componentType - The component type to retrieve
+   * @returns The component data, or undefined if not present
+   */
+  getMutableAndHandleFlushYourself<T>(
+    entity: EntityId,
+    componentType: ComponentType<T>,
+  ): T | undefined {
+    const instance = this.components.get(entity)?.get(componentType._tag);
+
+    if (instance != null)
+      this.mutations.push({
+        componentTag: getTag(componentType),
+        entity: entity,
+        type: 'replaced',
+      });
+
     return instance?.data as T | undefined;
   }
 
@@ -300,7 +327,7 @@ export class World {
    * @param entity - The entity to get components from
    * @returns Array of all component instances on the entity
    */
-  getAll(entity: EntityId): ComponentInstance[] {
+  getAll(entity: EntityId): DeepReadonly<ComponentInstance[]> {
     const entityComponents = this.components.get(entity);
     return entityComponents ? Array.from(entityComponents.values()) : [];
   }
