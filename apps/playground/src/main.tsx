@@ -7,7 +7,6 @@ import {
   Clickable,
   Disabled,
   DOMElement,
-  mount,
   registerDOMSystems,
   TextContent,
 } from '@ecs-test/dom';
@@ -30,9 +29,15 @@ type PlaygroundDeps = {
 };
 
 export function startPlayground({ doc, fetchFn }: PlaygroundDeps): void {
+  const container = doc.getElementById('root');
+  if (!container) {
+    console.error('Failed to mount - missing #root container');
+    return;
+  }
+
   // Create the world
   const world = new World({
-    externals: { createElement: doc.createElement.bind(doc) },
+    externals: { createElement: doc.createElement.bind(doc), rootContainer: container },
   });
 
   // Register systems (order matters!)
@@ -144,10 +149,7 @@ export function startPlayground({ doc, fetchFn }: PlaygroundDeps): void {
   // Flush to trigger all reactive systems
   world.flush();
 
-  // Mount to DOM
-  const container = doc.getElementById('root');
-  if (container && rootEntity && !Array.isArray(rootEntity)) {
-    mount(world, rootEntity, container);
+  if (rootEntity && !Array.isArray(rootEntity)) {
     console.log('Mounted! Try the demos.');
   } else {
     console.error('Failed to mount - check root entity');

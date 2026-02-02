@@ -4,14 +4,35 @@
  * Components and systems for rendering ECS entities to the DOM.
  */
 
-// Components
+import type { World } from '@ecs-test/ecs';
+import { DOMCreateSystem, DOMRemoveSystem } from './dom-element-systems.ts';
+import { ClassesSystem } from './features/classes/systems.ts';
+import { ClickableAddSystem, ClickableRemoveSystem } from './features/clickable/systems.ts';
+import { DisabledAddSystem, DisabledRemoveSystem } from './features/disabled/systems.ts';
+import {
+  DraggableAddSystem,
+  DraggableRemoveSystem,
+  DragOverAddSystem,
+  DragOverRemoveSystem,
+  DroppableAddSystem,
+  DroppableRemoveSystem,
+} from './features/drag-drop/systems.ts';
+import { TextContentSystem } from './features/text/systems.ts';
+
+export { DOMElement, DomRuntime } from './dom-element-components.ts';
 export {
-  Classes,
-  Clickable,
-  Clicked,
-  Disabled,
-  DOMElement,
-  DomRuntime,
+  DOMCreateSystem,
+  DOMRemoveSystem,
+  getDOMElement,
+} from './dom-element-systems.ts';
+export { Classes } from './features/classes/components.ts';
+// Systems
+export { ClassesSystem } from './features/classes/systems.ts';
+export { Clickable, Clicked } from './features/clickable/components.ts';
+export { ClickableAddSystem, ClickableRemoveSystem } from './features/clickable/systems.ts';
+export { Disabled } from './features/disabled/components.ts';
+export { DisabledAddSystem, DisabledRemoveSystem } from './features/disabled/systems.ts';
+export {
   Draggable,
   type DragHandlers,
   DragOver,
@@ -19,35 +40,34 @@ export {
   type DropHandlers,
   Droppable,
   Dropped,
-  TextContent,
-} from './components.ts';
-
-// Systems
+} from './features/drag-drop/components.ts';
 export {
-  ClassesSystem,
-  ClickableAddSystem,
-  ClickableRemoveSystem,
-  DisabledAddSystem,
-  DisabledRemoveSystem,
-  DOMCreateSystem,
-  DOMRemoveSystem,
   DraggableAddSystem,
   DraggableRemoveSystem,
   DragOverAddSystem,
   DragOverRemoveSystem,
   DroppableAddSystem,
   DroppableRemoveSystem,
-  getDOMElement,
-  mount,
-  registerDOMSystems,
-  setRootContainer,
-  TextContentSystem,
-} from './systems.ts';
+} from './features/drag-drop/systems.ts';
+export { TextContent } from './features/text/components.ts';
+export { TextContentSystem } from './features/text/systems.ts';
 
-// Test utilities
-export {
-  type TestWorldContext,
-  type TestWorldOptions,
-  type WindowLike,
-  withTestWorld,
-} from './test-utils.ts';
+/**
+ * Registers all DOM systems with the world.
+ */
+export function registerDOMSystems(world: World): void {
+  world.registerSystem(DOMCreateSystem);
+  world.registerSystem(DOMRemoveSystem);
+  world.registerSystem(ClickableAddSystem);
+  world.registerSystem(ClickableRemoveSystem);
+  world.registerSystem(DisabledAddSystem);
+  world.registerSystem(DisabledRemoveSystem);
+  world.registerSystem(TextContentSystem);
+  world.registerSystem(ClassesSystem);
+  world.registerSystem(DraggableAddSystem);
+  world.registerSystem(DraggableRemoveSystem);
+  world.registerSystem(DroppableAddSystem);
+  world.registerSystem(DroppableRemoveSystem);
+  world.registerSystem(DragOverAddSystem);
+  world.registerSystem(DragOverRemoveSystem);
+}

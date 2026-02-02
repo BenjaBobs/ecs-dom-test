@@ -23,27 +23,24 @@ Research project exploring an ECS (Entity Component System) inspired UI framewor
 ## Project Structure
 
 ```
-framework/              # The ECS UI framework
-  ecs/index.ts         # World, entities, components, systems, bundles
-  dom/index.ts         # DOM components (DOMElement, Clickable, etc.) and systems
-  jsx-runtime.ts       # JSX runtime (Entity, Fragment)
-  materialize.ts       # JSX -> ECS entity tree
-  index.ts             # Main barrel export
+packages/
+  ecs/          # @ecs-test/ecs - core ECS engine
+  dom/          # @ecs-test/dom - DOM renderer (core + feature folders)
+  forms/        # @ecs-test/forms - type-safe form state
+  forms-ui/     # @ecs-test/forms-ui - ECS bindings for forms
+  ui/           # @ecs-test/ui - reusable UI components (planned)
 
-src/                   # Consumer/app code (feature-based)
-  radio/index.ts       # Radio group feature (components, systems, bundles)
-  cat/index.ts         # Cat fetcher feature (async demo)
-  main.tsx             # App entry point
-
-index.html             # HTML entry
+apps/
+  playground/   # Demo application
 ```
 
 ## Commands
 
 ```bash
 bun install            # Install dependencies
-bun run index.html     # Run dev server
-bun run tsc --noEmit   # Type check
+bun run dev            # Run dev server
+bun run typecheck      # Type check
+bun run check:full     # Type check + lint + tests
 ```
 
 ## Key Patterns

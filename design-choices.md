@@ -92,7 +92,10 @@ Worlds can receive external dependencies (DOM factories, fetch, etc.) at constru
 **Example (conceptual):**
 ```ts
 const world = new World({
-  externals: { createElement: document.createElement.bind(document) },
+  externals: {
+    createElement: document.createElement.bind(document),
+    rootContainer: document.getElementById("root") ?? undefined,
+  },
 });
 ```
 
@@ -109,7 +112,7 @@ Each `World` instance is fully independent. Multiple worlds can coexist in the s
 
 **Why:** Enables micro-frontends, isolated widgets, testing without cleanup.
 
-**Implementation:** Runtime-only state is stored on the world's runtime entity (e.g., `DomRuntime`). External dependencies live in `WorldExternals`.
+**Implementation:** Runtime-only state is stored on the world's runtime entity (e.g., `DomRuntime`). External dependencies (like `createElement` and `rootContainer`) live in `WorldExternals`.
 
 ## What We Don't Do (and Why)
 

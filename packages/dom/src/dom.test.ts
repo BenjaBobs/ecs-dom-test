@@ -6,7 +6,8 @@
 
 import { describe, expect, it } from 'bun:test';
 import { Window } from 'happy-dom';
-import { Classes, DOMElement, getDOMElement, TextContent, withTestWorld } from './index.ts';
+import { Classes, DOMElement, getDOMElement, TextContent } from './index.ts';
+import { withTestWorld } from './test-utils/index.ts';
 
 describe('DOM systems', () => {
   it('creates and auto-mounts DOM elements', () => {

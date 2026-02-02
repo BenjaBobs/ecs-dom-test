@@ -1,28 +1,8 @@
 /**
- * DOM-related components.
+ * Drag and drop components.
  */
 
 import { defineComponent, defineMarker } from '@ecs-test/ecs';
-
-/** Specifies the HTML element tag to render */
-export const DOMElement = defineComponent<{
-  tag: keyof HTMLElementTagNameMap;
-}>('DOMElement');
-
-/** Text content for an element */
-export const TextContent = defineComponent<{ value: string }>('TextContent');
-
-/** CSS classes on an element */
-export const Classes = defineComponent<{ list: string[] }>('Classes');
-
-/** Click handler marker */
-export const Clickable = defineMarker('Clickable');
-
-/** Marks an entity as clicked (transient, consumed by systems) */
-export const Clicked = defineMarker('Clicked');
-
-/** Marks an entity as disabled */
-export const Disabled = defineMarker('Disabled');
 
 /** Marks an element as draggable */
 export const Draggable = defineComponent<{
@@ -51,6 +31,11 @@ export const Dropped = defineComponent<{
   sourceEntity?: number;
 }>('Dropped');
 
+export const DragDropHandlers = defineComponent<{
+  dragHandlers: Map<number, DragHandlers>;
+  dropHandlers: Map<number, DropHandlers>;
+}>('DragDropHandlers');
+
 export type DragHandlers = {
   dragstart: (e: DragEvent) => void;
   dragend: (e: DragEvent) => void;
@@ -68,13 +53,4 @@ export type DragState = {
   data: unknown;
 };
 
-/** Runtime state for the DOM rendering layer */
-export const DomRuntime = defineComponent<{
-  elements: Map<number, Element>;
-  clickHandlers: Map<number, () => void>;
-  dragHandlers: Map<number, DragHandlers>;
-  dropHandlers: Map<number, DropHandlers>;
-  dragState: DragState | null;
-  /** Optional root container for auto-mounting root entities */
-  rootContainer?: Element;
-}>('DomRuntime');
+export const DragState = defineComponent<DragState>('DragState');

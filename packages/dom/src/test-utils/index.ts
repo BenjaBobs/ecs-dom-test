@@ -4,7 +4,7 @@
  */
 
 import { createSyncScheduler, World, type WorldOptions } from '@ecs-test/ecs';
-import { registerDOMSystems, setRootContainer } from './systems.ts';
+import { registerDOMSystems } from '../index.ts';
 
 /**
  * Minimal interface for browser-like window objects.
@@ -64,11 +64,11 @@ export function withTestWorld<T>(
     scheduler: options?.scheduler ?? createSyncScheduler(),
     externals: {
       createElement: (tag: string) => window.document.createElement(tag) as Element,
+      rootContainer: container,
     },
   });
 
   registerDOMSystems(world);
-  setRootContainer(world, container);
 
   try {
     return fn({ world, container });
