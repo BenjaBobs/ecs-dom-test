@@ -44,6 +44,7 @@ function getFetchClient(world: World): FetchFn {
  * Handles FetchCatButton clicks - adds FetchCat to parent CatDisplay.
  */
 const FetchCatButtonClickSystem = defineReactiveSystem({
+  name: 'FetchCatButtonClickSystem',
   triggers: [added(Clicked)],
   filter: [FetchCatButton],
   execute(entities, world) {
@@ -63,6 +64,7 @@ const FetchCatButtonClickSystem = defineReactiveSystem({
  * Handles FetchCat trigger - starts async fetch for cat data.
  */
 const FetchCatSystem = defineReactiveSystem({
+  name: 'FetchCatSystem',
   triggers: [added(FetchCat)],
   execute(entities, world) {
     const fetchFn = getFetchClient(world);
@@ -104,6 +106,7 @@ const FetchCatSystem = defineReactiveSystem({
  * Creates/updates image element when CatData arrives.
  */
 const CatImageRenderSystem = defineReactiveSystem({
+  name: 'CatImageRenderSystem',
   triggers: [addedOrReplaced(CatData)],
   execute(entities, world) {
     for (const entity of entities) {
@@ -131,6 +134,7 @@ const CatImageRenderSystem = defineReactiveSystem({
  * Applies ImageSrc to the DOM img element.
  */
 const ImageSrcSystem = defineReactiveSystem({
+  name: 'ImageSrcSystem',
   triggers: [addedOrReplaced(ImageSrc)],
   execute(entities, world) {
     for (const entity of entities) {
@@ -148,6 +152,7 @@ const ImageSrcSystem = defineReactiveSystem({
  * Shows loading indicator when Loading is added.
  */
 const LoadingRenderSystem = defineReactiveSystem({
+  name: 'LoadingRenderSystem',
   triggers: [added(Loading)],
   execute(entities, world) {
     for (const entity of entities) {
@@ -169,6 +174,7 @@ const LoadingRenderSystem = defineReactiveSystem({
  * Removes loading indicator when data or error arrives.
  */
 const LoadingRemoveSystem = defineReactiveSystem({
+  name: 'LoadingRemoveSystem',
   triggers: [addedOrReplaced(CatData), addedOrReplaced(FetchError)],
   execute(entities, world) {
     for (const entity of entities) {
@@ -184,6 +190,7 @@ const LoadingRemoveSystem = defineReactiveSystem({
  * Renders error message when FetchError is added.
  */
 const ErrorRenderSystem = defineReactiveSystem({
+  name: 'ErrorRenderSystem',
   triggers: [added(FetchError)],
   execute(entities, world) {
     for (const entity of entities) {
@@ -208,6 +215,7 @@ const ErrorRenderSystem = defineReactiveSystem({
  * Disables fetch button when loading starts.
  */
 const ButtonDisableOnLoadSystem = defineReactiveSystem({
+  name: 'ButtonDisableOnLoadSystem',
   triggers: [added(Loading)],
   filter: [CatDisplayMarker],
   execute(entities, world) {
@@ -228,6 +236,7 @@ const ButtonDisableOnLoadSystem = defineReactiveSystem({
  * Re-enables fetch button when loading ends.
  */
 const ButtonEnableOnLoadEndSystem = defineReactiveSystem({
+  name: 'ButtonEnableOnLoadEndSystem',
   triggers: [removed(Loading)],
   execute(entities, world) {
     for (const entity of entities) {

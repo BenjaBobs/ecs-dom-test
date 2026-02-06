@@ -54,6 +54,7 @@ function setDragState(world: World, state: DragState | null): void {
  * Sets up drag behavior when Draggable is added.
  */
 export const DraggableAddSystem = defineReactiveSystem({
+  name: 'DraggableAddSystem',
   triggers: [added(Draggable)],
   execute(entities, world) {
     const domElements = getDOMElements(world);
@@ -94,6 +95,7 @@ export const DraggableAddSystem = defineReactiveSystem({
  * Removes drag behavior when Draggable is removed.
  */
 export const DraggableRemoveSystem = defineReactiveSystem({
+  name: 'DraggableRemoveSystem',
   triggers: [removed(Draggable)],
   execute(entities, world) {
     const domElements = getDOMElements(world);
@@ -118,6 +120,7 @@ export const DraggableRemoveSystem = defineReactiveSystem({
  * Sets up drop behavior when Droppable is added.
  */
 export const DroppableAddSystem = defineReactiveSystem({
+  name: 'DroppableAddSystem',
   triggers: [added(Droppable)],
   execute(entities, world) {
     const domElements = getDOMElements(world);
@@ -186,6 +189,7 @@ export const DroppableAddSystem = defineReactiveSystem({
  * Removes drop behavior when Droppable is removed.
  */
 export const DroppableRemoveSystem = defineReactiveSystem({
+  name: 'DroppableRemoveSystem',
   triggers: [removed(Droppable)],
   execute(entities, world) {
     const domElements = getDOMElements(world);
@@ -209,6 +213,7 @@ export const DroppableRemoveSystem = defineReactiveSystem({
  * Adds visual feedback when DragOver is added.
  */
 export const DragOverAddSystem = defineReactiveSystem({
+  name: 'DragOverAddSystem',
   triggers: [added(DragOver)],
   execute(entities, world) {
     const domElements = getDOMElements(world);
@@ -226,6 +231,7 @@ export const DragOverAddSystem = defineReactiveSystem({
  * Removes visual feedback when DragOver is removed.
  */
 export const DragOverRemoveSystem = defineReactiveSystem({
+  name: 'DragOverRemoveSystem',
   triggers: [removed(DragOver)],
   execute(entities, world) {
     const domElements = getDOMElements(world);

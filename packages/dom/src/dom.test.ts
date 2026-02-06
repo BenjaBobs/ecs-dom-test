@@ -6,7 +6,15 @@
 
 import { describe, expect, it } from 'bun:test';
 import { Window } from 'happy-dom';
-import { Classes, DOMElement, getDOMElement, TextContent } from './index.ts';
+import {
+  Classes,
+  createDebugUI,
+  DOMElement,
+  getDOMElement,
+  registerDebugUISystems,
+  Style,
+  TextContent,
+} from './index.ts';
 import { withTestWorld } from './test-utils/index.ts';
 
 describe('DOM systems', () => {
@@ -52,6 +60,22 @@ describe('DOM systems', () => {
     });
   });
 
+  it('applies and clears inline styles', () => {
+    withTestWorld(new Window(), ({ world, container }) => {
+      const entity = world.createEntity(null, [
+        DOMElement({ tag: 'div' }),
+        Style({ color: 'red' }),
+      ]);
+
+      const div = container.querySelector('div') as HTMLElement | null;
+      expect(div?.style.color).toBe('red');
+
+      world.remove(entity, Style);
+
+      expect(div?.getAttribute('style')).toBeNull();
+    });
+  });
+
   it('isolates tests from each other', () => {
     withTestWorld(new Window(), ({ container }) => {
       // Fresh window = fresh document = no contamination
@@ -85,6 +109,47 @@ describe('DOM systems', () => {
       expect(items.length).toBe(2);
       expect(items[0]?.textContent).toBe('Item 1');
       expect(items[1]?.textContent).toBe('Item 2');
+    });
+  });
+
+  it('renders debug UI panel', () => {
+    withTestWorld(new Window(), ({ world, container }) => {
+      registerDebugUISystems(world);
+      const debugRoot = createDebugUI(world, { visible: true });
+      const entity = world.createEntity(null, [
+        DOMElement({ tag: 'div' }),
+        TextContent({ value: 'Hello' }),
+      ]);
+
+      world.flush();
+
+      const panel = getDOMElement(world, debugRoot) as HTMLElement | undefined;
+      expect(panel).not.toBeUndefined();
+      expect(container.textContent).toContain(`Entity ${entity}`);
+    });
+  });
+
+  it('toggles debug UI via hotkey', () => {
+    const window = new Window();
+    withTestWorld(window, ({ world }) => {
+      registerDebugUISystems(world);
+      const debugRoot = createDebugUI(world);
+
+      window.dispatchEvent(
+        new window.KeyboardEvent('keydown', { key: 'd', ctrlKey: true, shiftKey: true }),
+      );
+      world.flush();
+
+      const panel = getDOMElement(world, debugRoot);
+      expect(panel).not.toBeUndefined();
+
+      window.dispatchEvent(
+        new window.KeyboardEvent('keydown', { key: 'd', ctrlKey: true, shiftKey: true }),
+      );
+      world.flush();
+
+      const removedPanel = getDOMElement(world, debugRoot);
+      expect(removedPanel).toBeUndefined();
     });
   });
 });

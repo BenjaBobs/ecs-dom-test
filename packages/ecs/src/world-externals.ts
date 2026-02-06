@@ -10,6 +10,7 @@
  * declare module '@ecs-test/ecs' {
  *   interface WorldExternals {
  *     createElement: (tag: string) => Element;
+ *     console: { log: (...args: unknown[]) => void };
  *   }
  * }
  * ```
@@ -17,5 +18,6 @@
  * @module
  */
 
-// biome-ignore lint/suspicious/noEmptyInterface: intended for declaration merging
-export interface WorldExternals {}
+export interface WorldExternals {
+  console?: { log: (...args: unknown[]) => void };
+}

@@ -10,6 +10,7 @@ import { TextContent } from './components.ts';
  * Updates text content when TextContent changes.
  */
 export const TextContentSystem = defineReactiveSystem({
+  name: 'TextContentSystem',
   triggers: [addedOrReplaced(TextContent)],
   execute(entities, world) {
     const domElements = getDOMElements(world);

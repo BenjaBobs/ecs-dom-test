@@ -26,6 +26,7 @@ import {
  * Creates form instance when FormData is added.
  */
 export const FormDataInitSystem = defineReactiveSystem({
+  name: 'FormDataInitSystem',
   triggers: [added(FormData)],
   execute(entities, world) {
     for (const entity of entities) {
@@ -42,6 +43,7 @@ export const FormDataInitSystem = defineReactiveSystem({
  * Sets up text input binding when FormBinding is added to a TextInput.
  */
 export const TextInputBindingSystem = defineReactiveSystem({
+  name: 'TextInputBindingSystem',
   triggers: [added(FormBinding)],
   filter: [TextInput, DOMElement],
   execute(entities, world) {
@@ -95,6 +97,7 @@ export const TextInputBindingSystem = defineReactiveSystem({
  * Sets up number input binding when FormBinding is added to a NumberInput.
  */
 export const NumberInputBindingSystem = defineReactiveSystem({
+  name: 'NumberInputBindingSystem',
   triggers: [added(FormBinding)],
   filter: [NumberInput, DOMElement],
   execute(entities, world) {
@@ -151,6 +154,7 @@ export const NumberInputBindingSystem = defineReactiveSystem({
  * Sets up read-only display when FormDisplay is added.
  */
 export const FormDisplaySystem = defineReactiveSystem({
+  name: 'FormDisplaySystem',
   triggers: [added(FormDisplay)],
   filter: [DOMElement],
   execute(entities, world) {
@@ -185,6 +189,7 @@ export const FormDisplaySystem = defineReactiveSystem({
  * Sets up error display when FieldError is added.
  */
 export const FieldErrorSystem = defineReactiveSystem({
+  name: 'FieldErrorSystem',
   triggers: [added(FieldError)],
   filter: [DOMElement],
   execute(entities, world) {

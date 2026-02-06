@@ -1,80 +1,245 @@
 # TODO
 
-## 1. Testing Infrastructure
+## Recently Completed
 
-### 1.1 Test Setup
-- [ ] Add bun test configuration
-- [ ] Add happy-dom as dev dependency
-- [ ] Create test utilities module (`framework/test-utils.ts`)
+- [x] **Testing Infrastructure**
+  - Bun test configuration working
+  - happy-dom integrated for DOM testing
+  - `withTestWorld` utility in `@ecs-test/dom/testing`
+  - Test coverage for: World core, systems, components, scheduler, forms, forms-ui, DOM
 
-### 1.2 Test Utilities
-- [ ] `createTestWorld()` - World with optional DOM systems
-- [ ] `createTestDOM()` - happy-dom document for integration tests
-- [ ] Entity builder helpers for common test patterns
-- [ ] Assertion helpers: `expectEntity(world, id).toHave(Component)`
+- [x] **Forms package** (`@ecs-test/forms`)
+  - Form factory pattern (define once, create isolated instances)
+  - Type-safe field accessors with full path inference
+  - Array operations (append, remove, reorder) with stable keys
+  - Validation and computed fields
+  - Zero dependencies
 
-### 1.3 Test Coverage
-- [ ] World core (createEntity, add, set, remove, query)
-- [ ] Reactive system triggers (added, removed, replaced, addedOrReplaced)
-- [ ] Materialization (JSX → entities)
-- [ ] DOM systems (integration with happy-dom)
-- [ ] Example feature tests (radio, cat fetcher)
+- [x] **Forms UI package** (`@ecs-test/forms-ui`)
+  - FormData, FormBinding, FormDisplay, FieldError components
+  - TextInput, NumberInput markers
+  - Assertions for missing FormData ancestor and invalid field paths
 
-## 2. World Inspection API
+---
 
-### 2.1 Entity Inspection
-- [ ] `world.getEntities()` - List all entity IDs
-- [ ] `world.inspect(entityId)` - Get entity details (components, parent, children)
-- [ ] `world.inspectAll()` - Full world state dump
+## 1. Debugging & Inspection
 
-### 2.2 System Inspection
-- [ ] `world.getSystems()` - List registered systems with their triggers
-- [ ] Track system names (add `name` to ReactiveSystem)
+The goal: make it easy to understand what's happening in the ECS world at any point in time, and quickly identify the source of bugs.
 
-### 2.3 Mutation Tracking (opt-in)
-- [ ] `world.onMutation(callback)` - Subscribe to mutations
-- [ ] `world.getMutationLog()` - Get recent mutations (when enabled)
-- [ ] Useful for debugging and testing assertions
+### 1.1 World State Inspection
 
-## 3. Performance Monitoring (opt-in)
+Core API for examining world state. Should return plain, serializable objects suitable for logging or dev tools.
 
-- [ ] `world.enableProfiling()` - Start collecting metrics
-- [ ] `world.getMetrics()` - Flush count, avg duration, mutations/flush, system timings
-- [ ] Keep it zero-cost when disabled
+- [x] `world.getEntities()` - List all entity IDs
+- [x] `world.inspect(entityId)` - Get entity snapshot:
+  ```ts
+  {
+    id: EntityId,
+    parent: EntityId | null,
+    children: EntityId[],
+    components: { [tag: string]: unknown }  // component data by tag
+  }
+  ```
+- [x] `world.snapshot()` - Full world state dump:
+  ```ts
+  {
+    entities: EntitySnapshot[],
+    systems: SystemInfo[],      // if names provided
+    stats: { entityCount, componentCount, systemCount }
+  }
+  ```
 
-## 4. Future Considerations
+### 1.2 System Naming (Optional)
 
-### Developer Tools
-- Browser extension for visual entity/component inspection
+System names are optional but highly recommended for debugging. When provided, they appear in:
+- Error stack traces
+- Performance profiles
+- World snapshots
+- Mutation logs
+
+```ts
+// Option A: Named parameter
+const MySystem = defineReactiveSystem({
+  name: 'MySystem',  // optional
+  triggers: [...],
+  execute(...) { ... }
+});
+
+// Option B: Inferred from variable (if feasible)
+```
+
+- [x] Add optional `name` field to `ReactiveSystemDef`
+- [x] Store name in `ReactiveSystem` class
+- [x] `world.getSystems()` - List registered systems with names and triggers
+- [x] Include system name in error messages when available
+
+### 1.3 Mutation Tracking (Opt-in)
+
+Subscribe to mutations for debugging or building dev tools. Disabled by default for zero overhead.
+
+- [x] `world.onMutation(callback, options?)` - Subscribe to mutations as they happen
+  ```ts
+  // Watch all mutations
+  world.onMutation((mutation) => {
+    console.log(`${mutation.type}: ${mutation.componentTag} on entity ${mutation.entity}`);
+  });
+
+  // Watch specific entity (+ optionally descendants)
+  world.onMutation(
+    (mutation) => console.log(mutation),
+    { entity: entityId, includeDescendants: true }
+  );
+
+  // Watch specific component types
+  world.onMutation(
+    (mutation) => console.log(mutation),
+    { components: [Position, Velocity] }
+  );
+  ```
+- [x] Returns `unsubscribe()` function
+- [x] Filter options: `{ entity?, includeDescendants?, components? }`
+- [x] Include component data in mutation event (the before/after values)
+
+### 1.4 Entity Debugging (`@ecs-test/ecs`)
+
+A dedicated package for runtime debugging tools. Allows targeted debugging of specific entities without overwhelming output.
+
+#### Debug Marker & System
+
+- [x] `Debug` marker component - Add to any entity to start tracking
+- [x] `DebugSystem` - Automatically logs mutations when Debug is added
+- [x] `DebugChildren` marker - Also track all descendant entities
+- [x] Configurable output: console, callback, or buffer for later inspection
+
+```ts
+import { Debug, DebugChildren, registerDebugSystems, World } from '@ecs-test/ecs';
+
+const world = new World({ externals: { console } });
+registerDebugSystems(world);
+
+// Debug a specific entity
+world.add(entity, Debug());
+
+// Debug entity and all its children
+world.add(entity, Debug());
+world.add(entity, DebugChildren());
+
+// Or combine in one call
+world.add(entity, Debug({ includeChildren: true, label: 'MyForm' }));
+```
+
+#### Debug Console/Inspector
+
+- [x] `world.debug(entityId)` - Print entity state to console (one-shot)
+- [x] `world.debugTree(entityId)` - Print entity + descendants as tree
+- [x] Interactive debug UI window (tree view, selection details, draggable + resizable)
+- [x] Debug UI hotkey toggle (`Ctrl+Shift+D`)
+- [x] Debug UI system timing view + 5s timeline with pause/selection
+
+```ts
+// Quick inspection
+world.debug(entity);
+// Output:
+// Entity 42 (parent: 10)
+//   DOMElement { tag: 'div' }
+//   Classes { list: ['active', 'selected'] }
+//   Children: [43, 44, 45]
+
+world.debugTree(entity);
+// Output:
+// Entity 42 (DOMElement, Classes)
+//   ├─ Entity 43 (DOMElement, TextContent)
+//   ├─ Entity 44 (DOMElement, Clickable)
+//   └─ Entity 45 (DOMElement)
+//        └─ Entity 46 (DOMElement, TextContent)
+```
+
+### 1.5 Enhanced Error Messages
+
+Errors should include enough context to identify the problem without additional debugging.
+
+- [x] Include entity ID and existing components when add/set/remove fails
+- [x] Include system name (if available) when error occurs during system execution
+- [x] Include parent chain when hierarchy operations fail
+- [x] Wrap system execute in try/catch to add context before re-throwing:
+  ```
+  Error in system "TextInputBindingSystem" while processing entity 42:
+    Entity has: [DOMElement, TextInput, FormBinding]
+    Parent chain: 42 → 10 → 1 (root)
+    Original error: Cannot read property 'value' of undefined
+  ```
+
+---
+
+## 2. Performance Profiling (Opt-in)
+
+Track where time is spent during flush cycles. Must be zero-cost when disabled.
+
+### 2.1 Per-Flush Metrics
+
+- [x] `world.enableProfiling()` / `world.disableProfiling()`
+- [x] `world.getLastFlushProfile()` - Get timing for most recent flush:
+  ```ts
+  {
+    totalDuration: number,        // ms
+    mutationCount: number,
+    systemExecutions: [
+      { name: string, duration: number, entityCount: number },
+      ...
+    ]
+  }
+  ```
+
+### 2.2 Aggregate Metrics
+
+- [x] `world.getProfilingStats()` - Aggregate stats since profiling enabled:
+  ```ts
+  {
+    flushCount: number,
+    totalDuration: number,
+    avgFlushDuration: number,
+    systemStats: Map<string, {
+      callCount: number,
+      totalDuration: number,
+      avgDuration: number,
+      maxDuration: number
+    }>
+  }
+  ```
+- [x] `world.resetProfilingStats()` - Clear accumulated stats
+
+### 2.3 Implementation Notes
+
+- Use `performance.now()` for timing (available in browser and Bun)
+- Store profiling state in world instance, not global
+- Consider: callback hook for custom profiling integration
+
+---
+
+## 3. Future Considerations
+
+### Developer Tools (Browser Extension)
+- Visual entity tree inspector
+- Component data viewer/editor
+- System execution timeline
 - Overlay mode: highlight entity boundaries in DOM
-- System execution visualizer
+- Time-travel debugging (mutation replay)
 
-### Advanced Testing
-- Snapshot testing for world state
+### Testing Enhancements
+- Snapshot testing for world state (`expect(world.snapshot()).toMatchSnapshot()`)
+- `expectEntity(world, id).toHave(Component)` assertion helpers
 - Property-based testing for system invariants
 - Performance regression tests
+
+### Error Recovery
+- Graceful handling of system errors (don't break the whole flush)
+- Error boundaries for system execution
+- Retry/skip strategies for failed systems
 
 ---
 
 ## Immediate Next Steps
 
-1. **Testing setup** - Get bun test + happy-dom working
-2. **World inspection** - Add `getEntities()`, `inspect()`, `inspectAll()`
-3. **First tests** - World core + one integration test
-4. **Forms tests** - Test the forms package in isolation (no ECS needed)
-
-## Recently Completed
-
-- [x] Forms package (`@ecs-test/forms`) - Pure form state management
-  - Form factory pattern (define once, create isolated instances)
-  - Type-safe field accessors with full path inference
-  - Array operations (append, remove, reorder) with stable keys
-  - Validation and computed fields
-  - Zero dependencies - works with any UI framework
-
-- [x] Forms UI package (`@ecs-test/forms-ui`) - ECS bindings
-  - FormData component (creates form instance)
-  - FormBinding component (connects inputs to form fields)
-  - TextInput, NumberInput markers
-  - FormDisplay, FieldError components
-
+1. **Interactive debug UI actions** - add/remove/modify components from the debug panel
+2. **Debug UI perf** - reduce self‑induced mutations during live profiling
+3. **Developer tools** - entity tree inspector, component editor, system timeline

@@ -44,6 +44,7 @@ export function getDOMElement(world: World, entity: EntityId): Element | undefin
  * Root entities (no parent) are auto-mounted to rootContainer if set.
  */
 export const DOMCreateSystem = defineReactiveSystem({
+  name: 'DOMCreateSystem',
   triggers: [added(DOMElement)],
   execute(entities, world) {
     const domElements = getDOMElements(world);
@@ -75,6 +76,7 @@ export const DOMCreateSystem = defineReactiveSystem({
  * Removes DOM elements when entity is removed.
  */
 export const DOMRemoveSystem = defineReactiveSystem({
+  name: 'DOMRemoveSystem',
   triggers: [removed(DOMElement)],
   execute(entities, world) {
     const domElements = getDOMElements(world);

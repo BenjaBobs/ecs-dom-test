@@ -41,6 +41,11 @@ export type Trigger = {
  * Configuration for defining a reactive system.
  */
 export type ReactiveSystemDef = {
+  /**
+   * Optional name for debugging and profiling.
+   * Appears in error messages, performance profiles, and world snapshots.
+   */
+  name?: string;
   /** Mutations that trigger this system */
   triggers: Trigger[];
   /**
@@ -53,13 +58,27 @@ export type ReactiveSystemDef = {
 };
 
 /**
+ * Information about a reactive system for debugging.
+ */
+export type SystemInfo = {
+  name: string | undefined;
+  triggers: { componentTag: string; mutationType: string }[];
+  filter: string[];
+};
+
+/**
  * A reactive system that responds to component mutations.
  *
  * Systems are registered with a World and automatically execute
  * when their trigger conditions are met during a flush.
  */
 export class ReactiveSystem {
-  constructor(private def: ReactiveSystemDef) {}
+  /** Optional name for debugging and profiling */
+  readonly name: string | undefined;
+
+  constructor(private def: ReactiveSystemDef) {
+    this.name = def.name;
+  }
 
   /**
    * Check if a mutation matches this system's triggers and filters.
@@ -94,6 +113,22 @@ export class ReactiveSystem {
    */
   execute(entities: EntityId[], world: World): void {
     this.def.execute(entities, world);
+  }
+
+  /**
+   * Get information about this system for debugging.
+   *
+   * @returns System info object with name, triggers, and filter
+   */
+  getInfo(): SystemInfo {
+    return {
+      name: this.name,
+      triggers: this.def.triggers.map(t => ({
+        componentTag: t.componentTag,
+        mutationType: t.mutationType,
+      })),
+      filter: this.def.filter?.map(ref => getTag(ref)) ?? [],
+    };
   }
 }
 

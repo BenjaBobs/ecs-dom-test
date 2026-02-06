@@ -22,6 +22,18 @@ export {
   defineMarker,
   getTag,
 } from './component.ts';
+// Debug
+export {
+  Debug,
+  type DebugBuffer,
+  DebugChildren,
+  type DebugLogEntry,
+  type DebugOptions,
+  type DebugOutput,
+  type DebugSystemHandle,
+  type DebugSystemOptions,
+  registerDebugSystems,
+} from './debug.ts';
 // JSX
 export {
   Entity,
@@ -50,13 +62,23 @@ export {
   type ReactiveSystemDef,
   removed,
   replaced,
+  type SystemInfo,
   type Trigger,
 } from './system.ts';
 // World
 export {
   type EntityId,
+  type EntitySnapshot,
+  type FlushProfile,
   type FlushScheduler,
+  type MutationCallback,
+  type MutationEvent,
+  type MutationSubscriptionOptions,
+  type ProfilingStats,
+  type SystemExecutionProfile,
+  type SystemProfilingStats,
   World,
   type WorldOptions,
+  type WorldSnapshot,
 } from './world.ts';
 export type { WorldExternals } from './world-externals.ts';

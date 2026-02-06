@@ -10,6 +10,7 @@ import { Classes } from './components.ts';
  * Updates classes when Classes component changes.
  */
 export const ClassesSystem = defineReactiveSystem({
+  name: 'ClassesSystem',
   triggers: [addedOrReplaced(Classes)],
   execute(entities, world) {
     const domElements = getDOMElements(world);

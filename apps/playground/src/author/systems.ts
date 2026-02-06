@@ -35,6 +35,7 @@ import { AddBookButton, BookItem, BookListMarker, RemoveBookButton, SubmitButton
  * Handles Add Book button clicks.
  */
 const AddBookClickSystem = defineReactiveSystem({
+  name: 'AddBookClickSystem',
   triggers: [added(Clicked)],
   filter: [AddBookButton],
   execute(entities, world) {
@@ -62,6 +63,7 @@ const AddBookClickSystem = defineReactiveSystem({
  * Handles Submit button clicks.
  */
 const SubmitClickSystem = defineReactiveSystem({
+  name: 'SubmitClickSystem',
   triggers: [added(Clicked)],
   filter: [SubmitButton],
   execute(entities, world) {
@@ -97,6 +99,7 @@ const SubmitClickSystem = defineReactiveSystem({
  * Handles Remove Book button clicks.
  */
 const RemoveBookClickSystem = defineReactiveSystem({
+  name: 'RemoveBookClickSystem',
   triggers: [added(Clicked)],
   filter: [RemoveBookButton],
   execute(entities, world) {
@@ -136,6 +139,7 @@ const RemoveBookClickSystem = defineReactiveSystem({
  * Initial render of book list when FormData is added.
  */
 const BookListInitSystem = defineReactiveSystem({
+  name: 'BookListInitSystem',
   triggers: [added(FormInstance)],
   filter: [FormData],
   execute(entities, world) {
@@ -251,6 +255,7 @@ function createBookItemEntity(world: World, parent: EntityId, index: number, key
  * Handles book reordering via drag and drop.
  */
 const BookDropSystem = defineReactiveSystem({
+  name: 'BookDropSystem',
   triggers: [added(Dropped)],
   filter: [BookItem],
   execute(entities, world) {

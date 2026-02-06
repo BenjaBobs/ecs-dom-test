@@ -5,8 +5,10 @@
 import {
   Classes,
   Clickable,
+  createDebugUI,
   Disabled,
   DOMElement,
+  registerDebugUISystems,
   registerDOMSystems,
   TextContent,
 } from '@ecs-test/dom';
@@ -36,12 +38,24 @@ export function startPlayground({ doc, fetchFn }: PlaygroundDeps): void {
   }
 
   // Create the world
+  const view = doc.defaultView;
+  if (!view) {
+    console.error('Failed to mount - missing window');
+    return;
+  }
+
   const world = new World({
-    externals: { createElement: doc.createElement.bind(doc), rootContainer: container },
+    externals: {
+      createElement: doc.createElement.bind(doc),
+      rootContainer: container,
+      window: view,
+      console,
+    },
   });
 
   // Register systems (order matters!)
   registerDOMSystems(world);
+  registerDebugUISystems(world);
   registerFormSystems(world);
   registerRadioSystems(world);
   registerCatSystems(world, { fetchFn });
@@ -145,6 +159,8 @@ export function startPlayground({ doc, fetchFn }: PlaygroundDeps): void {
 
   // Materialize JSX into entities
   const rootEntity = materialize(world, ui);
+
+  createDebugUI(world);
 
   // Flush to trigger all reactive systems
   world.flush();

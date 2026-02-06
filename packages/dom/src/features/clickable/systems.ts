@@ -22,6 +22,7 @@ function getClickHandlers(world: World): Map<number, () => void> {
  * Attaches click handler when Clickable is added.
  */
 export const ClickableAddSystem = defineReactiveSystem({
+  name: 'ClickableAddSystem',
   triggers: [added(Clickable)],
   execute(entities, world) {
     const domElements = getDOMElements(world);
@@ -55,6 +56,7 @@ export const ClickableAddSystem = defineReactiveSystem({
  * Removes click handler when Clickable is removed.
  */
 export const ClickableRemoveSystem = defineReactiveSystem({
+  name: 'ClickableRemoveSystem',
   triggers: [removed(Clickable)],
   execute(entities, world) {
     const domElements = getDOMElements(world);

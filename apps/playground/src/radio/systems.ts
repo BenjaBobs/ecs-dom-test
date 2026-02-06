@@ -18,6 +18,7 @@ import { Name, Radio, Selected, SelectedValue, Selection, Value } from './compon
  * When a child with Value is clicked, update the parent's SelectedValue.
  */
 const SelectionClickSystem = defineReactiveSystem({
+  name: 'SelectionClickSystem',
   triggers: [added(Clicked)],
   filter: [Value],
   execute(entities, world) {
@@ -44,6 +45,7 @@ const SelectionClickSystem = defineReactiveSystem({
  * Sync Selected marker on children when SelectedValue changes.
  */
 const SelectionSyncSystem = defineReactiveSystem({
+  name: 'SelectionSyncSystem',
   triggers: [addedOrReplaced(SelectedValue)],
   filter: [Selection],
   execute(entities, world) {
@@ -82,6 +84,7 @@ const SelectionSyncSystem = defineReactiveSystem({
  * Update radio visual classes based on Selected state.
  */
 const RadioRenderSystem = defineReactiveSystem({
+  name: 'RadioRenderSystem',
   triggers: [added(Selected)],
   filter: [Radio],
   execute(entities, world) {
@@ -95,6 +98,7 @@ const RadioRenderSystem = defineReactiveSystem({
  * Initialize radio visual when Radio component is added.
  */
 const RadioInitSystem = defineReactiveSystem({
+  name: 'RadioInitSystem',
   triggers: [added(Radio)],
   execute(entities, world) {
     for (const entity of entities) {
@@ -109,6 +113,7 @@ const RadioInitSystem = defineReactiveSystem({
  * Update radio visual when Selected is removed.
  */
 const RadioDeselectSystem = defineReactiveSystem({
+  name: 'RadioDeselectSystem',
   triggers: [removed(Selected)],
   filter: [Radio],
   execute(entities, world) {
@@ -122,6 +127,7 @@ const RadioDeselectSystem = defineReactiveSystem({
  * When an entity has Name, create a legend child element.
  */
 const NameLegendSystem = defineReactiveSystem({
+  name: 'NameLegendSystem',
   triggers: [added(Name)],
   execute(entities, world) {
     for (const entity of entities) {

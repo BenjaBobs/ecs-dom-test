@@ -65,6 +65,7 @@ export function withTestWorld<T>(
     externals: {
       createElement: (tag: string) => window.document.createElement(tag) as Element,
       rootContainer: container,
+      window: window as unknown as Window,
     },
   });
 

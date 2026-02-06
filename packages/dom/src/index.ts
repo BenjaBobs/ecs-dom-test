@@ -17,6 +17,7 @@ import {
   DroppableAddSystem,
   DroppableRemoveSystem,
 } from './features/drag-drop/systems.ts';
+import { StyleRemoveSystem, StyleSystem } from './features/style/systems.ts';
 import { TextContentSystem } from './features/text/systems.ts';
 
 export { DOMElement, DomRuntime } from './dom-element-components.ts';
@@ -30,6 +31,21 @@ export { Classes } from './features/classes/components.ts';
 export { ClassesSystem } from './features/classes/systems.ts';
 export { Clickable, Clicked } from './features/clickable/components.ts';
 export { ClickableAddSystem, ClickableRemoveSystem } from './features/clickable/systems.ts';
+export {
+  createDebugUI,
+  DebugUIEntityRef,
+  type DebugUIHotkey,
+  DebugUIHotkeys,
+  DebugUIPanelState,
+  DebugUIPauseToggle,
+  DebugUIRoot,
+  DebugUISelection,
+  DebugUIState,
+  DebugUITimeline,
+  DebugUITimelineRef,
+  DebugUIVisible,
+  registerDebugUISystems,
+} from './features/debug-ui/index.ts';
 export { Disabled } from './features/disabled/components.ts';
 export { DisabledAddSystem, DisabledRemoveSystem } from './features/disabled/systems.ts';
 export {
@@ -49,6 +65,8 @@ export {
   DroppableAddSystem,
   DroppableRemoveSystem,
 } from './features/drag-drop/systems.ts';
+export { Style } from './features/style/components.ts';
+export { StyleRemoveSystem, StyleSystem } from './features/style/systems.ts';
 export { TextContent } from './features/text/components.ts';
 export { TextContentSystem } from './features/text/systems.ts';
 
@@ -64,6 +82,8 @@ export function registerDOMSystems(world: World): void {
   world.registerSystem(DisabledRemoveSystem);
   world.registerSystem(TextContentSystem);
   world.registerSystem(ClassesSystem);
+  world.registerSystem(StyleSystem);
+  world.registerSystem(StyleRemoveSystem);
   world.registerSystem(DraggableAddSystem);
   world.registerSystem(DraggableRemoveSystem);
   world.registerSystem(DroppableAddSystem);

@@ -16,11 +16,13 @@ import { assert } from './assert.ts';
  * const Position: ComponentType<{ x: number; y: number }> = defineComponent('Position');
  * ```
  */
-export type ComponentType<T = unknown> = {
+type ComponentFactory<T> = undefined extends T
+  ? (data?: T) => ComponentInstance<T>
+  : (data: T) => ComponentInstance<T>;
+
+export type ComponentType<T = unknown> = ComponentFactory<T> & {
   /** Unique identifier for this component type */
   readonly _tag: string;
-  /** Create a new instance of this component with the given data */
-  (data: T): ComponentInstance<T>;
 };
 
 /**
@@ -75,11 +77,13 @@ export function getTag(ref: ComponentRef): string {
  */
 export function defineComponent<T>(tag: string): ComponentType<T> {
   assert(tag.trim().length > 0, 'Component tag must be a non-empty string');
-  const factory = (data: T | DeepReadonly<T>): ComponentInstance<T> => ({
-    _tag: tag,
-    data: data as T,
-  });
-  factory._tag = tag;
+  const factory = Object.assign(
+    (data?: T | DeepReadonly<T>): ComponentInstance<T> => ({
+      _tag: tag,
+      data: data as T,
+    }),
+    { _tag: tag },
+  ) as ComponentFactory<T>;
   return factory as ComponentType<T>;
 }
 
@@ -99,12 +103,14 @@ export function defineComponent<T>(tag: string): ComponentType<T> {
  */
 export function defineMarker(tag: string): ComponentType<void> & (() => ComponentInstance<void>) {
   assert(tag.trim().length > 0, 'Component tag must be a non-empty string');
-  const factory = (): ComponentInstance<void> => {
-    return {
-      _tag: tag,
-      data: undefined,
-    };
-  };
-  factory._tag = tag;
+  const factory = Object.assign(
+    (): ComponentInstance<void> => {
+      return {
+        _tag: tag,
+        data: undefined,
+      };
+    },
+    { _tag: tag },
+  );
   return factory as ComponentType<void> & (() => ComponentInstance<void>);
 }
