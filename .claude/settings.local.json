@@ -4,7 +4,9 @@
       "Bash(bun run tsc:*)",
       "Bash(bun run typecheck)",
       "WebFetch(domain:bun.com)",
-      "Bash(bun run:*)"
+      "Bash(bun run:*)",
+      "Bash(bun test)",
+      "Bash(bun test:*)"
     ]
   }
 }

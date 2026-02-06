@@ -5,6 +5,7 @@
 import { DOMElement, getDOMElement, TextContent } from '@ecs-test/dom';
 import {
   added,
+  assert,
   type ComponentRef,
   defineReactiveSystem,
   type EntityId,
@@ -49,16 +50,16 @@ export const TextInputBindingSystem = defineReactiveSystem({
       if (!binding) continue;
 
       const formDataEntity = findAncestorWith(entity, FormData, world);
-      if (!formDataEntity) {
-        console.warn('FormBinding without FormData ancestor');
-        continue;
-      }
+      assert(
+        formDataEntity !== undefined,
+        `FormBinding requires a FormData ancestor. Entity ${entity} has TextInput + FormBinding but no FormData in its parent chain.`,
+      );
 
       const formInstance = world.get(formDataEntity, FormInstance);
       if (!formInstance) continue;
 
       const el = getDOMElement(world, entity);
-      if (!el || !(el instanceof HTMLInputElement)) continue;
+      if (!el || !isInputElement(el)) continue;
 
       // Get bound accessor
       const boundAccessor = resolveBoundAccessor(formInstance.instance, binding.field);
@@ -102,16 +103,16 @@ export const NumberInputBindingSystem = defineReactiveSystem({
       if (!binding) continue;
 
       const formDataEntity = findAncestorWith(entity, FormData, world);
-      if (!formDataEntity) {
-        console.warn('FormBinding without FormData ancestor');
-        continue;
-      }
+      assert(
+        formDataEntity !== undefined,
+        `FormBinding requires a FormData ancestor. Entity ${entity} has NumberInput + FormBinding but no FormData in its parent chain.`,
+      );
 
       const formInstance = world.get(formDataEntity, FormInstance);
       if (!formInstance) continue;
 
       const el = getDOMElement(world, entity);
-      if (!el || !(el instanceof HTMLInputElement)) continue;
+      if (!el || !isInputElement(el)) continue;
 
       el.type = 'number';
 
@@ -272,12 +273,53 @@ function resolveBoundAccessor(
 ): BoundAccessor {
   // Navigate the path to get the bound accessor
   let accessor: unknown = instance.fields;
+  const pathSoFar: (string | number)[] = [];
+
   for (const segment of unbound.path) {
+    assert(
+      accessor != null,
+      `Invalid form field path: "${unbound.path.join('.')}". Path segment "${pathSoFar.join('.')}" resolved to null/undefined.`,
+    );
+
     if (typeof segment === 'number') {
-      accessor = (accessor as { at: (i: number) => unknown }).at(segment);
+      const atFn = (accessor as { at?: (i: number) => unknown }).at;
+      assert(
+        typeof atFn === 'function',
+        `Invalid form field path: "${unbound.path.join('.')}". Expected array accessor at "${pathSoFar.join('.')}" but got ${typeof accessor}.`,
+      );
+      accessor = atFn.call(accessor, segment);
     } else {
       accessor = (accessor as Record<string, unknown>)[segment];
     }
+    pathSoFar.push(segment);
   }
+
+  assert(
+    accessor != null,
+    `Invalid form field path: "${unbound.path.join('.')}". Path resolved to null/undefined.`,
+  );
+
   return accessor as BoundAccessor;
+}
+
+/**
+ * Type representing an input element with the properties we need.
+ * Uses duck-typing to work with any DOM implementation (happy-dom, jsdom, real browser).
+ */
+type InputElementLike = {
+  value: string;
+  type: string;
+  addEventListener: (event: string, handler: () => void) => void;
+};
+
+/**
+ * Duck-type check for input elements.
+ * Avoids instanceof HTMLInputElement which requires browser globals.
+ */
+function isInputElement(el: unknown): el is InputElementLike {
+  if (el == null || typeof el !== 'object') return false;
+  const candidate = el as Record<string, unknown>;
+  return (
+    'value' in candidate && 'type' in candidate && typeof candidate.addEventListener === 'function'
+  );
 }
