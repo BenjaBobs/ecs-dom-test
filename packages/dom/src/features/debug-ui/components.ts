@@ -80,6 +80,8 @@ export type DebugUIRuntimeData = {
   searchHandlers: Map<EntityId, (event: Event) => void>;
   scrollTimers: Map<EntityId, number>;
   pendingScroll: Map<EntityId, EntityId>;
+  snapshotThrottleMs: Map<EntityId, number>;
+  profileSampleMs: Map<EntityId, number>;
   timelineTimers: Map<EntityId, number>;
   timelinePendingProfiles: Map<EntityId, DebugUITimelineSample>;
   timelineLastSample: Map<EntityId, number>;
@@ -140,3 +142,10 @@ export const DebugUISectionToggle = defineComponent<{ section: 'selection' | 'ti
 );
 export const DebugUITreeToggle = defineComponent<{ id: EntityId }>('DebugUITreeToggle');
 export const DebugUITreeSearchInput = defineMarker('DebugUITreeSearchInput');
+
+export type DebugUIConfigData = {
+  snapshotThrottleMs: number;
+  profileSampleMs: number;
+};
+
+export const DebugUIConfig = defineComponent<DebugUIConfigData>('DebugUIConfig');

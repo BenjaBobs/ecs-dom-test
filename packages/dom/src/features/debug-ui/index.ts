@@ -5,6 +5,7 @@
 import type { EntityId, World } from '@ecs-test/ecs';
 import { Style } from '../style/components.ts';
 import {
+  DebugUIConfig,
   type DebugUIHotkey,
   DebugUIHotkeys,
   DebugUIPanelState,
@@ -33,6 +34,7 @@ import {
 } from './systems.ts';
 
 export {
+  DebugUIConfig,
   DebugUIEntityRef,
   DebugUIHeader,
   type DebugUIHotkey,
@@ -79,6 +81,8 @@ export type DebugUIOptions = {
   position?: { x: number; y: number; width: number; height: number };
   hotkeys?: DebugUIHotkey[];
   visible?: boolean;
+  snapshotThrottleMs?: number;
+  profileSampleMs?: number;
 };
 
 export function registerDebugUISystems(world: World): void {
@@ -128,6 +132,16 @@ export function createDebugUI(world: World, options: DebugUIOptions = {}): Entit
 
   if (options.visible) {
     world.add(root, DebugUIVisible());
+  }
+
+  if (options.snapshotThrottleMs !== undefined || options.profileSampleMs !== undefined) {
+    world.set(
+      root,
+      DebugUIConfig({
+        snapshotThrottleMs: options.snapshotThrottleMs ?? 120,
+        profileSampleMs: options.profileSampleMs ?? 250,
+      }),
+    );
   }
 
   if (!world.has(root, DebugUISelection)) {

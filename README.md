@@ -130,4 +130,12 @@ const RadioOption = defineBundle(({ value }: { value: string }) => [
 - **World isolation** - Multiple worlds can coexist independently
 - **Renderer-agnostic core** - ECS primitives don't depend on DOM
 
+## Testing Notes
+
+When writing DOM tests (especially with `happy-dom`), avoid assertions that pass
+large DOM objects directly into `expect(...)`. If such an assertion fails, Bun
+may stringify the entire DOM tree (and `window` graph), producing extremely large
+stdout output. Prefer targeted checks (e.g., specific node text or counts) or
+helpers that limit the inspected text length.
+
 See [design-choices.md](./design-choices.md) for detailed architectural decisions.

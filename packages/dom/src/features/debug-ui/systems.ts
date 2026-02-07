@@ -20,6 +20,8 @@ import { Clickable, Clicked } from '../clickable/components.ts';
 import { Style } from '../style/components.ts';
 import { TextContent } from '../text/components.ts';
 import {
+  DebugUIConfig,
+  type DebugUIConfigData,
   DebugUIEntityRef,
   type DebugUIEntityRefData,
   DebugUIHeader,
@@ -231,6 +233,8 @@ function getDebugUIRuntime(world: World): DebugUIRuntimeData {
       searchHandlers: new Map(),
       scrollTimers: new Map(),
       pendingScroll: new Map(),
+      snapshotThrottleMs: new Map(),
+      profileSampleMs: new Map(),
       timelineTimers: new Map(),
       timelinePendingProfiles: new Map(),
       timelineLastSample: new Map(),
@@ -311,7 +315,13 @@ function filterSnapshot(world: World, root: EntityId): WorldSnapshot {
   };
 }
 
-const snapshotThrottleMs = 120;
+function getSnapshotThrottleMs(world: World, root: EntityId): number {
+  const runtime = getDebugUIRuntime(world);
+  const config = world.get(root, DebugUIConfig) as DebugUIConfigData | undefined;
+  const value = config?.snapshotThrottleMs ?? runtime.snapshotThrottleMs.get(root) ?? 120;
+  runtime.snapshotThrottleMs.set(root, value);
+  return value;
+}
 
 function scheduleSnapshotUpdate(world: World, root: EntityId): void {
   if (!world.has(root, DebugUIVisible)) return;
@@ -325,9 +335,10 @@ function scheduleSnapshotUpdate(world: World, root: EntityId): void {
   }
 
   const nowTime = Date.now();
+  const throttleMs = getSnapshotThrottleMs(world, root);
   const lastSample = runtime.snapshotLastUpdate.get(root) ?? 0;
   const elapsed = nowTime - lastSample;
-  if (elapsed >= snapshotThrottleMs) {
+  if (elapsed >= throttleMs) {
     runtime.snapshotLastUpdate.set(root, nowTime);
     const snapshot = filterSnapshot(world, root);
     world.set(root, DebugUIState({ snapshot }));
@@ -336,7 +347,7 @@ function scheduleSnapshotUpdate(world: World, root: EntityId): void {
 
   runtime.snapshotPending.add(root);
   if (!runtime.snapshotTimers.has(root)) {
-    const delay = Math.max(0, snapshotThrottleMs - elapsed);
+    const delay = Math.max(0, throttleMs - elapsed);
     const timerId = view.setTimeout(() => {
       runtime.snapshotTimers.delete(root);
       if (!runtime.snapshotPending.has(root)) return;
@@ -656,6 +667,14 @@ function filterProfileExecutions(
       entity => !debugEntities.has(entity) && !isDescendantOf(world, entity, root),
     );
   });
+}
+
+function getProfileSampleMs(world: World, root: EntityId): number {
+  const runtime = getDebugUIRuntime(world);
+  const config = world.get(root, DebugUIConfig) as DebugUIConfigData | undefined;
+  const value = config?.profileSampleMs ?? runtime.profileSampleMs.get(root) ?? 250;
+  runtime.profileSampleMs.set(root, value);
+  return value;
 }
 
 export const DebugUIInitSystem = defineReactiveSystem({
@@ -1589,6 +1608,11 @@ export const DebugUIVisibilitySystem = defineReactiveSystem({
         const runtime = getDebugUIRuntime(world);
         runtime.snapshotLastUpdate.set(root, 0);
         runtime.snapshotPending.delete(root);
+        const config = world.get(root, DebugUIConfig) as DebugUIConfigData | undefined;
+        if (config) {
+          runtime.snapshotThrottleMs.set(root, config.snapshotThrottleMs);
+          runtime.profileSampleMs.set(root, config.profileSampleMs);
+        }
         if (view && !runtime.profileSubscriptions.has(root)) {
           const unsubscribe = world.onFlushProfile(profile => {
             if (!world.has(root, DebugUIVisible)) return;
@@ -1607,9 +1631,10 @@ export const DebugUIVisibilitySystem = defineReactiveSystem({
             if (sample.totalDuration === 0 && !includeDebugUI) return;
 
             const nowTime = Date.now();
+            const sampleMs = getProfileSampleMs(world, root);
             const lastSampleTime = runtime.timelineLastSample.get(root) ?? 0;
 
-            if (nowTime - lastSampleTime >= 250) {
+            if (nowTime - lastSampleTime >= sampleMs) {
               runtime.timelineLastSample.set(root, nowTime);
               pushTimelineSample(world, root, sample);
               return;
@@ -1621,7 +1646,7 @@ export const DebugUIVisibilitySystem = defineReactiveSystem({
               pending ? mergeTimelineSamples(pending, sample) : sample,
             );
             if (!runtime.timelineTimers.has(root)) {
-              const delay = Math.max(0, 250 - (nowTime - lastSampleTime));
+              const delay = Math.max(0, sampleMs - (nowTime - lastSampleTime));
               const timerId = view.setTimeout(() => {
                 runtime.timelineTimers.delete(root);
                 const pending = runtime.timelinePendingProfiles.get(root);
