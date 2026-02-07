@@ -36,6 +36,7 @@ export {
   DebugUIEntityRef,
   type DebugUIHotkey,
   DebugUIHotkeys,
+  DebugUIIncludeDebugToggle,
   DebugUIPanelState,
   DebugUIPauseToggle,
   DebugUIRoot,

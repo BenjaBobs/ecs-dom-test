@@ -93,6 +93,7 @@ export type SystemExecutionProfile = {
   name: string;
   duration: number;
   entityCount: number;
+  entities?: EntityId[];
 };
 
 export type FlushProfile = {
@@ -101,6 +102,8 @@ export type FlushProfile = {
   mutationCount: number;
   systemExecutions: SystemExecutionProfile[];
 };
+
+export type FlushProfileCallback = (profile: FlushProfile) => void;
 
 export type SystemProfilingStats = {
   callCount: number;
@@ -191,6 +194,7 @@ export class World {
   private profilingEnabled = false;
   private lastFlushProfile: FlushProfile | null = null;
   private profilingSequence = 0;
+  private profilingSubscribers = new Set<FlushProfileCallback>();
   private profilingStats = {
     flushCount: 0,
     totalDuration: 0,
@@ -795,6 +799,19 @@ export class World {
   }
 
   /**
+   * Subscribe to per-flush profiling data.
+   *
+   * @param callback - Called after each profiled flush
+   * @returns Unsubscribe function
+   */
+  onFlushProfile(callback: FlushProfileCallback): () => void {
+    this.profilingSubscribers.add(callback);
+    return () => {
+      this.profilingSubscribers.delete(callback);
+    };
+  }
+
+  /**
    * Get aggregate profiling stats since profiling was enabled.
    *
    * @returns Aggregate profiling stats
@@ -1092,14 +1109,24 @@ export class World {
           } catch (error) {
             const duration = now() - systemStart;
             const name = system.name ?? '(unnamed system)';
-            systemExecutions.push({ name, duration, entityCount: entities.length });
+            systemExecutions.push({
+              name,
+              duration,
+              entityCount: entities.length,
+              entities,
+            });
             this.updateSystemProfilingStats(name, duration);
             throw this.wrapSystemError(error, system, entities);
           }
 
           const duration = now() - systemStart;
           const name = system.name ?? '(unnamed system)';
-          systemExecutions.push({ name, duration, entityCount: entities.length });
+          systemExecutions.push({
+            name,
+            duration,
+            entityCount: entities.length,
+            entities,
+          });
           this.updateSystemProfilingStats(name, duration);
         }
       }
@@ -1113,6 +1140,11 @@ export class World {
       mutationCount,
       systemExecutions,
     };
+    if (this.profilingSubscribers.size > 0) {
+      for (const callback of this.profilingSubscribers) {
+        callback(this.lastFlushProfile);
+      }
+    }
     this.profilingStats.flushCount += 1;
     this.profilingStats.totalDuration += totalDuration;
   }

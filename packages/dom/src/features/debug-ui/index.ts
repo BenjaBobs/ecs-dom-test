@@ -16,13 +16,19 @@ import {
 import {
   DebugUIHeaderDragSystem,
   DebugUIHotkeySystem,
+  DebugUIIncludeDebugToggleSystem,
   DebugUIInitSystem,
+  DebugUILayoutSystem,
   DebugUIPauseToggleSystem,
-  DebugUIRenderSystem,
   DebugUIRootStyleSystem,
+  DebugUISectionToggleSystem,
   DebugUISelectionSystem,
   DebugUISubscriptionCleanupSystem,
+  DebugUITimelineRenderSystem,
   DebugUITimelineSelectionSystem,
+  DebugUITreeSearchInputSystem,
+  DebugUITreeSelectionRenderSystem,
+  DebugUITreeToggleSystem,
   DebugUIVisibilitySystem,
 } from './systems.ts';
 
@@ -31,27 +37,41 @@ export {
   DebugUIHeader,
   type DebugUIHotkey,
   DebugUIHotkeys,
+  DebugUIIncludeDebugToggle,
+  DebugUILayout,
   DebugUIPanelState,
   DebugUIPauseToggle,
   DebugUIRenderState,
   DebugUIRoot,
   DebugUIRuntime,
+  DebugUISectionState,
+  DebugUISectionToggle,
   DebugUISelection,
   DebugUIState,
   DebugUITimeline,
   DebugUITimelineRef,
+  DebugUITreeSearch,
+  DebugUITreeSearchInput,
+  DebugUITreeState,
+  DebugUITreeToggle,
   DebugUIVisible,
 } from './components.ts';
 
 export {
   DebugUIHeaderDragSystem,
   DebugUIHotkeySystem,
+  DebugUIIncludeDebugToggleSystem,
   DebugUIInitSystem,
-  DebugUIRenderSystem,
+  DebugUILayoutSystem,
   DebugUIRootStyleSystem,
+  DebugUISectionToggleSystem,
   DebugUISelectionSystem,
   DebugUISubscriptionCleanupSystem,
+  DebugUITimelineRenderSystem,
   DebugUITimelineSelectionSystem,
+  DebugUITreeSearchInputSystem,
+  DebugUITreeSelectionRenderSystem,
+  DebugUITreeToggleSystem,
   DebugUIVisibilitySystem,
 } from './systems.ts';
 
@@ -64,10 +84,16 @@ export type DebugUIOptions = {
 export function registerDebugUISystems(world: World): void {
   world.registerSystem(DebugUIInitSystem);
   world.registerSystem(DebugUIRootStyleSystem);
-  world.registerSystem(DebugUIRenderSystem);
+  world.registerSystem(DebugUILayoutSystem);
+  world.registerSystem(DebugUITreeSelectionRenderSystem);
+  world.registerSystem(DebugUITimelineRenderSystem);
   world.registerSystem(DebugUISelectionSystem);
   world.registerSystem(DebugUIPauseToggleSystem);
+  world.registerSystem(DebugUIIncludeDebugToggleSystem);
+  world.registerSystem(DebugUISectionToggleSystem);
   world.registerSystem(DebugUITimelineSelectionSystem);
+  world.registerSystem(DebugUITreeToggleSystem);
+  world.registerSystem(DebugUITreeSearchInputSystem);
   world.registerSystem(DebugUIHeaderDragSystem);
   world.registerSystem(DebugUIVisibilitySystem);
   world.registerSystem(DebugUIHotkeySystem);
@@ -109,7 +135,10 @@ export function createDebugUI(world: World, options: DebugUIOptions = {}): Entit
   }
 
   if (!world.has(root, DebugUIRenderState)) {
-    world.set(root, DebugUIRenderState({ uiEntities: [] }));
+    world.set(
+      root,
+      DebugUIRenderState({ treeEntities: [], selectionEntities: [], timelineEntities: [] }),
+    );
   }
 
   if (!world.has(root, Style)) {

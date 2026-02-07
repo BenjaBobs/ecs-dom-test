@@ -112,8 +112,8 @@ describe('DOM systems', () => {
     });
   });
 
-  it('renders debug UI panel', () => {
-    withTestWorld(new Window(), ({ world, container }) => {
+  it('renders debug UI panel', async () => {
+    await withTestWorld(new Window(), async ({ world, container }) => {
       registerDebugUISystems(world);
       const debugRoot = createDebugUI(world, { visible: true });
       const entity = world.createEntity(null, [
@@ -122,6 +122,8 @@ describe('DOM systems', () => {
       ]);
 
       world.flush();
+      await new Promise(resolve => setTimeout(resolve, 150));
+      await world.whenFlushed();
 
       const panel = getDOMElement(world, debugRoot) as HTMLElement | undefined;
       expect(panel).not.toBeUndefined();

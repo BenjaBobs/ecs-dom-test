@@ -70,6 +70,7 @@ export {
   type EntityId,
   type EntitySnapshot,
   type FlushProfile,
+  type FlushProfileCallback,
   type FlushScheduler,
   type MutationCallback,
   type MutationEvent,

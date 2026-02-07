@@ -71,9 +71,19 @@ export function withTestWorld<T>(
 
   registerDOMSystems(world);
 
+  let result: T;
   try {
-    return fn({ world, container });
-  } finally {
+    result = fn({ world, container });
+  } catch (error) {
     container.remove();
+    throw error;
   }
+  if (result && typeof (result as { finally?: unknown }).finally === 'function') {
+    const maybePromise = result as unknown as Promise<unknown>;
+    return maybePromise.finally(() => {
+      container.remove();
+    }) as T;
+  }
+  container.remove();
+  return result;
 }

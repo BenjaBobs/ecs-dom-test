@@ -2,6 +2,7 @@
  * Debug UI components.
  */
 
+import type { FlushProfile } from '@ecs-test/ecs';
 import { defineComponent, defineMarker, type EntityId, type WorldSnapshot } from '@ecs-test/ecs';
 
 export const DebugUIRoot = defineMarker('DebugUIRoot');
@@ -13,16 +14,50 @@ export type DebugUIStateData = {
 export const DebugUIState = defineComponent<DebugUIStateData>('DebugUIState');
 
 export type DebugUIRenderStateData = {
-  uiEntities: EntityId[];
+  treeEntities: EntityId[];
+  selectionEntities: EntityId[];
+  timelineEntities: EntityId[];
 };
 
 export const DebugUIRenderState = defineComponent<DebugUIRenderStateData>('DebugUIRenderState');
+
+export type DebugUILayoutData = {
+  header: EntityId;
+  content: EntityId;
+  tree: EntityId;
+  treeSearchInput: EntityId;
+  detail: EntityId;
+  selectionSection: EntityId;
+  timelineSection: EntityId;
+};
+
+export const DebugUILayout = defineComponent<DebugUILayoutData>('DebugUILayout');
 
 export type DebugUISelectionData = {
   entity: EntityId | null;
 };
 
 export const DebugUISelection = defineComponent<DebugUISelectionData>('DebugUISelection');
+
+export type DebugUITreeSearchData = {
+  query: string;
+  lastQuery: string;
+};
+
+export const DebugUITreeSearch = defineComponent<DebugUITreeSearchData>('DebugUITreeSearch');
+
+export type DebugUISectionStateData = {
+  selectionOpen: boolean;
+  timelineOpen: boolean;
+};
+
+export const DebugUISectionState = defineComponent<DebugUISectionStateData>('DebugUISectionState');
+
+export type DebugUITreeStateData = {
+  expanded: Set<EntityId>;
+};
+
+export const DebugUITreeState = defineComponent<DebugUITreeStateData>('DebugUITreeState');
 
 export type DebugUIPanelStateData = {
   x: number;
@@ -43,7 +78,17 @@ export type DebugUIRuntimeData = {
   headerHandlers: Map<EntityId, (event: MouseEvent) => void>;
   subscriptions: Map<EntityId, () => void>;
   hotkeyHandlers: Map<EntityId, (event: KeyboardEvent) => void>;
-  timelineIntervals: Map<EntityId, number>;
+  searchHandlers: Map<EntityId, (event: Event) => void>;
+  scrollTimers: Map<EntityId, number>;
+  pendingScroll: Map<EntityId, EntityId>;
+  timelineTimers: Map<EntityId, number>;
+  timelinePendingProfiles: Map<EntityId, FlushProfile>;
+  timelineLastSample: Map<EntityId, number>;
+  profileSubscriptions: Map<EntityId, () => void>;
+  snapshotTimers: Map<EntityId, number>;
+  snapshotPending: Set<EntityId>;
+  snapshotLastUpdate: Map<EntityId, number>;
+  debugEntities: Set<EntityId>;
   dragging?: { root: EntityId; offsetX: number; offsetY: number; width: number; height: number };
   moveHandler?: (event: MouseEvent) => void;
   upHandler?: (event: MouseEvent) => void;
@@ -68,13 +113,19 @@ export type DebugUITimelineSample = {
   id: number;
   timestamp: number;
   totalDuration: number;
-  systemExecutions: { name: string; duration: number; entityCount: number }[];
+  systemExecutions: {
+    name: string;
+    duration: number;
+    entityCount: number;
+    entities?: EntityId[];
+  }[];
 };
 
 export type DebugUITimelineData = {
   samples: DebugUITimelineSample[];
   selectedId: number | null;
   paused: boolean;
+  includeDebugUI: boolean;
 };
 
 export const DebugUITimeline = defineComponent<DebugUITimelineData>('DebugUITimeline');
@@ -82,3 +133,9 @@ export const DebugUITimeline = defineComponent<DebugUITimelineData>('DebugUITime
 export const DebugUITimelineRef = defineComponent<{ id: number }>('DebugUITimelineRef');
 
 export const DebugUIPauseToggle = defineMarker('DebugUIPauseToggle');
+export const DebugUIIncludeDebugToggle = defineMarker('DebugUIIncludeDebugToggle');
+export const DebugUISectionToggle = defineComponent<{ section: 'selection' | 'timeline' }>(
+  'DebugUISectionToggle',
+);
+export const DebugUITreeToggle = defineComponent<{ id: EntityId }>('DebugUITreeToggle');
+export const DebugUITreeSearchInput = defineMarker('DebugUITreeSearchInput');
