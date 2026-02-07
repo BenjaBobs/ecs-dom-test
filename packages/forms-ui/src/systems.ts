@@ -4,10 +4,10 @@
 
 import { DOMElement, getDOMElement, TextContent } from '@ecs-test/dom';
 import {
-  added,
   assert,
   type ComponentRef,
   defineReactiveSystem,
+  Entities,
   type EntityId,
   type World,
 } from '@ecs-test/ecs';
@@ -27,8 +27,8 @@ import {
  */
 export const FormDataInitSystem = defineReactiveSystem({
   name: 'FormDataInitSystem',
-  triggers: [added(FormData)],
-  execute(entities, world) {
+  query: Entities.with([FormData]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const formData = world.get(entity, FormData);
       if (!formData) continue;
@@ -44,9 +44,8 @@ export const FormDataInitSystem = defineReactiveSystem({
  */
 export const TextInputBindingSystem = defineReactiveSystem({
   name: 'TextInputBindingSystem',
-  triggers: [added(FormBinding)],
-  filter: [TextInput, DOMElement],
-  execute(entities, world) {
+  query: Entities.with([FormBinding, TextInput, DOMElement]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const binding = world.get(entity, FormBinding);
       if (!binding) continue;
@@ -98,9 +97,8 @@ export const TextInputBindingSystem = defineReactiveSystem({
  */
 export const NumberInputBindingSystem = defineReactiveSystem({
   name: 'NumberInputBindingSystem',
-  triggers: [added(FormBinding)],
-  filter: [NumberInput, DOMElement],
-  execute(entities, world) {
+  query: Entities.with([FormBinding, NumberInput, DOMElement]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const binding = world.get(entity, FormBinding);
       if (!binding) continue;
@@ -155,9 +153,8 @@ export const NumberInputBindingSystem = defineReactiveSystem({
  */
 export const FormDisplaySystem = defineReactiveSystem({
   name: 'FormDisplaySystem',
-  triggers: [added(FormDisplay)],
-  filter: [DOMElement],
-  execute(entities, world) {
+  query: Entities.with([FormDisplay, DOMElement]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const display = world.get(entity, FormDisplay);
       if (!display) continue;
@@ -189,9 +186,8 @@ export const FormDisplaySystem = defineReactiveSystem({
  */
 export const FieldErrorSystem = defineReactiveSystem({
   name: 'FieldErrorSystem',
-  triggers: [added(FieldError)],
-  filter: [DOMElement],
-  execute(entities, world) {
+  query: Entities.with([FieldError, DOMElement]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const fieldError = world.get(entity, FieldError);
       if (!fieldError) continue;

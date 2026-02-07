@@ -2,7 +2,7 @@
  * Drag and drop systems.
  */
 
-import { added, defineReactiveSystem, type EntityId, removed, type World } from '@ecs-test/ecs';
+import { defineReactiveSystem, Entities, type EntityId, type World } from '@ecs-test/ecs';
 import { getDOMElements } from '../../dom-element-systems.ts';
 import {
   DragDropHandlers,
@@ -53,10 +53,10 @@ function setDragState(world: World, state: DragState | null): void {
 /**
  * Sets up drag behavior when Draggable is added.
  */
-export const DraggableAddSystem = defineReactiveSystem({
-  name: 'DraggableAddSystem',
-  triggers: [added(Draggable)],
-  execute(entities, world) {
+export const DraggableSystem = defineReactiveSystem({
+  name: 'DraggableSystem',
+  query: Entities.with([Draggable]),
+  onEnter(world, entities) {
     const domElements = getDOMElements(world);
     const dragHandlers = getDragHandlers(world);
 
@@ -89,15 +89,7 @@ export const DraggableAddSystem = defineReactiveSystem({
       dragHandlers.set(entity, handlers);
     }
   },
-});
-
-/**
- * Removes drag behavior when Draggable is removed.
- */
-export const DraggableRemoveSystem = defineReactiveSystem({
-  name: 'DraggableRemoveSystem',
-  triggers: [removed(Draggable)],
-  execute(entities, world) {
+  onExit(world, entities) {
     const domElements = getDOMElements(world);
     const dragHandlers = getDragHandlers(world);
 
@@ -119,10 +111,10 @@ export const DraggableRemoveSystem = defineReactiveSystem({
 /**
  * Sets up drop behavior when Droppable is added.
  */
-export const DroppableAddSystem = defineReactiveSystem({
-  name: 'DroppableAddSystem',
-  triggers: [added(Droppable)],
-  execute(entities, world) {
+export const DroppableSystem = defineReactiveSystem({
+  name: 'DroppableSystem',
+  query: Entities.with([Droppable]),
+  onEnter(world, entities) {
     const domElements = getDOMElements(world);
     const dropHandlers = getDropHandlers(world);
 
@@ -183,15 +175,7 @@ export const DroppableAddSystem = defineReactiveSystem({
       dropHandlers.set(entity, handlers);
     }
   },
-});
-
-/**
- * Removes drop behavior when Droppable is removed.
- */
-export const DroppableRemoveSystem = defineReactiveSystem({
-  name: 'DroppableRemoveSystem',
-  triggers: [removed(Droppable)],
-  execute(entities, world) {
+  onExit(world, entities) {
     const domElements = getDOMElements(world);
     const dropHandlers = getDropHandlers(world);
 
@@ -212,10 +196,10 @@ export const DroppableRemoveSystem = defineReactiveSystem({
 /**
  * Adds visual feedback when DragOver is added.
  */
-export const DragOverAddSystem = defineReactiveSystem({
-  name: 'DragOverAddSystem',
-  triggers: [added(DragOver)],
-  execute(entities, world) {
+export const DragOverSystem = defineReactiveSystem({
+  name: 'DragOverSystem',
+  query: Entities.with([DragOver]),
+  onEnter(world, entities) {
     const domElements = getDOMElements(world);
 
     for (const entity of entities) {
@@ -225,15 +209,7 @@ export const DragOverAddSystem = defineReactiveSystem({
       }
     }
   },
-});
-
-/**
- * Removes visual feedback when DragOver is removed.
- */
-export const DragOverRemoveSystem = defineReactiveSystem({
-  name: 'DragOverRemoveSystem',
-  triggers: [removed(DragOver)],
-  execute(entities, world) {
+  onExit(world, entities) {
     const domElements = getDOMElements(world);
 
     for (const entity of entities) {

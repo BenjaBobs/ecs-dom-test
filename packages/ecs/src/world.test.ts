@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'bun:test';
 import {
-  added,
-  addedOrReplaced,
   createMicrotaskScheduler,
   Debug,
   type DebugBuffer,
@@ -9,8 +7,8 @@ import {
   defineComponent,
   defineMarker,
   defineReactiveSystem,
+  Entities,
   registerDebugSystems,
-  removed,
   World,
 } from './index.ts';
 
@@ -63,16 +61,15 @@ describe('World', () => {
     expect(world.exists(child)).toBe(false);
   });
 
-  it('runs reactive systems with triggers and filters', () => {
+  it('runs reactive systems with queries', () => {
     const world = new World({ autoFlush: false });
     const entity = world.createEntity();
     let executed = 0;
 
     world.registerSystem(
       defineReactiveSystem({
-        triggers: [added(Position)],
-        filter: [Selected],
-        execute(entities) {
+        query: Entities.with([Position, Selected]),
+        onEnter(_world, entities) {
           executed += entities.length;
         },
       }),
@@ -92,8 +89,8 @@ describe('World', () => {
 
     world.registerSystem(
       defineReactiveSystem({
-        triggers: [addedOrReplaced(Position)],
-        execute(entities) {
+        query: Entities.with([Position]),
+        onUpdate(_world, entities) {
           executions += entities.length;
         },
       }),
@@ -106,15 +103,15 @@ describe('World', () => {
     expect(executions).toBe(1);
   });
 
-  it('supports removed triggers', () => {
+  it('supports onExit callbacks', () => {
     const world = new World();
     const entity = world.createEntity();
     let removedCount = 0;
 
     world.registerSystem(
       defineReactiveSystem({
-        triggers: [removed(Position)],
-        execute(entities) {
+        query: Entities.with([Position]),
+        onExit(_world, entities) {
           removedCount += entities.length;
         },
       }),
@@ -134,8 +131,8 @@ describe('World', () => {
 
     world.registerSystem(
       defineReactiveSystem({
-        triggers: [addedOrReplaced(Position)],
-        execute(entities) {
+        query: Entities.with([Position]),
+        onUpdate(_world, entities) {
           executions += entities.length;
         },
       }),
@@ -159,8 +156,8 @@ describe('World', () => {
 
     world.registerSystem(
       defineReactiveSystem({
-        triggers: [added(Position)],
-        execute(entities) {
+        query: Entities.with([Position]),
+        onEnter(_world, entities) {
           executions += entities.length;
         },
       }),
@@ -188,8 +185,8 @@ describe('World', () => {
 
     world.registerSystem(
       defineReactiveSystem({
-        triggers: [added(Position)],
-        execute(entities) {
+        query: Entities.with([Position]),
+        onEnter(_world, entities) {
           executed += entities.length;
         },
       }),
@@ -271,9 +268,8 @@ describe('World inspection', () => {
     world.registerSystem(
       defineReactiveSystem({
         name: 'TestSystem',
-        triggers: [added(Position)],
-        filter: [Velocity],
-        execute() {},
+        query: Entities.with([Position, Velocity]),
+        onEnter() {},
       }),
     );
 
@@ -300,16 +296,15 @@ describe('World inspection', () => {
     world.registerSystem(
       defineReactiveSystem({
         name: 'MovementSystem',
-        triggers: [addedOrReplaced(Velocity)],
-        filter: [Position],
-        execute() {},
+        query: Entities.with([Position, Velocity]),
+        onUpdate() {},
       }),
     );
 
     world.registerSystem(
       defineReactiveSystem({
-        triggers: [removed(Position)],
-        execute() {},
+        query: Entities.with([Position]),
+        onExit() {},
       }),
     );
 
@@ -318,14 +313,12 @@ describe('World inspection', () => {
     expect(systems.length).toBe(2);
 
     expect(systems[0]?.name).toBe('MovementSystem');
-    expect(systems[0]?.triggers).toEqual([
-      { componentTag: 'Velocity', mutationType: 'addedOrReplaced' },
-    ]);
-    expect(systems[0]?.filter).toEqual(['Position']);
+    expect(systems[0]?.required).toEqual(['Position', 'Velocity']);
+    expect(systems[0]?.excluded).toEqual([]);
 
     expect(systems[1]?.name).toBeUndefined();
-    expect(systems[1]?.triggers).toEqual([{ componentTag: 'Position', mutationType: 'removed' }]);
-    expect(systems[1]?.filter).toEqual([]);
+    expect(systems[1]?.required).toEqual(['Position']);
+    expect(systems[1]?.excluded).toEqual([]);
   });
 });
 
@@ -635,8 +628,8 @@ describe('World enhanced errors', () => {
     world.registerSystem(
       defineReactiveSystem({
         name: 'ExplodeSystem',
-        triggers: [added(Position)],
-        execute() {
+        query: Entities.with([Position]),
+        onEnter() {
           throw new Error('boom');
         },
       }),
@@ -670,8 +663,8 @@ describe('World profiling', () => {
     world.registerSystem(
       defineReactiveSystem({
         name: 'ProfiledSystem',
-        triggers: [added(Position)],
-        execute() {},
+        query: Entities.with([Position]),
+        onEnter() {},
       }),
     );
 
@@ -693,8 +686,8 @@ describe('World profiling', () => {
     world.registerSystem(
       defineReactiveSystem({
         name: 'AggregateSystem',
-        triggers: [added(Position)],
-        execute() {},
+        query: Entities.with([Position]),
+        onEnter() {},
       }),
     );
 

@@ -13,9 +13,9 @@ import {
   TextContent,
 } from '@ecs-test/dom';
 import {
-  added,
   type ComponentRef,
   defineReactiveSystem,
+  Entities,
   type EntityId,
   type World,
 } from '@ecs-test/ecs';
@@ -36,9 +36,8 @@ import { AddBookButton, BookItem, BookListMarker, RemoveBookButton, SubmitButton
  */
 const AddBookClickSystem = defineReactiveSystem({
   name: 'AddBookClickSystem',
-  triggers: [added(Clicked)],
-  filter: [AddBookButton],
-  execute(entities, world) {
+  query: Entities.with([AddBookButton, Clicked]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       world.remove(entity, Clicked);
 
@@ -64,9 +63,8 @@ const AddBookClickSystem = defineReactiveSystem({
  */
 const SubmitClickSystem = defineReactiveSystem({
   name: 'SubmitClickSystem',
-  triggers: [added(Clicked)],
-  filter: [SubmitButton],
-  execute(entities, world) {
+  query: Entities.with([SubmitButton, Clicked]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       world.remove(entity, Clicked);
 
@@ -100,9 +98,8 @@ const SubmitClickSystem = defineReactiveSystem({
  */
 const RemoveBookClickSystem = defineReactiveSystem({
   name: 'RemoveBookClickSystem',
-  triggers: [added(Clicked)],
-  filter: [RemoveBookButton],
-  execute(entities, world) {
+  query: Entities.with([RemoveBookButton, Clicked]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       world.remove(entity, Clicked);
 
@@ -140,9 +137,8 @@ const RemoveBookClickSystem = defineReactiveSystem({
  */
 const BookListInitSystem = defineReactiveSystem({
   name: 'BookListInitSystem',
-  triggers: [added(FormInstance)],
-  filter: [FormData],
-  execute(entities, world) {
+  query: Entities.with([FormData, FormInstance]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const formInstance = world.get(entity, FormInstance);
       if (!formInstance) continue;
@@ -256,9 +252,8 @@ function createBookItemEntity(world: World, parent: EntityId, index: number, key
  */
 const BookDropSystem = defineReactiveSystem({
   name: 'BookDropSystem',
-  triggers: [added(Dropped)],
-  filter: [BookItem],
-  execute(entities, world) {
+  query: Entities.with([BookItem, Dropped]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const dropped = world.get(entity, Dropped);
       world.remove(entity, Dropped);

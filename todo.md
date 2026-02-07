@@ -20,7 +20,26 @@
   - TextInput, NumberInput markers
   - Assertions for missing FormData ancestor and invalid field paths
 
+- [x] **Reactive Systems Rewrite (Core)**
+  - Query builder (`Entities.with([...]).without([...])`) with canonicalized tags
+  - `ReactiveSystemDef` now uses `query` + optional `onEnter/onUpdate/onExit`
+  - World flush rewritten for group membership + enter/update/exit semantics
+  - Profiling updated to track onEnter/onUpdate/onExit entity sets
+
 ---
+
+## 0. Reactive Systems Rewrite (In Progress)
+
+Goal: replace trigger-based reactive systems with group/matcher-based queries.
+
+- [x] Query builder API with type-safe `has` / `without`
+- [x] World membership tracking + enter/update/exit dispatch ordering
+- [x] Update ECS debug tools to new API
+- [ ] Migrate all systems in `@ecs-test/dom`
+- [ ] Migrate systems in `@ecs-test/forms-ui`
+- [ ] Migrate playground systems
+- [ ] Update tests to new API
+- [ ] Remove old trigger helpers and update docs/examples
 
 ## 1. Debugging & Inspection
 
@@ -61,8 +80,8 @@ System names are optional but highly recommended for debugging. When provided, t
 // Option A: Named parameter
 const MySystem = defineReactiveSystem({
   name: 'MySystem',  // optional
-  triggers: [...],
-  execute(...) { ... }
+  query: Entities.with([Position]).without([Inactive]),
+  onUpdate(...) { ... }
 });
 
 // Option B: Inferred from variable (if feasible)
@@ -70,7 +89,7 @@ const MySystem = defineReactiveSystem({
 
 - [x] Add optional `name` field to `ReactiveSystemDef`
 - [x] Store name in `ReactiveSystem` class
-- [x] `world.getSystems()` - List registered systems with names and triggers
+- [x] `world.getSystems()` - List registered systems with names and queries
 - [x] Include system name in error messages when available
 
 ### 1.3 Mutation Tracking (Opt-in)
@@ -132,9 +151,11 @@ world.add(entity, Debug({ includeChildren: true, label: 'MyForm' }));
 
 - [x] `world.debug(entityId)` - Print entity state to console (one-shot)
 - [x] `world.debugTree(entityId)` - Print entity + descendants as tree
-- [x] Interactive debug UI window (tree view, selection details, draggable + resizable)
+- [x] Interactive debug UI window (tree view, selection details, draggable + resizable, opacity 0.75)
+- [x] Entity tree folding + search with match highlighting
 - [x] Debug UI hotkey toggle (`Ctrl+Shift+D`)
-- [x] Debug UI system timing view + 5s timeline with pause/selection
+- [x] Debug UI system timing view with selectable bar timeline, pause, aggregation, and ISO timestamps
+- [x] Exclude Debug UI self-cost from profiling (default on)
 
 ```ts
 // Quick inspection
@@ -240,6 +261,6 @@ Track where time is spent during flush cycles. Must be zero-cost when disabled.
 
 ## Immediate Next Steps
 
-1. **Interactive debug UI actions** - add/remove/modify components from the debug panel
-2. **Debug UI perf** - reduce self‑induced mutations during live profiling
+1. **Finish reactive systems rewrite** - migrate remaining systems/tests and remove old trigger helpers
+2. **Interactive debug UI actions** - add/remove/modify components from the debug panel
 3. **Developer tools** - entity tree inspector, component editor, system timeline

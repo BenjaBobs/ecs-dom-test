@@ -63,11 +63,15 @@ const RadioOption = defineBundle(({ value }: { value: string }) => [
 ### Reactive System
 ```ts
 const MySystem = defineReactiveSystem({
-  triggers: [added(Selected), removed(Selected)],
-  filter: [Radio._tag],  // Optional: entity must also have these
-  execute(entities, world) {
+  query: Entities.with([Radio._tag, Selected]),
+  onEnter(world, entities) {
     for (const entity of entities) {
-      // React to changes
+      // React to entering the query
+    }
+  },
+  onExit(world, entities) {
+    for (const entity of entities) {
+      // React to exiting the query
     }
   },
 });

@@ -1,5 +1,5 @@
 import { defineComponent, defineMarker } from './component.ts';
-import { added, addedOrReplaced, defineReactiveSystem, removed } from './system.ts';
+import { defineReactiveSystem, Entities } from './system.ts';
 import type { EntityId, MutationEvent, World } from './world.ts';
 
 export type DebugLogEntry = {
@@ -142,13 +142,39 @@ export function registerDebugSystems(
   world.registerSystem(
     defineReactiveSystem({
       name: 'DebugTrackingSystem',
-      triggers: [
-        addedOrReplaced(Debug),
-        removed(Debug),
-        added(DebugChildren),
-        removed(DebugChildren),
-      ],
-      execute(entities) {
+      query: Entities.with([Debug]),
+      onEnter(_world, entities) {
+        if (!state.enabled) return;
+        for (const entity of entities) {
+          syncEntity(entity);
+        }
+      },
+      onUpdate(_world, entities) {
+        if (!state.enabled) return;
+        for (const entity of entities) {
+          syncEntity(entity);
+        }
+      },
+      onExit(_world, entities) {
+        if (!state.enabled) return;
+        for (const entity of entities) {
+          syncEntity(entity);
+        }
+      },
+    }),
+  );
+
+  world.registerSystem(
+    defineReactiveSystem({
+      name: 'DebugChildrenTrackingSystem',
+      query: Entities.with([DebugChildren]),
+      onEnter(_world, entities) {
+        if (!state.enabled) return;
+        for (const entity of entities) {
+          syncEntity(entity);
+        }
+      },
+      onExit(_world, entities) {
         if (!state.enabled) return;
         for (const entity of entities) {
           syncEntity(entity);

@@ -2,7 +2,7 @@
  * Inline style systems.
  */
 
-import { addedOrReplaced, defineReactiveSystem, removed } from '@ecs-test/ecs';
+import { defineReactiveSystem, Entities } from '@ecs-test/ecs';
 import { getDOMElements } from '../../dom-element-systems.ts';
 import { Style } from './components.ts';
 
@@ -11,10 +11,9 @@ import { Style } from './components.ts';
  */
 export const StyleSystem = defineReactiveSystem({
   name: 'StyleSystem',
-  triggers: [addedOrReplaced(Style)],
-  execute(entities, world) {
+  query: Entities.with([Style]),
+  onEnter(world, entities) {
     const domElements = getDOMElements(world);
-
     for (const entity of entities) {
       const el = domElements.get(entity) as HTMLElement | undefined;
       const styles = world.get(entity, Style);
@@ -23,17 +22,18 @@ export const StyleSystem = defineReactiveSystem({
       }
     }
   },
-});
-
-/**
- * Clears inline styles when Style is removed.
- */
-export const StyleRemoveSystem = defineReactiveSystem({
-  name: 'StyleRemoveSystem',
-  triggers: [removed(Style)],
-  execute(entities, world) {
+  onUpdate(world, entities) {
     const domElements = getDOMElements(world);
-
+    for (const entity of entities) {
+      const el = domElements.get(entity) as HTMLElement | undefined;
+      const styles = world.get(entity, Style);
+      if (el && styles) {
+        Object.assign(el.style, styles);
+      }
+    }
+  },
+  onExit(world, entities) {
+    const domElements = getDOMElements(world);
     for (const entity of entities) {
       const el = domElements.get(entity) as HTMLElement | undefined;
       if (el) {

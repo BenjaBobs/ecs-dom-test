@@ -53,17 +53,15 @@ export {
 } from './scheduler.ts';
 // System
 export {
-  added,
-  addedOrReplaced,
   defineReactiveSystem,
+  Entities,
   type Mutation,
   type MutationType,
+  type QueryBuilder,
+  type QueryDef,
   ReactiveSystem,
   type ReactiveSystemDef,
-  removed,
-  replaced,
   type SystemInfo,
-  type Trigger,
 } from './system.ts';
 // World
 export {

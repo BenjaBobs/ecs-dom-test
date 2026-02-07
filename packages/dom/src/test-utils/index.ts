@@ -4,6 +4,7 @@
  */
 
 import { createSyncScheduler, World, type WorldOptions } from '@ecs-test/ecs';
+import { DebugUIRoot, DebugUIVisible } from '../features/debug-ui/components.ts';
 import { registerDOMSystems } from '../index.ts';
 
 /**
@@ -78,12 +79,51 @@ export function withTestWorld<T>(
     container.remove();
     throw error;
   }
+  const closeWindow = () => {
+    const maybeWindow = window as unknown as {
+      close?: () => void;
+      happyDOM?: { cancelAsync?: () => Promise<void> | void; close?: () => Promise<void> | void };
+    };
+    if (maybeWindow.happyDOM?.cancelAsync) {
+      maybeWindow.happyDOM.cancelAsync();
+    }
+    if (maybeWindow.happyDOM?.close) {
+      maybeWindow.happyDOM.close();
+    }
+    if (typeof maybeWindow.close === 'function') {
+      maybeWindow.close();
+    }
+  };
+
+  const cleanup = () => {
+    let removedDebugUI = false;
+    for (const entity of world.getEntities()) {
+      if (world.has(entity, DebugUIRoot) && world.has(entity, DebugUIVisible)) {
+        world.remove(entity, DebugUIVisible);
+        removedDebugUI = true;
+      }
+    }
+
+    const finish = () => {
+      container.remove();
+      closeWindow();
+    };
+
+    if (removedDebugUI) {
+      const flushed = world.flush();
+      if (flushed && typeof (flushed as Promise<unknown>).finally === 'function') {
+        return (flushed as Promise<unknown>).finally(finish);
+      }
+    }
+
+    finish();
+    return undefined;
+  };
+
   if (result && typeof (result as { finally?: unknown }).finally === 'function') {
     const maybePromise = result as unknown as Promise<unknown>;
-    return maybePromise.finally(() => {
-      container.remove();
-    }) as T;
+    return maybePromise.finally(() => cleanup()) as T;
   }
-  container.remove();
+  cleanup();
   return result;
 }

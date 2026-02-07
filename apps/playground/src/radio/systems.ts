@@ -4,12 +4,10 @@
 
 import { Classes, Clicked, Disabled } from '@ecs-test/dom';
 import {
-  added,
-  addedOrReplaced,
   type ComponentRef,
   defineReactiveSystem,
+  Entities,
   type EntityId,
-  removed,
   type World,
 } from '@ecs-test/ecs';
 import { Name, Radio, Selected, SelectedValue, Selection, Value } from './components.ts';
@@ -19,9 +17,8 @@ import { Name, Radio, Selected, SelectedValue, Selection, Value } from './compon
  */
 const SelectionClickSystem = defineReactiveSystem({
   name: 'SelectionClickSystem',
-  triggers: [added(Clicked)],
-  filter: [Value],
-  execute(entities, world) {
+  query: Entities.with([Value, Clicked]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       if (world.has(entity, Disabled)) {
         world.remove(entity, Clicked);
@@ -46,9 +43,8 @@ const SelectionClickSystem = defineReactiveSystem({
  */
 const SelectionSyncSystem = defineReactiveSystem({
   name: 'SelectionSyncSystem',
-  triggers: [addedOrReplaced(SelectedValue)],
-  filter: [Selection],
-  execute(entities, world) {
+  query: Entities.with([Selection, SelectedValue]),
+  onUpdate(world, entities) {
     for (const parent of entities) {
       const selectedValue = world.get(parent, SelectedValue);
       if (!selectedValue) continue;
@@ -85,9 +81,8 @@ const SelectionSyncSystem = defineReactiveSystem({
  */
 const RadioRenderSystem = defineReactiveSystem({
   name: 'RadioRenderSystem',
-  triggers: [added(Selected)],
-  filter: [Radio],
-  execute(entities, world) {
+  query: Entities.with([Radio, Selected]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       world.set(entity, Classes({ list: ['radio', 'selected'] }));
     }
@@ -99,8 +94,8 @@ const RadioRenderSystem = defineReactiveSystem({
  */
 const RadioInitSystem = defineReactiveSystem({
   name: 'RadioInitSystem',
-  triggers: [added(Radio)],
-  execute(entities, world) {
+  query: Entities.with([Radio]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       if (!world.has(entity, Selected)) {
         world.set(entity, Classes({ list: ['radio'] }));
@@ -114,9 +109,8 @@ const RadioInitSystem = defineReactiveSystem({
  */
 const RadioDeselectSystem = defineReactiveSystem({
   name: 'RadioDeselectSystem',
-  triggers: [removed(Selected)],
-  filter: [Radio],
-  execute(entities, world) {
+  query: Entities.with([Radio, Selected]),
+  onExit(world, entities) {
     for (const entity of entities) {
       world.set(entity, Classes({ list: ['radio'] }));
     }
@@ -128,8 +122,8 @@ const RadioDeselectSystem = defineReactiveSystem({
  */
 const NameLegendSystem = defineReactiveSystem({
   name: 'NameLegendSystem',
-  triggers: [added(Name)],
-  execute(entities, world) {
+  query: Entities.with([Name]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const name = world.get(entity, Name);
       if (!name) continue;

@@ -2,14 +2,7 @@
  * DOM element creation/removal systems.
  */
 
-import {
-  added,
-  assert,
-  defineReactiveSystem,
-  type EntityId,
-  removed,
-  type World,
-} from '@ecs-test/ecs';
+import { assert, defineReactiveSystem, Entities, type EntityId, type World } from '@ecs-test/ecs';
 import { DOMElement, DOMElements } from './dom-element-components.ts';
 
 function getDOMElementsState(world: World) {
@@ -43,10 +36,10 @@ export function getDOMElement(world: World, entity: EntityId): Element | undefin
  * Only creates the node - other systems handle behavior.
  * Root entities (no parent) are auto-mounted to rootContainer if set.
  */
-export const DOMCreateSystem = defineReactiveSystem({
-  name: 'DOMCreateSystem',
-  triggers: [added(DOMElement)],
-  execute(entities, world) {
+export const DOMElementSystem = defineReactiveSystem({
+  name: 'DOMElementSystem',
+  query: Entities.with([DOMElement]),
+  onEnter(world, entities) {
     const domElements = getDOMElements(world);
     const createElement = getCreateElement(world);
     const rootContainer = world.getExternals().rootContainer;
@@ -70,15 +63,7 @@ export const DOMCreateSystem = defineReactiveSystem({
       }
     }
   },
-});
-
-/**
- * Removes DOM elements when entity is removed.
- */
-export const DOMRemoveSystem = defineReactiveSystem({
-  name: 'DOMRemoveSystem',
-  triggers: [removed(DOMElement)],
-  execute(entities, world) {
+  onExit(world, entities) {
     const domElements = getDOMElements(world);
 
     for (const entity of entities) {

@@ -3,7 +3,7 @@
  */
 
 import type { World } from '@ecs-test/ecs';
-import { added, defineReactiveSystem, removed } from '@ecs-test/ecs';
+import { defineReactiveSystem, Entities } from '@ecs-test/ecs';
 import { getDOMElements } from '../../dom-element-systems.ts';
 import { Disabled } from '../disabled/components.ts';
 import { Clickable, Clicked, ClickHandlers } from './components.ts';
@@ -21,10 +21,10 @@ function getClickHandlers(world: World): Map<number, () => void> {
 /**
  * Attaches click handler when Clickable is added.
  */
-export const ClickableAddSystem = defineReactiveSystem({
-  name: 'ClickableAddSystem',
-  triggers: [added(Clickable)],
-  execute(entities, world) {
+export const ClickableSystem = defineReactiveSystem({
+  name: 'ClickableSystem',
+  query: Entities.with([Clickable]),
+  onEnter(world, entities) {
     const domElements = getDOMElements(world);
     const clickHandlers = getClickHandlers(world);
 
@@ -50,15 +50,7 @@ export const ClickableAddSystem = defineReactiveSystem({
       (el as HTMLElement).style.cursor = 'pointer';
     }
   },
-});
-
-/**
- * Removes click handler when Clickable is removed.
- */
-export const ClickableRemoveSystem = defineReactiveSystem({
-  name: 'ClickableRemoveSystem',
-  triggers: [removed(Clickable)],
-  execute(entities, world) {
+  onExit(world, entities) {
     const domElements = getDOMElements(world);
     const clickHandlers = getClickHandlers(world);
 

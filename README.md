@@ -81,15 +81,19 @@ bun run dev
 
 ### Reactive Systems
 
-Systems declare triggers and only run when matching mutations occur:
+Systems declare queries and react when entities enter/exit or update within that query:
 
 ```tsx
 const MySystem = defineReactiveSystem({
-  triggers: [added(Selected), removed(Selected)],
-  filter: [Radio],  // Optional: entity must also have these
-  execute(entities, world) {
+  query: Entities.with([Radio, Selected]),
+  onEnter(world, entities) {
     for (const entity of entities) {
-      // React to changes
+      // React to entering the query
+    }
+  },
+  onExit(world, entities) {
+    for (const entity of entities) {
+      // React to exiting the query
     }
   },
 });

@@ -3,15 +3,12 @@
  * @module
  */
 
-import type { ComponentRef, ComponentType } from './component.ts';
+import type { ComponentRef } from './component.ts';
 import { getTag } from './component.ts';
 import type { EntityId, World } from './world.ts';
 
 /**
- * Types of mutations that can trigger reactive systems.
- * - `added`: Component was added to an entity
- * - `removed`: Component was removed from an entity
- * - `replaced`: Component data was replaced (via `world.set()`)
+ * Types of mutations recorded during a flush.
  */
 export type MutationType = 'added' | 'removed' | 'replaced';
 
@@ -27,14 +24,18 @@ export type Mutation = {
   type: MutationType;
 };
 
-/**
- * Defines what mutations trigger a reactive system.
- */
-export type Trigger = {
-  /** Tag of the component to watch */
-  componentTag: string;
-  /** Type of mutation to respond to */
-  mutationType: MutationType | 'addedOrReplaced';
+export type QueryDef = {
+  /** Component tags that must be present */
+  required: string[];
+  /** Component tags that must be absent */
+  excluded: string[];
+};
+
+export type QueryBuilder = QueryDef & {
+  /** Include component types in the query */
+  with: (refs: ComponentRef[]) => QueryBuilder;
+  /** Exclude component types from the query */
+  without: (refs: ComponentRef[]) => QueryBuilder;
 };
 
 /**
@@ -46,15 +47,14 @@ export type ReactiveSystemDef = {
    * Appears in error messages, performance profiles, and world snapshots.
    */
   name?: string;
-  /** Mutations that trigger this system */
-  triggers: Trigger[];
-  /**
-   * Optional filter - entity must have all these components for the system to execute.
-   * Checked at flush time, not mutation time.
-   */
-  filter?: ComponentRef[];
-  /** Function to execute when triggered */
-  execute: (entities: EntityId[], world: World) => void;
+  /** Query for matching entities */
+  query: QueryBuilder;
+  /** Called when an entity enters the query */
+  onEnter?: (world: World, entities: EntityId[]) => void;
+  /** Called when a matching entity updates required components */
+  onUpdate?: (world: World, entities: EntityId[]) => void;
+  /** Called when an entity exits the query */
+  onExit?: (world: World, entities: EntityId[]) => void;
 };
 
 /**
@@ -62,72 +62,61 @@ export type ReactiveSystemDef = {
  */
 export type SystemInfo = {
   name: string | undefined;
-  triggers: { componentTag: string; mutationType: string }[];
-  filter: string[];
+  required: string[];
+  excluded: string[];
 };
 
 /**
  * A reactive system that responds to component mutations.
  *
  * Systems are registered with a World and automatically execute
- * when their trigger conditions are met during a flush.
+ * when their query conditions are met during a flush.
  */
 export class ReactiveSystem {
   /** Optional name for debugging and profiling */
   readonly name: string | undefined;
+  readonly query: QueryDef;
+  readonly onEnter?: (world: World, entities: EntityId[]) => void;
+  readonly onUpdate?: (world: World, entities: EntityId[]) => void;
+  readonly onExit?: (world: World, entities: EntityId[]) => void;
+  readonly queryKey: string;
 
-  constructor(private def: ReactiveSystemDef) {
+  constructor(def: ReactiveSystemDef) {
     this.name = def.name;
+    this.query = def.query;
+    this.onEnter = def.onEnter;
+    this.onUpdate = def.onUpdate;
+    this.onExit = def.onExit;
+    this.queryKey = buildQueryKey(this.query.required, this.query.excluded);
   }
 
   /**
-   * Check if a mutation matches this system's triggers and filters.
+   * Check if an entity matches this system's query.
    *
    * @param mutation - The mutation to check
    * @param world - The world containing the entity
    * @returns True if this system should execute for this mutation
    */
-  matches(mutation: Mutation, world: World): boolean {
-    const triggerMatches = this.def.triggers.some(trigger => {
-      if (trigger.componentTag !== mutation.componentTag) return false;
-      if (trigger.mutationType === 'addedOrReplaced') {
-        return mutation.type === 'added' || mutation.type === 'replaced';
-      }
-      return trigger.mutationType === mutation.type;
-    });
-
-    if (!triggerMatches) return false;
-
-    if (this.def.filter) {
-      return this.def.filter.every(ref => world.has(mutation.entity, getTag(ref)));
+  matchesEntity(world: World, entity: EntityId): boolean {
+    for (const tag of this.query.required) {
+      if (!world.has(entity, tag)) return false;
     }
-
+    for (const tag of this.query.excluded) {
+      if (world.has(entity, tag)) return false;
+    }
     return true;
-  }
-
-  /**
-   * Execute this system for the given entities.
-   *
-   * @param entities - Entities that matched the triggers
-   * @param world - The world containing the entities
-   */
-  execute(entities: EntityId[], world: World): void {
-    this.def.execute(entities, world);
   }
 
   /**
    * Get information about this system for debugging.
    *
-   * @returns System info object with name, triggers, and filter
+   * @returns System info object with name and query
    */
   getInfo(): SystemInfo {
     return {
       name: this.name,
-      triggers: this.def.triggers.map(t => ({
-        componentTag: t.componentTag,
-        mutationType: t.mutationType,
-      })),
-      filter: this.def.filter?.map(ref => getTag(ref)) ?? [],
+      required: this.query.required,
+      excluded: this.query.excluded,
     };
   }
 }
@@ -135,15 +124,14 @@ export class ReactiveSystem {
 /**
  * Define a reactive system that responds to component mutations.
  *
- * @param def - System definition with triggers, optional filter, and execute function
+ * @param def - System definition with query and reactive callbacks
  * @returns A ReactiveSystem instance to register with a World
  *
  * @example
  * ```typescript
  * const MovementSystem = defineReactiveSystem({
- *   triggers: [addedOrReplaced(Velocity)],
- *   filter: [Position],
- *   execute(entities, world) {
+ *   query: Entities.with([Position, Velocity]),
+ *   onUpdate(world, entities) {
  *     for (const entity of entities) {
  *       const pos = world.get(entity, Position);
  *       const vel = world.get(entity, Velocity);
@@ -158,87 +146,36 @@ export function defineReactiveSystem(def: ReactiveSystemDef): ReactiveSystem {
 }
 
 // =============================================================================
-// Trigger Helpers
+// Query Helpers
 // =============================================================================
 
-/**
- * Create a trigger that fires when a component is added to an entity.
- *
- * @typeParam T - The component's data type
- * @param componentType - The component type to watch
- * @returns A Trigger for the 'added' mutation
- *
- * @example
- * ```typescript
- * defineReactiveSystem({
- *   triggers: [added(Position)],
- *   execute(entities) { ... }
- * });
- * ```
- */
-export const added = <T>(componentType: ComponentType<T>): Trigger => ({
-  componentTag: componentType._tag,
-  mutationType: 'added',
-});
+function normalizeRefs(refs: ComponentRef[]): string[] {
+  const tags = refs.map(ref => getTag(ref));
+  const unique = Array.from(new Set(tags));
+  unique.sort();
+  return unique;
+}
 
-/**
- * Create a trigger that fires when a component is removed from an entity.
- *
- * @typeParam T - The component's data type
- * @param componentType - The component type to watch
- * @returns A Trigger for the 'removed' mutation
- *
- * @example
- * ```typescript
- * defineReactiveSystem({
- *   triggers: [removed(Position)],
- *   execute(entities) { ... }
- * });
- * ```
- */
-export const removed = <T>(componentType: ComponentType<T>): Trigger => ({
-  componentTag: componentType._tag,
-  mutationType: 'removed',
-});
+function buildQuery(required: ComponentRef[], excluded: ComponentRef[]): QueryBuilder {
+  const requiredTags = normalizeRefs(required);
+  const excludedTags = normalizeRefs(excluded);
+  return {
+    required: requiredTags,
+    excluded: excludedTags,
+    with: (refs: ComponentRef[]) => buildQuery([...required, ...refs], excluded),
+    without: (refs: ComponentRef[]) => buildQuery(required, [...excluded, ...refs]),
+  };
+}
 
-/**
- * Create a trigger that fires when a component's data is replaced.
- * Note: Only fires on `world.set()` when the component already exists.
- *
- * @typeParam T - The component's data type
- * @param componentType - The component type to watch
- * @returns A Trigger for the 'replaced' mutation
- *
- * @example
- * ```typescript
- * defineReactiveSystem({
- *   triggers: [replaced(Position)],
- *   execute(entities) { ... }
- * });
- * ```
- */
-export const replaced = <T>(componentType: ComponentType<T>): Trigger => ({
-  componentTag: componentType._tag,
-  mutationType: 'replaced',
-});
+export const Entities = {
+  with(refs: ComponentRef[]): QueryBuilder {
+    return buildQuery(refs, []);
+  },
+  without(refs: ComponentRef[]): QueryBuilder {
+    return buildQuery([], refs);
+  },
+};
 
-/**
- * Create a trigger that fires when a component is added OR replaced.
- * This is the most common trigger for reactive rendering systems.
- *
- * @typeParam T - The component's data type
- * @param componentType - The component type to watch
- * @returns A Trigger for both 'added' and 'replaced' mutations
- *
- * @example
- * ```typescript
- * defineReactiveSystem({
- *   triggers: [addedOrReplaced(Position)],
- *   execute(entities) { ... }
- * });
- * ```
- */
-export const addedOrReplaced = <T>(componentType: ComponentType<T>): Trigger => ({
-  componentTag: componentType._tag,
-  mutationType: 'addedOrReplaced',
-});
+export function buildQueryKey(required: string[], excluded: string[]): string {
+  return `r:${required.join('|')}|e:${excluded.join('|')}`;
+}

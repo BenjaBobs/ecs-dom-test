@@ -2,7 +2,7 @@
  * Text content systems.
  */
 
-import { addedOrReplaced, defineReactiveSystem } from '@ecs-test/ecs';
+import { defineReactiveSystem, Entities } from '@ecs-test/ecs';
 import { getDOMElements } from '../../dom-element-systems.ts';
 import { TextContent } from './components.ts';
 
@@ -11,10 +11,19 @@ import { TextContent } from './components.ts';
  */
 export const TextContentSystem = defineReactiveSystem({
   name: 'TextContentSystem',
-  triggers: [addedOrReplaced(TextContent)],
-  execute(entities, world) {
+  query: Entities.with([TextContent]),
+  onEnter(world, entities) {
     const domElements = getDOMElements(world);
-
+    for (const entity of entities) {
+      const el = domElements.get(entity);
+      const text = world.get(entity, TextContent);
+      if (el && text) {
+        el.textContent = text.value;
+      }
+    }
+  },
+  onUpdate(world, entities) {
+    const domElements = getDOMElements(world);
     for (const entity of entities) {
       const el = domElements.get(entity);
       const text = world.get(entity, TextContent);

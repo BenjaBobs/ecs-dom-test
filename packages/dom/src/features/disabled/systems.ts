@@ -2,19 +2,18 @@
  * Disabled state systems.
  */
 
-import { added, defineReactiveSystem, removed } from '@ecs-test/ecs';
+import { defineReactiveSystem, Entities } from '@ecs-test/ecs';
 import { getDOMElements } from '../../dom-element-systems.ts';
 import { Disabled } from './components.ts';
 
 /**
  * Adds disabled class when Disabled is added.
  */
-export const DisabledAddSystem = defineReactiveSystem({
-  name: 'DisabledAddSystem',
-  triggers: [added(Disabled)],
-  execute(entities, world) {
+export const DisabledSystem = defineReactiveSystem({
+  name: 'DisabledSystem',
+  query: Entities.with([Disabled]),
+  onEnter(world, entities) {
     const domElements = getDOMElements(world);
-
     for (const entity of entities) {
       const el = domElements.get(entity);
       if (el) {
@@ -22,17 +21,8 @@ export const DisabledAddSystem = defineReactiveSystem({
       }
     }
   },
-});
-
-/**
- * Removes disabled class when Disabled is removed.
- */
-export const DisabledRemoveSystem = defineReactiveSystem({
-  name: 'DisabledRemoveSystem',
-  triggers: [removed(Disabled)],
-  execute(entities, world) {
+  onExit(world, entities) {
     const domElements = getDOMElements(world);
-
     for (const entity of entities) {
       const el = domElements.get(entity);
       if (el) {

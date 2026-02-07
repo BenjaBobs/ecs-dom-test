@@ -4,12 +4,10 @@
 
 import { Classes, Clicked, Disabled, DOMElement, getDOMElement, TextContent } from '@ecs-test/dom';
 import {
-  added,
-  addedOrReplaced,
   type ComponentRef,
   defineReactiveSystem,
+  Entities,
   type EntityId,
-  removed,
   type World,
 } from '@ecs-test/ecs';
 import {
@@ -45,9 +43,8 @@ function getFetchClient(world: World): FetchFn {
  */
 const FetchCatButtonClickSystem = defineReactiveSystem({
   name: 'FetchCatButtonClickSystem',
-  triggers: [added(Clicked)],
-  filter: [FetchCatButton],
-  execute(entities, world) {
+  query: Entities.with([FetchCatButton, Clicked]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const catDisplay = findAncestorWithComponent(entity, CatDisplayMarker, world);
       if (catDisplay !== undefined) {
@@ -65,8 +62,8 @@ const FetchCatButtonClickSystem = defineReactiveSystem({
  */
 const FetchCatSystem = defineReactiveSystem({
   name: 'FetchCatSystem',
-  triggers: [added(FetchCat)],
-  execute(entities, world) {
+  query: Entities.with([FetchCat]),
+  onEnter(world, entities) {
     const fetchFn = getFetchClient(world);
 
     for (const entity of entities) {
@@ -107,8 +104,8 @@ const FetchCatSystem = defineReactiveSystem({
  */
 const CatImageRenderSystem = defineReactiveSystem({
   name: 'CatImageRenderSystem',
-  triggers: [addedOrReplaced(CatData)],
-  execute(entities, world) {
+  query: Entities.with([CatData]),
+  onUpdate(world, entities) {
     for (const entity of entities) {
       const catData = world.get(entity, CatData);
       if (!catData) continue;
@@ -135,8 +132,8 @@ const CatImageRenderSystem = defineReactiveSystem({
  */
 const ImageSrcSystem = defineReactiveSystem({
   name: 'ImageSrcSystem',
-  triggers: [addedOrReplaced(ImageSrc)],
-  execute(entities, world) {
+  query: Entities.with([ImageSrc]),
+  onUpdate(world, entities) {
     for (const entity of entities) {
       const src = world.get(entity, ImageSrc);
       const el = getDOMElement(world, entity);
@@ -153,8 +150,8 @@ const ImageSrcSystem = defineReactiveSystem({
  */
 const LoadingRenderSystem = defineReactiveSystem({
   name: 'LoadingRenderSystem',
-  triggers: [added(Loading)],
-  execute(entities, world) {
+  query: Entities.with([Loading]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       let loadingEntity = findChildWithComponent(entity, 'LoadingIndicator', world);
 
@@ -173,10 +170,23 @@ const LoadingRenderSystem = defineReactiveSystem({
 /**
  * Removes loading indicator when data or error arrives.
  */
-const LoadingRemoveSystem = defineReactiveSystem({
-  name: 'LoadingRemoveSystem',
-  triggers: [addedOrReplaced(CatData), addedOrReplaced(FetchError)],
-  execute(entities, world) {
+const LoadingRemoveOnDataSystem = defineReactiveSystem({
+  name: 'LoadingRemoveOnDataSystem',
+  query: Entities.with([CatData]),
+  onUpdate(world, entities) {
+    for (const entity of entities) {
+      const loadingEntity = findChildWithComponent(entity, 'LoadingIndicator', world);
+      if (loadingEntity !== undefined) {
+        world.removeEntity(loadingEntity);
+      }
+    }
+  },
+});
+
+const LoadingRemoveOnErrorSystem = defineReactiveSystem({
+  name: 'LoadingRemoveOnErrorSystem',
+  query: Entities.with([FetchError]),
+  onUpdate(world, entities) {
     for (const entity of entities) {
       const loadingEntity = findChildWithComponent(entity, 'LoadingIndicator', world);
       if (loadingEntity !== undefined) {
@@ -191,8 +201,8 @@ const LoadingRemoveSystem = defineReactiveSystem({
  */
 const ErrorRenderSystem = defineReactiveSystem({
   name: 'ErrorRenderSystem',
-  triggers: [added(FetchError)],
-  execute(entities, world) {
+  query: Entities.with([FetchError]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const error = world.get(entity, FetchError);
       if (!error) continue;
@@ -216,9 +226,8 @@ const ErrorRenderSystem = defineReactiveSystem({
  */
 const ButtonDisableOnLoadSystem = defineReactiveSystem({
   name: 'ButtonDisableOnLoadSystem',
-  triggers: [added(Loading)],
-  filter: [CatDisplayMarker],
-  execute(entities, world) {
+  query: Entities.with([CatDisplayMarker, Loading]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const button = findChildWithComponent(entity, FetchCatButton, world);
       if (button !== undefined) {
@@ -237,11 +246,9 @@ const ButtonDisableOnLoadSystem = defineReactiveSystem({
  */
 const ButtonEnableOnLoadEndSystem = defineReactiveSystem({
   name: 'ButtonEnableOnLoadEndSystem',
-  triggers: [removed(Loading)],
-  execute(entities, world) {
+  query: Entities.with([CatDisplayMarker, Loading]),
+  onExit(world, entities) {
     for (const entity of entities) {
-      if (!world.has(entity, CatDisplayMarker)) continue;
-
       const button = findChildWithComponent(entity, FetchCatButton, world);
       if (button !== undefined) {
         world.remove(button, Disabled);
@@ -265,7 +272,8 @@ export function registerCatSystems(world: World, options: CatSystemOptions): voi
   world.registerSystem(CatImageRenderSystem);
   world.registerSystem(ImageSrcSystem);
   world.registerSystem(LoadingRenderSystem);
-  world.registerSystem(LoadingRemoveSystem);
+  world.registerSystem(LoadingRemoveOnDataSystem);
+  world.registerSystem(LoadingRemoveOnErrorSystem);
   world.registerSystem(ErrorRenderSystem);
   world.registerSystem(ButtonDisableOnLoadSystem);
   world.registerSystem(ButtonEnableOnLoadEndSystem);

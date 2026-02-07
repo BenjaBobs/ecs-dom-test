@@ -9,6 +9,7 @@ import type { ComponentInstance, ComponentRef, ComponentType } from './component
 import { getTag } from './component.ts';
 import { createSyncScheduler } from './scheduler.ts';
 import type { Mutation, ReactiveSystem, SystemInfo } from './system.ts';
+import { buildQueryKey } from './system.ts';
 import type { WorldExternals } from './world-externals.ts';
 
 /**
@@ -185,6 +186,14 @@ export class World {
   private childrenMap = new Map<EntityId, Set<EntityId>>();
   private mutations: Mutation[] = [];
   private systems: ReactiveSystem[] = [];
+  private queryGroups = new Map<
+    string,
+    {
+      query: { required: string[]; excluded: string[] };
+      entities: Set<EntityId>;
+      systems: Set<ReactiveSystem>;
+    }
+  >();
   private externals: WorldExternals;
   private runtimeEntityId?: EntityId;
   private scheduler: FlushScheduler;
@@ -987,6 +996,17 @@ export class World {
    */
   registerSystem(system: ReactiveSystem): void {
     this.systems.push(system);
+    const key = system.queryKey ?? buildQueryKey(system.query.required, system.query.excluded);
+    let group = this.queryGroups.get(key);
+    if (!group) {
+      group = {
+        query: system.query,
+        entities: new Set<EntityId>(),
+        systems: new Set<ReactiveSystem>(),
+      };
+      this.queryGroups.set(key, group);
+    }
+    group.systems.add(system);
   }
 
   /**
@@ -1061,22 +1081,91 @@ export class World {
         const currentMutations = this.mutations;
         this.mutations = [];
 
-        for (const system of this.systems) {
-          const matchingEntities = new Set<EntityId>();
+        const entityChanges = new Map<EntityId, Set<string>>();
+        for (const mutation of currentMutations) {
+          const set = entityChanges.get(mutation.entity) ?? new Set<string>();
+          set.add(mutation.componentTag);
+          entityChanges.set(mutation.entity, set);
+        }
 
-          for (const mutation of currentMutations) {
-            if (system.matches(mutation, this)) {
-              matchingEntities.add(mutation.entity);
+        const groupResults = new Map<
+          string,
+          { enter: EntityId[]; update: EntityId[]; exit: EntityId[] }
+        >();
+
+        for (const [key, group] of this.queryGroups) {
+          const enter: EntityId[] = [];
+          const update: EntityId[] = [];
+          const exit: EntityId[] = [];
+
+          const hasOnUpdate = Array.from(group.systems).some(system => system.onUpdate);
+          const requiredTags = group.query.required;
+
+          for (const [entity, changes] of entityChanges) {
+            const wasMatching = group.entities.has(entity);
+            let matchesNow = true;
+            for (const tag of group.query.required) {
+              if (!this.has(entity, tag)) {
+                matchesNow = false;
+                break;
+              }
+            }
+            if (matchesNow) {
+              for (const tag of group.query.excluded) {
+                if (this.has(entity, tag)) {
+                  matchesNow = false;
+                  break;
+                }
+              }
+            }
+
+            const requiredChanged =
+              hasOnUpdate && requiredTags.length > 0 && requiredTags.some(tag => changes.has(tag));
+
+            if (!wasMatching && matchesNow) {
+              enter.push(entity);
+              group.entities.add(entity);
+            }
+            if (matchesNow && requiredChanged) {
+              update.push(entity);
+            }
+            if (wasMatching && !matchesNow) {
+              exit.push(entity);
+              group.entities.delete(entity);
             }
           }
 
-          if (matchingEntities.size > 0) {
-            const entities = Array.from(matchingEntities);
-            try {
-              system.execute(entities, this);
-            } catch (error) {
-              throw this.wrapSystemError(error, system, entities);
+          groupResults.set(key, { enter, update, exit });
+        }
+
+        for (const system of this.systems) {
+          if (!system.onEnter && !system.onUpdate && !system.onExit) {
+            continue;
+          }
+
+          const group = this.queryGroups.get(system.queryKey);
+          const result = group ? groupResults.get(system.queryKey) : undefined;
+          const enter = result?.enter ?? [];
+          const update = result?.update ?? [];
+          const exit = result?.exit ?? [];
+
+          if (enter.length === 0 && update.length === 0 && exit.length === 0) {
+            continue;
+          }
+
+          const entities = Array.from(new Set([...enter, ...update, ...exit]));
+          try {
+            if (system.onEnter && enter.length > 0) {
+              system.onEnter(this, enter);
             }
+            if (system.onUpdate && update.length > 0) {
+              system.onUpdate(this, update);
+            }
+            if (system.onExit && exit.length > 0) {
+              system.onExit(this, exit);
+            }
+          } catch (error) {
+            throw this.wrapSystemError(error, system, entities);
           }
         }
       }
@@ -1092,33 +1181,91 @@ export class World {
       this.mutations = [];
       mutationCount += currentMutations.length;
 
-      for (const system of this.systems) {
-        const matchingEntities = new Set<EntityId>();
+      const entityChanges = new Map<EntityId, Set<string>>();
+      for (const mutation of currentMutations) {
+        const set = entityChanges.get(mutation.entity) ?? new Set<string>();
+        set.add(mutation.componentTag);
+        entityChanges.set(mutation.entity, set);
+      }
 
-        for (const mutation of currentMutations) {
-          if (system.matches(mutation, this)) {
-            matchingEntities.add(mutation.entity);
+      const groupResults = new Map<
+        string,
+        { enter: EntityId[]; update: EntityId[]; exit: EntityId[] }
+      >();
+
+      for (const [key, group] of this.queryGroups) {
+        const enter: EntityId[] = [];
+        const update: EntityId[] = [];
+        const exit: EntityId[] = [];
+
+        const hasOnUpdate = Array.from(group.systems).some(system => system.onUpdate);
+        const requiredTags = group.query.required;
+
+        for (const [entity, changes] of entityChanges) {
+          const wasMatching = group.entities.has(entity);
+          let matchesNow = true;
+          for (const tag of group.query.required) {
+            if (!this.has(entity, tag)) {
+              matchesNow = false;
+              break;
+            }
+          }
+          if (matchesNow) {
+            for (const tag of group.query.excluded) {
+              if (this.has(entity, tag)) {
+                matchesNow = false;
+                break;
+              }
+            }
+          }
+
+          const requiredChanged =
+            hasOnUpdate && requiredTags.length > 0 && requiredTags.some(tag => changes.has(tag));
+
+          if (!wasMatching && matchesNow) {
+            enter.push(entity);
+            group.entities.add(entity);
+          }
+          if (matchesNow && requiredChanged) {
+            update.push(entity);
+          }
+          if (wasMatching && !matchesNow) {
+            exit.push(entity);
+            group.entities.delete(entity);
           }
         }
 
-        if (matchingEntities.size > 0) {
-          const entities = Array.from(matchingEntities);
-          const systemStart = now();
-          try {
-            system.execute(entities, this);
-          } catch (error) {
-            const duration = now() - systemStart;
-            const name = system.name ?? '(unnamed system)';
-            systemExecutions.push({
-              name,
-              duration,
-              entityCount: entities.length,
-              entities,
-            });
-            this.updateSystemProfilingStats(name, duration);
-            throw this.wrapSystemError(error, system, entities);
-          }
+        groupResults.set(key, { enter, update, exit });
+      }
 
+      for (const system of this.systems) {
+        if (!system.onEnter && !system.onUpdate && !system.onExit) {
+          continue;
+        }
+
+        const group = this.queryGroups.get(system.queryKey);
+        const result = group ? groupResults.get(system.queryKey) : undefined;
+        const enter = result?.enter ?? [];
+        const update = result?.update ?? [];
+        const exit = result?.exit ?? [];
+
+        if (enter.length === 0 && update.length === 0 && exit.length === 0) {
+          continue;
+        }
+
+        const entities = Array.from(new Set([...enter, ...update, ...exit]));
+        const systemStart = now();
+        try {
+          if (system.onEnter && enter.length > 0) {
+            system.onEnter(this, enter);
+          }
+          if (system.onUpdate && update.length > 0) {
+            system.onUpdate(this, update);
+          }
+          if (system.onExit && exit.length > 0) {
+            system.onExit(this, exit);
+          }
+        } catch (error) {
           const duration = now() - systemStart;
           const name = system.name ?? '(unnamed system)';
           systemExecutions.push({
@@ -1128,7 +1275,18 @@ export class World {
             entities,
           });
           this.updateSystemProfilingStats(name, duration);
+          throw this.wrapSystemError(error, system, entities);
         }
+
+        const duration = now() - systemStart;
+        const name = system.name ?? '(unnamed system)';
+        systemExecutions.push({
+          name,
+          duration,
+          entityCount: entities.length,
+          entities,
+        });
+        this.updateSystemProfilingStats(name, duration);
       }
     }
 

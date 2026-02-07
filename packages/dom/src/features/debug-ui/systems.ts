@@ -4,12 +4,10 @@
 
 import type { ComponentInstance } from '@ecs-test/ecs';
 import {
-  added,
-  addedOrReplaced,
   defineReactiveSystem,
+  Entities,
   type EntityId,
   type FlushProfile,
-  removed,
   type World,
   type WorldSnapshot,
 } from '@ecs-test/ecs';
@@ -679,12 +677,16 @@ function getProfileSampleMs(world: World, root: EntityId): number {
 
 export const DebugUIInitSystem = defineReactiveSystem({
   name: 'DebugUIInitSystem',
-  triggers: [added(DebugUIRoot)],
-  execute(entities, world) {
+  query: Entities.with([DebugUIRoot]),
+  onEnter(world, entities) {
     for (const root of entities) {
       getDebugUIRuntime(world).debugEntities.add(root);
       if (!world.has(root, DebugUIPanelState)) {
         world.set(root, DebugUIPanelState({ ...defaultPanelState }));
+      }
+
+      if (!world.has(root, DOMElement)) {
+        world.add(root, DOMElement({ tag: 'div' }));
       }
 
       if (!world.has(root, DebugUIHotkeys)) {
@@ -744,15 +746,21 @@ export const DebugUIInitSystem = defineReactiveSystem({
 
 export const DebugUIRootStyleSystem = defineReactiveSystem({
   name: 'DebugUIRootStyleSystem',
-  triggers: [addedOrReplaced(DebugUIPanelState)],
-  filter: [DebugUIRoot],
-  execute(entities, world) {
+  query: Entities.with([DebugUIRoot, DebugUIPanelState, DebugUIVisible]),
+  onEnter(world, entities) {
     for (const root of entities) {
       const panelState = world.get(root, DebugUIPanelState);
       if (!panelState) continue;
-      if (!world.has(root, DebugUIVisible)) {
-        continue;
-      }
+      world.set(
+        root,
+        Style({ ...panelBaseStyle, ...panelStyle(panelState as DebugUIPanelStateData) }),
+      );
+    }
+  },
+  onUpdate(world, entities) {
+    for (const root of entities) {
+      const panelState = world.get(root, DebugUIPanelState);
+      if (!panelState) continue;
       world.set(
         root,
         Style({ ...panelBaseStyle, ...panelStyle(panelState as DebugUIPanelStateData) }),
@@ -763,11 +771,48 @@ export const DebugUIRootStyleSystem = defineReactiveSystem({
 
 export const DebugUILayoutSystem = defineReactiveSystem({
   name: 'DebugUILayoutSystem',
-  triggers: [added(DebugUIVisible), added(DOMElement)],
-  filter: [DebugUIRoot],
-  execute(entities, world) {
+  query: Entities.with([DebugUIRoot, DebugUIVisible]),
+  onEnter(world, entities) {
     for (const root of entities) {
-      if (!world.has(root, DebugUIVisible)) continue;
+      if (world.has(root, DebugUILayout)) continue;
+      if (!world.has(root, DOMElement)) {
+        world.add(root, DOMElement({ tag: 'div' }));
+        continue;
+      }
+
+      const header = createDebugUIElementEntity(world, root, 'div', 'ECS Debugger', headerStyle);
+      world.add(header, DebugUIHeader());
+
+      const content = createDebugUIElementEntity(world, root, 'div', undefined, contentStyle);
+      const tree = createDebugUIElementEntity(world, content, 'div', undefined, treeStyle);
+      const treeSearchInput = createDebugUIElementEntity(
+        world,
+        tree,
+        'input',
+        undefined,
+        treeSearchStyle,
+      );
+      world.add(treeSearchInput, DebugUITreeSearchInput());
+      const detail = createDebugUIElementEntity(world, content, 'div', undefined, detailStyle);
+      const selectionSection = createDebugUIElementEntity(world, detail, 'div');
+      const timelineSection = createDebugUIElementEntity(world, detail, 'div');
+
+      world.set(
+        root,
+        DebugUILayout({
+          header,
+          content,
+          tree,
+          treeSearchInput,
+          detail,
+          selectionSection,
+          timelineSection,
+        }),
+      );
+    }
+  },
+  onUpdate(world, entities) {
+    for (const root of entities) {
       if (world.has(root, DebugUILayout)) continue;
       if (!world.has(root, DOMElement)) {
         world.add(root, DOMElement({ tag: 'div' }));
@@ -809,16 +854,17 @@ export const DebugUILayoutSystem = defineReactiveSystem({
 
 export const DebugUITreeSelectionRenderSystem = defineReactiveSystem({
   name: 'DebugUITreeSelectionRenderSystem',
-  triggers: [
-    addedOrReplaced(DebugUIState),
-    addedOrReplaced(DebugUISelection),
-    addedOrReplaced(DebugUISectionState),
-    addedOrReplaced(DebugUITreeState),
-    addedOrReplaced(DebugUITreeSearch),
-    added(DebugUILayout),
-  ],
-  filter: [DebugUIRoot, DebugUIVisible, DebugUILayout],
-  execute(entities, world) {
+  query: Entities.with([
+    DebugUIRoot,
+    DebugUIVisible,
+    DebugUILayout,
+    DebugUIState,
+    DebugUISelection,
+    DebugUISectionState,
+    DebugUITreeState,
+    DebugUITreeSearch,
+  ]),
+  onUpdate(world, entities) {
     for (const root of entities) {
       const state = world.get(root, DebugUIState) as DebugUIStateData | undefined;
       const layout = world.get(root, DebugUILayout) as DebugUILayoutData | undefined;
@@ -1069,13 +1115,14 @@ export const DebugUITreeSelectionRenderSystem = defineReactiveSystem({
 
 export const DebugUITimelineRenderSystem = defineReactiveSystem({
   name: 'DebugUITimelineRenderSystem',
-  triggers: [
-    addedOrReplaced(DebugUITimeline),
-    addedOrReplaced(DebugUISectionState),
-    added(DebugUILayout),
-  ],
-  filter: [DebugUIRoot, DebugUIVisible, DebugUILayout],
-  execute(entities, world) {
+  query: Entities.with([
+    DebugUIRoot,
+    DebugUIVisible,
+    DebugUILayout,
+    DebugUITimeline,
+    DebugUISectionState,
+  ]),
+  onUpdate(world, entities) {
     for (const root of entities) {
       const timeline = getTimelineData(world, root);
       const layout = world.get(root, DebugUILayout) as DebugUILayoutData | undefined;
@@ -1292,9 +1339,8 @@ export const DebugUITimelineRenderSystem = defineReactiveSystem({
 
 export const DebugUISelectionSystem = defineReactiveSystem({
   name: 'DebugUISelectionSystem',
-  triggers: [added(Clicked)],
-  filter: [DebugUIEntityRef],
-  execute(entities, world) {
+  query: Entities.with([DebugUIEntityRef, Clicked]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const target = world.get(entity, DebugUIEntityRef) as DebugUIEntityRefData | undefined;
       if (!target) continue;
@@ -1310,9 +1356,8 @@ export const DebugUISelectionSystem = defineReactiveSystem({
 
 export const DebugUITimelineSelectionSystem = defineReactiveSystem({
   name: 'DebugUITimelineSelectionSystem',
-  triggers: [added(Clicked)],
-  filter: [DebugUITimelineRef],
-  execute(entities, world) {
+  query: Entities.with([DebugUITimelineRef, Clicked]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const ref = world.get(entity, DebugUITimelineRef) as { id: number } | undefined;
       if (!ref) continue;
@@ -1337,9 +1382,8 @@ export const DebugUITimelineSelectionSystem = defineReactiveSystem({
 
 export const DebugUIPauseToggleSystem = defineReactiveSystem({
   name: 'DebugUIPauseToggleSystem',
-  triggers: [added(Clicked)],
-  filter: [DebugUIPauseToggle],
-  execute(entities, world) {
+  query: Entities.with([DebugUIPauseToggle, Clicked]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const root = findDebugRoot(world, entity);
       if (!root) continue;
@@ -1361,9 +1405,8 @@ export const DebugUIPauseToggleSystem = defineReactiveSystem({
 
 export const DebugUIIncludeDebugToggleSystem = defineReactiveSystem({
   name: 'DebugUIIncludeDebugToggleSystem',
-  triggers: [added(Clicked)],
-  filter: [DebugUIIncludeDebugToggle],
-  execute(entities, world) {
+  query: Entities.with([DebugUIIncludeDebugToggle, Clicked]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const root = findDebugRoot(world, entity);
       if (!root) continue;
@@ -1385,8 +1428,8 @@ export const DebugUIIncludeDebugToggleSystem = defineReactiveSystem({
 
 export const DebugUITreeSearchInputSystem = defineReactiveSystem({
   name: 'DebugUITreeSearchInputSystem',
-  triggers: [added(DebugUITreeSearchInput), removed(DebugUITreeSearchInput)],
-  execute(entities, world) {
+  query: Entities.with([DebugUITreeSearchInput]),
+  onEnter(world, entities) {
     const domElements = getDOMElements(world);
     const runtime = getDebugUIRuntime(world);
 
@@ -1398,7 +1441,6 @@ export const DebugUITreeSearchInputSystem = defineReactiveSystem({
         runtime.searchHandlers.delete(entity);
       }
 
-      if (!world.has(entity, DebugUITreeSearchInput)) continue;
       if (!isInputElement(el)) continue;
 
       const root = findDebugRoot(world, entity);
@@ -1430,13 +1472,25 @@ export const DebugUITreeSearchInputSystem = defineReactiveSystem({
       runtime.searchHandlers.set(entity, handler);
     }
   },
+  onExit(world, entities) {
+    const domElements = getDOMElements(world);
+    const runtime = getDebugUIRuntime(world);
+
+    for (const entity of entities) {
+      const el = domElements.get(entity);
+      const existing = runtime.searchHandlers.get(entity);
+      if (existing && isInputElement(el)) {
+        el.removeEventListener('input', existing);
+      }
+      runtime.searchHandlers.delete(entity);
+    }
+  },
 });
 
 export const DebugUISectionToggleSystem = defineReactiveSystem({
   name: 'DebugUISectionToggleSystem',
-  triggers: [added(Clicked)],
-  filter: [DebugUISectionToggle],
-  execute(entities, world) {
+  query: Entities.with([DebugUISectionToggle, Clicked]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const root = findDebugRoot(world, entity);
       if (!root) continue;
@@ -1463,9 +1517,8 @@ export const DebugUISectionToggleSystem = defineReactiveSystem({
 
 export const DebugUITreeToggleSystem = defineReactiveSystem({
   name: 'DebugUITreeToggleSystem',
-  triggers: [added(Clicked)],
-  filter: [DebugUITreeToggle],
-  execute(entities, world) {
+  query: Entities.with([DebugUITreeToggle, Clicked]),
+  onEnter(world, entities) {
     for (const entity of entities) {
       const root = findDebugRoot(world, entity);
       if (!root) continue;
@@ -1491,8 +1544,8 @@ export const DebugUITreeToggleSystem = defineReactiveSystem({
 
 export const DebugUIHeaderDragSystem = defineReactiveSystem({
   name: 'DebugUIHeaderDragSystem',
-  triggers: [added(DebugUIHeader), removed(DebugUIHeader)],
-  execute(entities, world) {
+  query: Entities.with([DebugUIHeader]),
+  onEnter(world, entities) {
     const domElements = getDOMElements(world);
     const runtime = getDebugUIRuntime(world);
 
@@ -1507,10 +1560,6 @@ export const DebugUIHeaderDragSystem = defineReactiveSystem({
       if (existing) {
         el.removeEventListener('mousedown', existing);
         runtime.headerHandlers.delete(entity);
-      }
-
-      if (!world.has(entity, DebugUIHeader)) {
-        continue;
       }
 
       const handler = (event: MouseEvent) => {
@@ -1594,176 +1643,187 @@ export const DebugUIHeaderDragSystem = defineReactiveSystem({
       runtime.headerHandlers.set(entity, handler);
     }
   },
+  onExit(world, entities) {
+    const domElements = getDOMElements(world);
+    const runtime = getDebugUIRuntime(world);
+
+    for (const entity of entities) {
+      const el = domElements.get(entity) as HTMLElement | undefined;
+      const existing = runtime.headerHandlers.get(entity);
+      if (el && existing) {
+        el.removeEventListener('mousedown', existing);
+      }
+      runtime.headerHandlers.delete(entity);
+    }
+  },
 });
 
 export const DebugUIVisibilitySystem = defineReactiveSystem({
   name: 'DebugUIVisibilitySystem',
-  triggers: [added(DebugUIVisible), removed(DebugUIVisible)],
-  filter: [DebugUIRoot],
-  execute(entities, world) {
+  query: Entities.with([DebugUIRoot, DebugUIVisible]),
+  onEnter(world, entities) {
     for (const root of entities) {
-      if (world.has(root, DebugUIVisible)) {
-        world.enableProfiling();
-        const view = world.getExternals().window;
-        const runtime = getDebugUIRuntime(world);
-        runtime.snapshotLastUpdate.set(root, 0);
-        runtime.snapshotPending.delete(root);
-        const config = world.get(root, DebugUIConfig) as DebugUIConfigData | undefined;
-        if (config) {
-          runtime.snapshotThrottleMs.set(root, config.snapshotThrottleMs);
-          runtime.profileSampleMs.set(root, config.profileSampleMs);
-        }
-        if (view && !runtime.profileSubscriptions.has(root)) {
-          const unsubscribe = world.onFlushProfile(profile => {
-            if (!world.has(root, DebugUIVisible)) return;
-            const timeline = getTimelineData(world, root);
-            if (timeline.paused) return;
+      world.enableProfiling();
+      const view = world.getExternals().window;
+      const runtime = getDebugUIRuntime(world);
+      runtime.snapshotLastUpdate.set(root, 0);
+      runtime.snapshotPending.delete(root);
+      const config = world.get(root, DebugUIConfig) as DebugUIConfigData | undefined;
+      if (config) {
+        runtime.snapshotThrottleMs.set(root, config.snapshotThrottleMs);
+        runtime.profileSampleMs.set(root, config.profileSampleMs);
+      }
+      if (view && !runtime.profileSubscriptions.has(root)) {
+        const unsubscribe = world.onFlushProfile(profile => {
+          if (!world.has(root, DebugUIVisible)) return;
+          const timeline = getTimelineData(world, root);
+          if (timeline.paused) return;
 
-            const includeDebugUI = timeline.includeDebugUI;
-            const filteredExecutions = filterProfileExecutions(
-              world,
-              root,
-              profile,
-              includeDebugUI,
-              runtime.debugEntities,
-            );
-            const sample = buildTimelineSample(profile, filteredExecutions);
-            if (sample.totalDuration === 0 && !includeDebugUI) return;
+          const includeDebugUI = timeline.includeDebugUI;
+          const filteredExecutions = filterProfileExecutions(
+            world,
+            root,
+            profile,
+            includeDebugUI,
+            runtime.debugEntities,
+          );
+          const sample = buildTimelineSample(profile, filteredExecutions);
+          if (sample.totalDuration === 0 && !includeDebugUI) return;
 
-            const nowTime = Date.now();
-            const sampleMs = getProfileSampleMs(world, root);
-            const lastSampleTime = runtime.timelineLastSample.get(root) ?? 0;
+          const nowTime = Date.now();
+          const sampleMs = getProfileSampleMs(world, root);
+          const lastSampleTime = runtime.timelineLastSample.get(root) ?? 0;
 
-            if (nowTime - lastSampleTime >= sampleMs) {
-              runtime.timelineLastSample.set(root, nowTime);
-              pushTimelineSample(world, root, sample);
-              return;
-            }
-
-            const pending = runtime.timelinePendingProfiles.get(root);
-            runtime.timelinePendingProfiles.set(
-              root,
-              pending ? mergeTimelineSamples(pending, sample) : sample,
-            );
-            if (!runtime.timelineTimers.has(root)) {
-              const delay = Math.max(0, sampleMs - (nowTime - lastSampleTime));
-              const timerId = view.setTimeout(() => {
-                runtime.timelineTimers.delete(root);
-                const pending = runtime.timelinePendingProfiles.get(root);
-                if (!pending) return;
-                runtime.timelinePendingProfiles.delete(root);
-                const pendingTimeline = getTimelineData(world, root);
-                if (pendingTimeline.paused || !world.has(root, DebugUIVisible)) return;
-
-                const includeDebug = pendingTimeline.includeDebugUI;
-                if (pending.totalDuration === 0 && !includeDebug) return;
-
-                const time = Date.now();
-                runtime.timelineLastSample.set(root, time);
-                pushTimelineSample(world, root, {
-                  ...pending,
-                  endTimestamp: time,
-                });
-              }, delay);
-              runtime.timelineTimers.set(root, timerId);
-            }
-          });
-          runtime.profileSubscriptions.set(root, unsubscribe);
-        }
-
-        const panelState =
-          (world.get(root, DebugUIPanelState) as DebugUIPanelStateData | undefined) ??
-          defaultPanelState;
-        if (!world.has(root, DOMElement)) {
-          world.add(root, DOMElement({ tag: 'div' }));
-        }
-        world.set(root, Style({ ...panelBaseStyle, ...panelStyle(panelState) }));
-        const snapshot = filterSnapshot(world, root);
-        world.set(root, DebugUIState({ snapshot }));
-        const timeline = getTimelineData(world, root);
-        world.set(
-          root,
-          DebugUITimeline({
-            samples: timeline.samples,
-            selectedId: timeline.selectedId,
-            paused: timeline.paused,
-            includeDebugUI: timeline.includeDebugUI,
-          }),
-        );
-      } else {
-        world.disableProfiling();
-        const runtime = getDebugUIRuntime(world);
-        const view = world.getExternals().window;
-        const unsubscribe = runtime.profileSubscriptions.get(root);
-        if (unsubscribe) {
-          unsubscribe();
-          runtime.profileSubscriptions.delete(root);
-        }
-        const timerId = runtime.timelineTimers.get(root);
-        if (timerId !== undefined && view) {
-          view.clearTimeout(timerId);
-          runtime.timelineTimers.delete(root);
-        }
-        runtime.timelinePendingProfiles.delete(root);
-        runtime.snapshotPending.delete(root);
-        const scrollTimer = runtime.scrollTimers.get(root);
-        if (scrollTimer !== undefined && view) {
-          view.clearTimeout(scrollTimer);
-          runtime.scrollTimers.delete(root);
-        }
-        runtime.pendingScroll.delete(root);
-        const snapshotTimer = runtime.snapshotTimers.get(root);
-        if (snapshotTimer !== undefined && view) {
-          view.clearTimeout(snapshotTimer);
-          runtime.snapshotTimers.delete(root);
-        }
-        world.set(
-          root,
-          DebugUITimeline({ samples: [], selectedId: null, paused: false, includeDebugUI: false }),
-        );
-        const renderState = world.get(root, DebugUIRenderState) as
-          | DebugUIRenderStateData
-          | undefined;
-        const layout = world.get(root, DebugUILayout) as DebugUILayoutData | undefined;
-        const treeEntities = renderState?.treeEntities ?? [];
-        const selectionEntities = renderState?.selectionEntities ?? [];
-        const timelineEntities = renderState?.timelineEntities ?? [];
-        world.batch(() => {
-          clearEntities(world, treeEntities);
-          clearEntities(world, selectionEntities);
-          clearEntities(world, timelineEntities);
-
-          if (layout) {
-            const layoutEntities = [
-              layout.header,
-              layout.content,
-              layout.tree,
-              layout.treeSearchInput,
-              layout.detail,
-              layout.selectionSection,
-              layout.timelineSection,
-            ];
-            clearEntities(world, layoutEntities);
-            world.remove(root, DebugUILayout);
+          if (nowTime - lastSampleTime >= sampleMs) {
+            runtime.timelineLastSample.set(root, nowTime);
+            pushTimelineSample(world, root, sample);
+            return;
           }
 
-          world.set(
+          const pending = runtime.timelinePendingProfiles.get(root);
+          runtime.timelinePendingProfiles.set(
             root,
-            DebugUIRenderState({ treeEntities: [], selectionEntities: [], timelineEntities: [] }),
+            pending ? mergeTimelineSamples(pending, sample) : sample,
           );
-          if (world.has(root, DOMElement)) {
-            world.remove(root, DOMElement);
+          if (!runtime.timelineTimers.has(root)) {
+            const delay = Math.max(0, sampleMs - (nowTime - lastSampleTime));
+            const timerId = view.setTimeout(() => {
+              runtime.timelineTimers.delete(root);
+              const pending = runtime.timelinePendingProfiles.get(root);
+              if (!pending) return;
+              runtime.timelinePendingProfiles.delete(root);
+              const pendingTimeline = getTimelineData(world, root);
+              if (pendingTimeline.paused || !world.has(root, DebugUIVisible)) return;
+
+              const includeDebug = pendingTimeline.includeDebugUI;
+              if (pending.totalDuration === 0 && !includeDebug) return;
+
+              const time = Date.now();
+              runtime.timelineLastSample.set(root, time);
+              pushTimelineSample(world, root, {
+                ...pending,
+                endTimestamp: time,
+              });
+            }, delay);
+            runtime.timelineTimers.set(root, timerId);
           }
         });
+        runtime.profileSubscriptions.set(root, unsubscribe);
       }
+
+      const panelState =
+        (world.get(root, DebugUIPanelState) as DebugUIPanelStateData | undefined) ??
+        defaultPanelState;
+      if (!world.has(root, DOMElement)) {
+        world.add(root, DOMElement({ tag: 'div' }));
+      }
+      world.set(root, Style({ ...panelBaseStyle, ...panelStyle(panelState) }));
+      const snapshot = filterSnapshot(world, root);
+      world.set(root, DebugUIState({ snapshot }));
+      const timeline = getTimelineData(world, root);
+      world.set(
+        root,
+        DebugUITimeline({
+          samples: timeline.samples,
+          selectedId: timeline.selectedId,
+          paused: timeline.paused,
+          includeDebugUI: timeline.includeDebugUI,
+        }),
+      );
+    }
+  },
+  onExit(world, entities) {
+    for (const root of entities) {
+      world.disableProfiling();
+      const runtime = getDebugUIRuntime(world);
+      const view = world.getExternals().window;
+      const unsubscribe = runtime.profileSubscriptions.get(root);
+      if (unsubscribe) {
+        unsubscribe();
+        runtime.profileSubscriptions.delete(root);
+      }
+      const timerId = runtime.timelineTimers.get(root);
+      if (timerId !== undefined && view) {
+        view.clearTimeout(timerId);
+        runtime.timelineTimers.delete(root);
+      }
+      runtime.timelinePendingProfiles.delete(root);
+      runtime.snapshotPending.delete(root);
+      const scrollTimer = runtime.scrollTimers.get(root);
+      if (scrollTimer !== undefined && view) {
+        view.clearTimeout(scrollTimer);
+        runtime.scrollTimers.delete(root);
+      }
+      runtime.pendingScroll.delete(root);
+      const snapshotTimer = runtime.snapshotTimers.get(root);
+      if (snapshotTimer !== undefined && view) {
+        view.clearTimeout(snapshotTimer);
+        runtime.snapshotTimers.delete(root);
+      }
+      world.set(
+        root,
+        DebugUITimeline({ samples: [], selectedId: null, paused: false, includeDebugUI: false }),
+      );
+      const renderState = world.get(root, DebugUIRenderState) as DebugUIRenderStateData | undefined;
+      const layout = world.get(root, DebugUILayout) as DebugUILayoutData | undefined;
+      const treeEntities = renderState?.treeEntities ?? [];
+      const selectionEntities = renderState?.selectionEntities ?? [];
+      const timelineEntities = renderState?.timelineEntities ?? [];
+      world.batch(() => {
+        clearEntities(world, treeEntities);
+        clearEntities(world, selectionEntities);
+        clearEntities(world, timelineEntities);
+
+        if (layout) {
+          const layoutEntities = [
+            layout.header,
+            layout.content,
+            layout.tree,
+            layout.treeSearchInput,
+            layout.detail,
+            layout.selectionSection,
+            layout.timelineSection,
+          ];
+          clearEntities(world, layoutEntities);
+          world.remove(root, DebugUILayout);
+        }
+
+        world.set(
+          root,
+          DebugUIRenderState({ treeEntities: [], selectionEntities: [], timelineEntities: [] }),
+        );
+        if (world.has(root, DOMElement)) {
+          world.remove(root, DOMElement);
+        }
+      });
     }
   },
 });
 
 export const DebugUIHotkeySystem = defineReactiveSystem({
   name: 'DebugUIHotkeySystem',
-  triggers: [added(DebugUIRoot), removed(DebugUIRoot), addedOrReplaced(DebugUIHotkeys)],
-  execute(entities, world) {
+  query: Entities.with([DebugUIRoot, DebugUIHotkeys]),
+  onUpdate(world, entities) {
     const runtime = getDebugUIRuntime(world);
     const view = world.getExternals().window;
     if (!view) return;
@@ -1773,10 +1833,6 @@ export const DebugUIHotkeySystem = defineReactiveSystem({
       if (existing) {
         view.removeEventListener('keydown', existing);
         runtime.hotkeyHandlers.delete(root);
-      }
-
-      if (!world.has(root, DebugUIRoot)) {
-        continue;
       }
 
       const hotkeys = world.get(root, DebugUIHotkeys)?.keys ?? defaultHotkeys;
@@ -1801,12 +1857,25 @@ export const DebugUIHotkeySystem = defineReactiveSystem({
       runtime.hotkeyHandlers.set(root, handler);
     }
   },
+  onExit(world, entities) {
+    const runtime = getDebugUIRuntime(world);
+    const view = world.getExternals().window;
+    if (!view) return;
+
+    for (const root of entities) {
+      const existing = runtime.hotkeyHandlers.get(root);
+      if (existing) {
+        view.removeEventListener('keydown', existing);
+      }
+      runtime.hotkeyHandlers.delete(root);
+    }
+  },
 });
 
 export const DebugUISubscriptionCleanupSystem = defineReactiveSystem({
   name: 'DebugUISubscriptionCleanupSystem',
-  triggers: [removed(DebugUIRoot)],
-  execute(entities, world) {
+  query: Entities.with([DebugUIRoot]),
+  onExit(world, entities) {
     const runtime = getDebugUIRuntime(world);
     for (const entity of entities) {
       const unsubscribe = runtime.subscriptions.get(entity);

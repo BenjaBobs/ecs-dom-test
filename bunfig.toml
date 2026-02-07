@@ -4,3 +4,4 @@
 # Only print failures for cleaner output
 onlyFailures = true
 concurrent = true
+timeout = 500

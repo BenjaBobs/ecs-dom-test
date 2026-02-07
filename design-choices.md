@@ -16,10 +16,10 @@ This framework targets browser UI, not games. This context shapes every decision
 
 ## What We Do
 
-### Reactive Systems (Entitas-style)
-Systems declare triggers (`added`, `removed`, `replaced`) and only run when matching mutations occur.
+### Reactive Systems (Group/Matcher-style)
+Systems declare queries (`Entities.with([...]).without([...])`) and react via `onEnter`, `onUpdate`, and `onExit`.
 
-**Why:** Event-driven UI means no wasted work between interactions. Systems sleep until relevant changes happen.
+**Why:** Event-driven UI means no wasted work between interactions. Queries stay simple and systems only run when membership changes or required components update.
 
 ### Component Index
 `Map<componentTag, Set<EntityId>>` maintained on add/set/remove.
@@ -32,7 +32,7 @@ When materializing JSX, components/bundles are processed before child entities.
 **Why:** Ensures parent's `DOMElement` exists before children try to attach to it. Deterministic DOM tree construction.
 
 ### Separate Reactive Systems for Behavior
-`ClickableAddSystem`, `DisabledAddSystem`, etc. are separate from `DOMCreateSystem`.
+`ClickableSystem`, `DisabledSystem`, etc. are separate from `DOMElementSystem`.
 
 **Why:** Adding `Clickable` to an existing entity should work. Creation-time-only wiring is a bug, not a feature.
 
@@ -125,14 +125,12 @@ Archetypes group entities with identical component sets into contiguous memory t
 - Component churn in UI (adding/removing state) would cause frequent archetype moves
 - Added complexity not justified for our access patterns
 
-### No Cached Query Groups (Entitas Groups/Collectors)
-Groups maintain a live `Set<EntityId>` for a query, updated on every mutation.
+### No Exposed Groups/Collectors API (Yet)
+We do maintain per-query membership internally to drive `onEnter`/`onUpdate`/`onExit`, but we don't expose a public "group" API.
 
-**Why not:**
-- Trades write speed for read speed
-- Makes sense when queries run 60x/second
-- We query only when events occur - caching overhead not justified
-- The component index gives us 80% of the benefit with 20% of the complexity
+**Why:**
+- Keeps the public surface area small while we stabilize query semantics
+- Avoids committing to a group lifecycle/collector API too early
 
 ### No Frame-Based Scheduling
 No `requestAnimationFrame` loop running systems continuously.
@@ -140,7 +138,7 @@ No `requestAnimationFrame` loop running systems continuously.
 **Why not:**
 - UI is event-driven, not frame-driven
 - Running systems when nothing changed wastes CPU and battery
-- Reactive triggers naturally batch related changes within a single flush
+- Reactive queries naturally batch related changes within a single flush
 
 ### No Structural Sharing / Immutable Components
 Components are mutable. No copy-on-write or persistent data structures.

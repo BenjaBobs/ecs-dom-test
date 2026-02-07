@@ -2,7 +2,7 @@
  * CSS class systems.
  */
 
-import { addedOrReplaced, defineReactiveSystem } from '@ecs-test/ecs';
+import { defineReactiveSystem, Entities } from '@ecs-test/ecs';
 import { getDOMElements } from '../../dom-element-systems.ts';
 import { Classes } from './components.ts';
 
@@ -11,10 +11,19 @@ import { Classes } from './components.ts';
  */
 export const ClassesSystem = defineReactiveSystem({
   name: 'ClassesSystem',
-  triggers: [addedOrReplaced(Classes)],
-  execute(entities, world) {
+  query: Entities.with([Classes]),
+  onEnter(world, entities) {
     const domElements = getDOMElements(world);
-
+    for (const entity of entities) {
+      const el = domElements.get(entity);
+      const classes = world.get(entity, Classes);
+      if (el && classes) {
+        el.className = classes.list.join(' ');
+      }
+    }
+  },
+  onUpdate(world, entities) {
+    const domElements = getDOMElements(world);
     for (const entity of entities) {
       const el = domElements.get(entity);
       const classes = world.get(entity, Classes);
