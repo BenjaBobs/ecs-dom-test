@@ -2,7 +2,6 @@
  * Debug UI components.
  */
 
-import type { FlushProfile } from '@ecs-test/ecs';
 import { defineComponent, defineMarker, type EntityId, type WorldSnapshot } from '@ecs-test/ecs';
 
 export const DebugUIRoot = defineMarker('DebugUIRoot');
@@ -82,7 +81,7 @@ export type DebugUIRuntimeData = {
   scrollTimers: Map<EntityId, number>;
   pendingScroll: Map<EntityId, EntityId>;
   timelineTimers: Map<EntityId, number>;
-  timelinePendingProfiles: Map<EntityId, FlushProfile>;
+  timelinePendingProfiles: Map<EntityId, DebugUITimelineSample>;
   timelineLastSample: Map<EntityId, number>;
   profileSubscriptions: Map<EntityId, () => void>;
   snapshotTimers: Map<EntityId, number>;
@@ -111,8 +110,10 @@ export const DebugUIHotkeys = defineComponent<{
 
 export type DebugUITimelineSample = {
   id: number;
-  timestamp: number;
+  startTimestamp: number;
+  endTimestamp: number;
   totalDuration: number;
+  flushCount: number;
   systemExecutions: {
     name: string;
     duration: number;

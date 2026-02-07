@@ -8,6 +8,7 @@ import {
   addedOrReplaced,
   defineReactiveSystem,
   type EntityId,
+  type FlushProfile,
   removed,
   type World,
   type WorldSnapshot,
@@ -112,7 +113,8 @@ const detailHeaderStyle: Partial<CSSStyleDeclaration> = {
 };
 
 const detailSectionStyle: Partial<CSSStyleDeclaration> = {
-  padding: '6px 8px',
+  padding: '0 8px',
+  whiteSpace: 'pre-wrap',
 };
 
 const rowBaseStyle: Partial<CSSStyleDeclaration> = {
@@ -189,13 +191,15 @@ const timelineBarsStyle: Partial<CSSStyleDeclaration> = {
 
 const timelineBarBaseStyle: Partial<CSSStyleDeclaration> = {
   width: '6px',
-  backgroundColor: '#38bdf8',
+  backgroundColor: '#22c55e',
   cursor: 'pointer',
   borderRadius: '2px',
 };
 
 const timelineBarSelectedStyle: Partial<CSSStyleDeclaration> = {
-  backgroundColor: '#f59e0b',
+  boxShadow: 'rgb(122 0 255) 0px 0px 6px, rgb(122 0 255) 0px 0px 6px, rgb(122 0 255) 0px 0px 6px',
+  position: 'relative',
+  zIndex: '1',
 };
 
 const timelineControlsStyle: Partial<CSSStyleDeclaration> = {
@@ -552,12 +556,12 @@ function isInputElement(el: unknown): el is InputElementLike {
   );
 }
 
+const maxTimelineSamples = 20;
+
 function pushTimelineSample(world: World, root: EntityId, profile: DebugUITimelineSample): void {
   const timeline = getTimelineData(world, root);
   const selectedId = timeline.selectedId;
-  const nextSamples = [...timeline.samples, profile].filter(
-    sample => profile.timestamp - sample.timestamp <= 5000,
-  );
+  const nextSamples = [...timeline.samples, profile].slice(-maxTimelineSamples);
   world.set(
     root,
     DebugUITimeline({
@@ -578,6 +582,63 @@ type ProfilingExecutionSource = {
     entities?: EntityId[];
   }[];
 };
+
+function buildTimelineSample(
+  profile: FlushProfile,
+  systemExecutions: DebugUITimelineSample['systemExecutions'],
+): DebugUITimelineSample {
+  const totalDuration = systemExecutions.reduce((sum, system) => sum + system.duration, 0);
+  const nowTime = Date.now();
+  return {
+    id: profile.id,
+    startTimestamp: nowTime,
+    endTimestamp: nowTime,
+    totalDuration,
+    systemExecutions,
+    flushCount: 1,
+  };
+}
+
+function mergeTimelineSamples(
+  base: DebugUITimelineSample,
+  incoming: DebugUITimelineSample,
+): DebugUITimelineSample {
+  const mergedExecutions = new Map<
+    string,
+    { name: string; duration: number; entityCount: number }
+  >();
+
+  for (const system of base.systemExecutions) {
+    mergedExecutions.set(system.name, {
+      name: system.name,
+      duration: system.duration,
+      entityCount: system.entityCount,
+    });
+  }
+
+  for (const system of incoming.systemExecutions) {
+    const existing = mergedExecutions.get(system.name);
+    if (existing) {
+      existing.duration += system.duration;
+      existing.entityCount += system.entityCount;
+    } else {
+      mergedExecutions.set(system.name, {
+        name: system.name,
+        duration: system.duration,
+        entityCount: system.entityCount,
+      });
+    }
+  }
+
+  return {
+    id: incoming.id,
+    startTimestamp: base.startTimestamp,
+    endTimestamp: incoming.endTimestamp,
+    totalDuration: base.totalDuration + incoming.totalDuration,
+    systemExecutions: Array.from(mergedExecutions.values()),
+    flushCount: base.flushCount + incoming.flushCount,
+  };
+}
 
 function filterProfileExecutions(
   world: World,
@@ -1017,7 +1078,7 @@ export const DebugUITimelineRenderSystem = defineReactiveSystem({
           world,
           layout.timelineSection,
           'div',
-          `Systems ${timelineOpen ? '▾' : '▸'}`,
+          `Systems (last ${maxTimelineSamples}) ${timelineOpen ? '▾' : '▸'}`,
           sectionHeaderStyle,
         );
         world.add(sectionHeader, Clickable());
@@ -1049,7 +1110,7 @@ export const DebugUITimelineRenderSystem = defineReactiveSystem({
           world,
           timelineHeader,
           'div',
-          'last 5s approx.',
+          `last ${maxTimelineSamples} samples`,
           undefined,
         );
         timelineEntities.push(timelineTitle);
@@ -1135,9 +1196,16 @@ export const DebugUITimelineRenderSystem = defineReactiveSystem({
           for (const sample of samples) {
             const height = Math.max(6, Math.round((sample.totalDuration / maxTotal) * 46));
             const isSelected = selected?.id === sample.id;
+            const barColor =
+              sample.totalDuration > 5
+                ? '#ef4444'
+                : sample.totalDuration > 1
+                  ? '#facc15'
+                  : '#22c55e';
             const bar = createDebugUIElementEntity(world, bars, 'div', undefined, {
               ...timelineBarBaseStyle,
               height: `${height}px`,
+              backgroundColor: barColor,
               ...(isSelected ? timelineBarSelectedStyle : {}),
             });
             world.add(bar, Clickable());
@@ -1150,6 +1218,24 @@ export const DebugUITimelineRenderSystem = defineReactiveSystem({
             const sorted = [...activeSample.systemExecutions].sort(
               (a, b) => b.duration - a.duration,
             );
+            const timestampLine = createDebugUIElementEntity(
+              world,
+              layout.timelineSection,
+              'div',
+              `Timestamp: ${new Date(activeSample.startTimestamp).toISOString()}\n        -> ${new Date(
+                activeSample.endTimestamp,
+              ).toISOString()}`,
+              detailSectionStyle,
+            );
+            timelineEntities.push(timestampLine);
+            const flushCountLine = createDebugUIElementEntity(
+              world,
+              layout.timelineSection,
+              'div',
+              `Flushes: ${activeSample.flushCount}`,
+              detailSectionStyle,
+            );
+            timelineEntities.push(flushCountLine);
             const summary = createDebugUIElementEntity(
               world,
               layout.timelineSection,
@@ -1517,20 +1603,11 @@ export const DebugUIVisibilitySystem = defineReactiveSystem({
               includeDebugUI,
               runtime.debugEntities,
             );
-            const totalDuration = filteredExecutions.reduce(
-              (sum, system) => sum + system.duration,
-              0,
-            );
-            if (totalDuration === 0 && !includeDebugUI) return;
+            const sample = buildTimelineSample(profile, filteredExecutions);
+            if (sample.totalDuration === 0 && !includeDebugUI) return;
 
             const nowTime = Date.now();
             const lastSampleTime = runtime.timelineLastSample.get(root) ?? 0;
-            const sample: DebugUITimelineSample = {
-              id: profile.id,
-              timestamp: nowTime,
-              totalDuration,
-              systemExecutions: filteredExecutions,
-            };
 
             if (nowTime - lastSampleTime >= 250) {
               runtime.timelineLastSample.set(root, nowTime);
@@ -1538,7 +1615,11 @@ export const DebugUIVisibilitySystem = defineReactiveSystem({
               return;
             }
 
-            runtime.timelinePendingProfiles.set(root, profile);
+            const pending = runtime.timelinePendingProfiles.get(root);
+            runtime.timelinePendingProfiles.set(
+              root,
+              pending ? mergeTimelineSamples(pending, sample) : sample,
+            );
             if (!runtime.timelineTimers.has(root)) {
               const delay = Math.max(0, 250 - (nowTime - lastSampleTime));
               const timerId = view.setTimeout(() => {
@@ -1550,23 +1631,13 @@ export const DebugUIVisibilitySystem = defineReactiveSystem({
                 if (pendingTimeline.paused || !world.has(root, DebugUIVisible)) return;
 
                 const includeDebug = pendingTimeline.includeDebugUI;
-                const execs = filterProfileExecutions(
-                  world,
-                  root,
-                  pending,
-                  includeDebug,
-                  runtime.debugEntities,
-                );
-                const total = execs.reduce((sum, system) => sum + system.duration, 0);
-                if (total === 0 && !includeDebug) return;
+                if (pending.totalDuration === 0 && !includeDebug) return;
 
                 const time = Date.now();
                 runtime.timelineLastSample.set(root, time);
                 pushTimelineSample(world, root, {
-                  id: pending.id,
-                  timestamp: time,
-                  totalDuration: total,
-                  systemExecutions: execs,
+                  ...pending,
+                  endTimestamp: time,
                 });
               }, delay);
               runtime.timelineTimers.set(root, timerId);
