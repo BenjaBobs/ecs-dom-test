@@ -397,7 +397,9 @@ function buildEntityList(
     const entity = entityMap.get(entityId);
     if (!entity) return;
     const tags = Object.keys(entity.components);
-    const summary = `Entity ${entity.id}${tags.length ? ` (${tags.join(', ')})` : ''}`;
+    // Use name if available, otherwise show "Entity {id}"
+    const displayName = entity.name ?? `Entity ${entity.id}`;
+    const summary = tags.length > 0 ? `${displayName} (${tags.join(', ')})` : displayName;
     const childIds = allowed
       ? entity.children.filter(child => allowed.has(child))
       : entity.children;

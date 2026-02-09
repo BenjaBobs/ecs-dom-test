@@ -34,6 +34,8 @@ export {
   type DebugSystemOptions,
   registerDebugSystems,
 } from './debug.ts';
+// Entity Name
+export { EntityName, type EntityNameData, getEntityName } from './entity-name.ts';
 // JSX
 export {
   Entity,

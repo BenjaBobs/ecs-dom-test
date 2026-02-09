@@ -31,6 +31,8 @@ export type EntitySnapshot = {
   children: EntityId[];
   /** Component data keyed by component tag */
   components: Record<string, unknown>;
+  /** Optional human-readable name from EntityName component */
+  name?: string;
 };
 
 /**
@@ -557,11 +559,22 @@ export class World {
       components[tag] = instance.data;
     }
 
+    // Extract name if present
+    const nameComponent = entityComponents.get('EntityName');
+    const name =
+      nameComponent &&
+      typeof nameComponent.data === 'object' &&
+      nameComponent.data !== null &&
+      'value' in nameComponent.data
+        ? (nameComponent.data.value as string)
+        : undefined;
+
     return {
       id: entity,
       parent: this.parents.get(entity) ?? null,
       children: this.getChildren(entity),
       components,
+      name,
     };
   }
 
@@ -704,11 +717,12 @@ export class World {
    * ```
    */
   onMutation(callback: MutationCallback, options?: MutationSubscriptionOptions): () => void {
-    const componentTags =
-      options?.components && options.components.length > 0
-        ? new Set(options.components.map(component => getTag(component)))
-        : undefined;
+    const componentTags = options?.components?.length
+      ? new Set(options.components.map(component => getTag(component)))
+      : undefined;
+
     const subscription: MutationSubscription = { callback, options, componentTags };
+
     this.mutationSubscribers.add(subscription);
     return () => {
       this.mutationSubscribers.delete(subscription);
@@ -758,7 +772,7 @@ export class World {
     }
 
     // Filter by component types
-    if (subscription.componentTags && subscription.componentTags.size > 0) {
+    if (subscription.componentTags?.size) {
       if (!subscription.componentTags.has(event.componentTag)) {
         return false;
       }
@@ -771,10 +785,10 @@ export class World {
    * Check if an entity is a descendant of another entity.
    * @internal
    */
-  private isDescendantOf(entity: EntityId, ancestor: EntityId): boolean {
+  private isDescendantOf(entity: EntityId, ancestorMaybe: EntityId): boolean {
     let current = this.parents.get(entity);
     while (current !== undefined) {
-      if (current === ancestor) return true;
+      if (current === ancestorMaybe) return true;
       current = this.parents.get(current);
     }
     return false;
