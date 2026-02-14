@@ -23,6 +23,7 @@ import {
 } from './components.ts';
 import { BottomNavSystem } from './systems/bottom-nav-system.ts';
 import { ContentSystem } from './systems/content-system.ts';
+import { PlaygroundSystem } from './systems/playground-system.ts';
 import {
   SearchFilterSystem,
   SearchInputSystem,
@@ -150,6 +151,7 @@ export async function startDocsApp({ doc }: DocsDeps): Promise<void> {
   registerDebugUISystems(world);
 
   world.registerSystem(ContentSystem);
+  world.registerSystem(PlaygroundSystem);
   world.registerSystem(SidebarSystem);
   world.registerSystem(BottomNavSystem);
   world.registerSystem(ThemeApplySystem);

@@ -1,96 +1,78 @@
 # AGENTS.md
 
-This file provides guidance for any coding agent working in this repository.
+This file gives implementation rules for coding agents in this repository.
 
-## Project Vision
+## Documentation Source Of Truth
 
-Research project exploring an ECS (Entity Component System) inspired UI framework. The hypothesis: applying data-oriented design principles from game architecture to UI could yield better composability and performance than traditional component-based frameworks like React.
+Project explanations should live in docs pages, not duplicated here.
 
-### Core Concepts
+Use these pages for context:
+- Overview concepts: `apps/docs/content/overview/concepts.mdx`
+- Overview design choices: `apps/docs/content/overview/design-choices.mdx`
+- Overview architecture: `apps/docs/content/overview/architecture.mdx`
+- Project roadmap: `apps/docs/content/repo/roadmap.mdx`
+- Current execution board: `apps/docs/content/repo/working-set.mdx`
+- Dogfooding findings: `apps/docs/content/repo/friction-log.mdx`
 
-- **Entities**: UI nodes (created via `<Entity>` in JSX)
-- **Components**: Data attached to entities (state, styles, event handlers, etc.)
-- **Systems**: Reactive functions that trigger on component changes and apply behavior
-- **Bundles**: Reusable groups of components with `except`/`only` filtering
-
-### Design Goals
-
-1. **Minimal dependencies** - Build from primitives where possible
-2. **CPU cache efficiency** - Contiguous memory layouts for component data (future goal)
-3. **JSX syntax** - Familiar HTML-like authoring experience
-4. **Composition over inheritance** - Behavior emerges from component combinations
+Guides are for task-oriented walkthroughs (for example `apps/docs/content/guides/getting-started.mdx`).
 
 ## Project Structure
 
-```
+```text
 packages/
-  ecs/          # @ecs-test/ecs - core ECS engine
-  dom/          # @ecs-test/dom - DOM renderer (core + feature folders)
-  forms/        # @ecs-test/forms - type-safe form state
-  forms-ui/     # @ecs-test/forms-ui - ECS bindings for forms
-  ui/           # @ecs-test/ui - reusable UI components (planned)
+  ecs/        @ecs-test/ecs
+  dom/        @ecs-test/dom
+  forms/      @ecs-test/forms
+  forms-ui/   @ecs-test/forms-ui
+  ui/         @ecs-test/ui
 
 apps/
-  playground/   # Demo application
+  playground/
+  docs/
 ```
 
 ## Commands
 
 ```bash
-bun install            # Install dependencies
-bun run dev            # Run dev server
-bun run typecheck      # Type check
-bun run check:full     # Type check + lint + tests
+bun install
+bun run dev
+bun run typecheck
+bun run check:full
+bun run docs:build
+bun run docs:dev
 ```
 
-## Key Patterns
+## Implementation Rules
 
-### Component Definition
-```ts
-const Position = defineComponent<{ x: number; y: number }>("Position");
-const Selected = defineMarker("Selected");  // No data, just a flag
-```
+- One `DOMElement` per entity.
+- If two bundles both add `DOMElement`, place them in separate `<Entity>` wrappers.
+- Use `world.add()` for initial setup (throws on duplicate).
+- Use `world.set()` for updates (upsert behavior).
+- Start async work in systems and call `world.flush()` in callbacks after mutations.
 
-### Bundle Definition
-```ts
-const RadioOption = defineBundle(({ value }: { value: string }) => [
-  DOMElement({ tag: "label" }),
-  Clickable(),
-  Value({ of: value }),
-]);
-```
+## Planning And Tracking (Required)
 
-### Reactive System
-```ts
-const MySystem = defineReactiveSystem({
-  query: Entities.with([Radio._tag, Selected]),
-  onEnter(world, entities) {
-    for (const entity of entities) {
-      // React to entering the query
-    }
-  },
-  onExit(world, entities) {
-    for (const entity of entities) {
-      // React to exiting the query
-    }
-  },
-});
-```
+All agent work must be tracked in repository docs:
+- Roadmap: `apps/docs/content/repo/roadmap.mdx`
+- Working set: `apps/docs/content/repo/working-set.mdx`
+- Friction log: `apps/docs/content/repo/friction-log.mdx`
 
-### JSX Usage
-```tsx
-<Entity>
-  <RadioOption value="small" except={[Clickable._tag]} />
-  <Disabled />
-  <Entity>
-    <RadioIndicator />
-  </Entity>
-</Entity>
-```
+Before substantial implementation:
+- Ensure the task exists in `working-set.mdx` (or add it).
 
-## Important Rules
+After substantial implementation:
+- Update `working-set.mdx` task status and `Recently Completed`.
+- Record relevant findings in `friction-log.mdx`.
+- Reflect priority/milestone shifts in `roadmap.mdx` when needed.
 
-- **One DOMElement per entity** - Each entity with `DOMElement` renders as one DOM node
-- **Bundles in separate entities** - If two bundles both add `DOMElement`, put them in separate `<Entity>` wrappers
-- **add vs set** - Use `world.add()` for initial setup (throws on duplicate), `world.set()` for updates (upserts)
-- **Async state** - Start async ops in systems, call `world.flush()` in callbacks after adding result components
+## Documentation Sync (Required)
+
+Any change to code, architecture, behavior, APIs, workflows, or project structure must include updates to all relevant docs content so documentation remains current.
+
+At minimum, agents must update applicable files under:
+- `apps/docs/content/overview/`
+- `apps/docs/content/guides/`
+- `apps/docs/content/repo/`
+- `apps/docs/content/api/` (when API generation or API-facing behavior changes)
+
+Do not defer docs updates for \"later\" when shipping implementation changes.

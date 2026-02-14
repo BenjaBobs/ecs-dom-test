@@ -16,13 +16,17 @@ export type FlatNavItem = {
 
 const GROUP_ORDER: Record<string, number> = {
   root: 0,
-  guides: 1,
-  examples: 2,
-  api: 3,
+  overview: 1,
+  guides: 2,
+  repo: 3,
+  examples: 4,
+  api: 5,
 };
 
 const GROUP_LABELS: Record<string, string> = {
+  overview: "Overview",
   guides: "Guides",
+  repo: "Repository",
   examples: "Examples",
   api: "API Reference",
 };

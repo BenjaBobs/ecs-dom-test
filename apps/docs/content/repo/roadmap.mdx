@@ -1,0 +1,106 @@
+---
+title: Roadmap
+description: Project-wide roadmap for ECS framework, docs dogfooding, and UI library.
+order: 2
+---
+
+# Roadmap
+
+This roadmap is for the entire project, not just the docs app.
+
+Primary strategy:
+- Build the docs product using the framework (dogfooding).
+- Use that work to discover real framework pain points.
+- In parallel, draft a practical UI standard library for building basic apps.
+
+## Current Priority Order
+
+1. `R1` Dogfooded Docs Product + Pain-Point Discovery Loop
+2. `R2` UI Standard Library Draft (`@ecs-test/ui`)
+3. `R3` Framework Ergonomics and Footgun Reduction (driven by R1 findings)
+4. `R4` Platform Hardening (debug/profiling/testing/perf)
+
+## Milestones
+
+### R1. Dogfooded Docs Product + Discovery Loop (In Progress)
+
+- Status: `in_progress`
+- Why first:
+  - it exercises real-world ECS usage continuously
+  - it reveals missing features, friction, and architectural footguns quickly
+- Scope:
+  - docs shell and interactions implemented as ECS
+  - API docs + search + navigation + playground embeds
+  - ongoing capture of friction points while developing docs features
+- Exit criteria:
+  - docs experience is stable and usable for contributors
+  - a maintained list of concrete friction findings exists and is actionable
+
+### R2. UI Standard Library Draft (In Progress)
+
+- Status: `in_progress`
+- Goal:
+  - define a baseline set of reusable UI components for typical app scaffolding
+- Scope:
+  - basic primitives (buttons, inputs, layout, cards, nav patterns)
+  - ECS-friendly composition patterns and bundles
+  - docs/examples demonstrating intended usage
+- Exit criteria:
+  - initial usable component set exists in `@ecs-test/ui`
+  - building a small app no longer requires repetitive low-level boilerplate
+
+### R3. Framework Ergonomics + Flexibility Improvements (Planned)
+
+- Status: `planned`
+- Inputs:
+  - issues discovered while executing R1/R2
+- Focus areas:
+  - overly verbose syntax
+  - inflexible composition points
+  - missing primitives/features
+  - developer footguns and unsafe defaults
+- Exit criteria:
+  - high-impact friction items are resolved or intentionally deferred with rationale
+  - docs and examples reflect improved patterns
+
+### R4. Platform Hardening (Planned / Ongoing)
+
+- Status: `planned`
+- Notes:
+  - core runtime and DOM renderer are likely near-done functionally
+  - this track remains important, but not primary right now
+- Scope:
+  - debug/profiling polish
+  - reliability and regression testing
+  - targeted performance work when evidence requires it
+- Exit criteria:
+  - hardening tasks are driven by observed issues, not speculative work
+
+## Discovery Protocol (For R1/R2)
+
+When building features, capture findings in categories:
+- `footgun`: easy-to-make mistakes with costly outcomes
+- `verbosity`: too much code/noisy syntax for common patterns
+- `inflexibility`: valid UI composition that framework resists
+- `missing_feature`: needed capability absent in core/dom/forms/ui
+
+Each finding should include:
+- short title
+- reproducible context
+- impact
+- proposed direction
+- milestone link (`R3` by default unless urgent)
+
+Record findings in the [Friction Log](/repo/friction-log.html).
+
+## Out of Immediate Focus
+
+- major new debugging platform initiatives unless they block R1/R2
+- speculative optimization work without measured pain
+- release/versioned docs strategy before core dogfooding goals are met
+
+## Success Criteria
+
+- The docs project continuously improves the framework through real usage feedback.
+- A practical UI standard library exists and is used by docs/demo apps.
+- Roadmap and working set stay tightly aligned with this priority order.

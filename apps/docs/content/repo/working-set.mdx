@@ -1,0 +1,69 @@
+---
+title: Working Set
+description: Current execution plan and task checklist aligned to the project roadmap.
+order: 3
+---
+
+# Working Set
+
+Execution board for both humans and agents.
+
+## Rules
+
+- Every active task maps to a roadmap milestone (`R1`..`R4`).
+- Keep statuses current: `todo` | `in_progress` | `blocked` | `done`.
+- Use priorities: `P0` (highest) to `P3` (lowest).
+- Add dated entries to `Recently Completed` when tasks finish.
+- Track all discovered friction items in [Friction Log](/repo/friction-log.html).
+
+## Alignment Snapshot
+
+Primary active milestones:
+- `R1` Dogfooded Docs Product + Discovery Loop
+- `R2` UI Standard Library Draft
+
+Secondary (supporting) milestone:
+- `R3` Framework Ergonomics + Flexibility Improvements
+
+## Active Tasks
+
+| ID | Status | Priority | Milestone | Task | Output |
+| --- | --- | --- | --- | --- | --- |
+| WS-R1-001 | in_progress | P0 | R1 | Keep docs app feature-complete via ECS dogfooding | Stable docs runtime with real ECS usage patterns. |
+| WS-R1-002 | in_progress | P0 | R1 | Add and maintain friction log from docs development | Concrete footguns/verbosity/inflexibility/missing-feature findings. |
+| WS-R1-003 | todo | P1 | R1 | Tighten docs UX and navigation flow | Cleaner contributor path through guides/repo/api/examples. |
+| WS-R2-001 | in_progress | P0 | R2 | Draft initial `@ecs-test/ui` primitive set | First pass of reusable UI bundles/components. |
+| WS-R2-002 | todo | P1 | R2 | Use `@ecs-test/ui` primitives in docs surfaces where sensible | Validate primitives through real usage. |
+| WS-R2-003 | todo | P2 | R2 | Document usage patterns for each primitive | API docs + examples for quick adoption. |
+| WS-R3-001 | todo | P1 | R3 | Convert top friction findings into actionable framework tasks | Prioritized implementation queue. |
+| WS-R4-001 | todo | P2 | R4 | Add targeted regression tests for discovered pain points | Prevent repeat breakage from resolved issues. |
+
+## Friction Log Template (R1/R3)
+
+Use [Friction Log](/repo/friction-log.html) and this shape for each finding:
+
+```md
+- ID: FR-YYYYMMDD-XX
+- Category: footgun | verbosity | inflexibility | missing_feature
+- Context:
+- Impact:
+- Proposed direction:
+- Milestone: R3
+- Status: todo | in_progress | done
+```
+
+## Blocked Tasks
+
+| ID | Blocked By | Unblock Condition |
+| --- | --- | --- |
+| WS-R4-001 | Initial friction backlog not curated | Finalize first prioritized R3 queue. |
+
+## Recently Completed
+
+- [x] 2026-02-14 ECS docs shell, API generation, and playground hydration baseline.
+- [x] 2026-02-14 Repository docs section established (`Design Choices`, `Roadmap`, `Working Set`).
+
+## Backlog (Unscheduled)
+
+- CI/CD + release/versioning strategy (after R1/R2 maturity).
+- Larger debugging platform expansion not required by current dogfooding needs.

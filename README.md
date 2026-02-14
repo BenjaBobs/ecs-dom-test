@@ -142,4 +142,4 @@ may stringify the entire DOM tree (and `window` graph), producing extremely larg
 stdout output. Prefer targeted checks (e.g., specific node text or counts) or
 helpers that limit the inspected text length.
 
-See [design-choices.md](./design-choices.md) for detailed architectural decisions.
+See [Repository Design Choices](./apps/docs/content/repo/design-choices.mdx) for detailed architectural decisions.

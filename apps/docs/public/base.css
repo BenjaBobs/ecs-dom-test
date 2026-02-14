@@ -218,6 +218,26 @@ html {
   font-size: var(--font-size-sm);
 }
 
+/* ── Playground Embed ─────────────────────────────── */
+.prose [data-playground] {
+  margin: var(--spacing-md) 0 var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.playground-frame {
+  width: 100%;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.playground-open-link {
+  align-self: flex-start;
+  font-size: var(--font-size-sm);
+}
+
 /* ── Prose (article content) ──────────────────────── */
 .prose h1 {
   font-size: var(--font-size-3xl);

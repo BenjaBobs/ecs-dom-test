@@ -7,6 +7,7 @@ import { buildNavTree, flattenNav } from './generate-nav.ts';
 import { renderPage } from './template.ts';
 
 export const DOCS_ROOT = resolve(import.meta.dir, '..');
+const REPO_ROOT = resolve(DOCS_ROOT, '../..');
 export const CONTENT_DIR = resolve(DOCS_ROOT, 'content');
 export const PUBLIC_DIR = resolve(DOCS_ROOT, 'public');
 export const DIST_DIR = resolve(DOCS_ROOT, 'dist');
@@ -35,6 +36,30 @@ async function bundleClientApp(): Promise<void> {
   if (!result.success) {
     throw new AggregateError(result.logs, 'Failed to bundle docs client app');
   }
+}
+
+async function bundlePlaygroundApp(): Promise<void> {
+  const playgroundDist = resolve(DIST_DIR, 'playground');
+  await mkdir(playgroundDist, { recursive: true });
+
+  const result = await Bun.build({
+    entrypoints: [resolve(REPO_ROOT, 'apps/playground/src/main.tsx')],
+    outdir: playgroundDist,
+    naming: 'app.js',
+    target: 'browser',
+    format: 'esm',
+    sourcemap: 'external',
+    minify: false,
+    write: true,
+  });
+
+  if (!result.success) {
+    throw new AggregateError(result.logs, 'Failed to bundle playground app');
+  }
+
+  const template = await Bun.file(resolve(REPO_ROOT, 'apps/playground/index.html')).text();
+  const html = template.replace('./src/main.tsx', '/playground/app.js');
+  await Bun.write(resolve(playgroundDist, 'index.html'), html);
 }
 
 export async function build() {
@@ -78,7 +103,11 @@ export async function build() {
   await bundleClientApp();
   console.log('Bundled client app');
 
-  // 7. Render HTML pages
+  // 7. Bundle playground app used by hydrated embeds
+  await bundlePlaygroundApp();
+  console.log('Bundled playground app');
+
+  // 8. Render HTML pages
   for (const page of pages) {
     const html = renderPage({
       title: page.frontmatter.title,
@@ -96,11 +125,11 @@ export async function build() {
 
   console.log(`Wrote ${pages.length} HTML pages`);
 
-  // 8. Copy public/ → dist/
+  // 9. Copy public/ → dist/
   await cp(PUBLIC_DIR, DIST_DIR, { recursive: true });
   console.log('Copied public assets');
 
-  // 9. Generate search index
+  // 10. Generate search index
   const searchIndex = pages.map((p) => ({
     title: p.frontmatter.title,
     slug: p.slug,

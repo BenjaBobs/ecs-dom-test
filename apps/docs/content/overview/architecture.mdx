@@ -1,0 +1,62 @@
+---
+title: Architecture
+description: High-level architecture of the ECS framework and docs application.
+order: 3
+---
+
+# Architecture
+
+This page describes the architecture of the project at a high level.
+
+## Repository Structure
+
+```text
+packages/
+  ecs/        Core ECS runtime
+  dom/        DOM rendering + interaction systems
+  forms/      Type-safe form state primitives
+  forms-ui/   ECS bindings for forms
+  ui/         Reusable UI primitives (in progress)
+
+apps/
+  playground/ Demo app for feature experimentation
+  docs/       Dogfooded documentation product
+```
+
+## Runtime Architecture (Framework)
+
+The framework follows ECS principles:
+- entities represent UI nodes
+- components hold data
+- reactive systems implement behavior
+- bundles compose reusable patterns
+
+Key runtime characteristics:
+- event-driven execution via `world.flush()`
+- query-based system lifecycle (`onEnter`, `onUpdate`, `onExit`)
+- world-scoped externals for environment bindings
+- DOM behavior implemented in layered systems (`@ecs-test/dom`)
+
+## Docs App Architecture
+
+The docs app is itself an ECS application:
+- shell rendering (layout/sidebar/content/search/theme) is ECS-driven
+- debug UI is mounted to inspect real world state
+- API docs are generated via TypeDoc and compiled into docs pages
+- playground placeholders are hydrated at runtime with ECS systems
+
+## Build Pipeline (Docs)
+
+`apps/docs/build/build.ts` performs:
+1. API reference generation
+2. content discovery + MDX compilation
+3. nav generation
+4. docs client bundle
+5. playground bundle for embed usage
+6. static page rendering + search index generation
+
+## Architectural Intent
+
+- dogfood the framework continuously through the docs app
+- treat docs development as a feedback loop for framework ergonomics
+- use findings to drive `@ecs-test/ui` and core framework improvements
