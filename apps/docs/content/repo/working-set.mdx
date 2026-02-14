@@ -20,9 +20,9 @@ Execution board for both humans and agents.
 
 Primary active milestones:
 - `R1` Dogfooded Docs Product + Discovery Loop
-- `R2` UI Standard Library Draft
 
 Secondary (supporting) milestone:
+- `R2` UI Standard Library Draft
 - `R3` Framework Ergonomics + Flexibility Improvements
 
 ## Active Tasks
@@ -31,12 +31,19 @@ Secondary (supporting) milestone:
 | --- | --- | --- | --- | --- | --- |
 | WS-R1-001 | in_progress | P0 | R1 | Keep docs app feature-complete via ECS dogfooding | Stable docs runtime with real ECS usage patterns. |
 | WS-R1-002 | in_progress | P0 | R1 | Add and maintain friction log from docs development | Concrete footguns/verbosity/inflexibility/missing-feature findings. |
-| WS-R1-003 | todo | P1 | R1 | Tighten docs UX and navigation flow | Cleaner contributor path through guides/repo/api/examples. |
-| WS-R2-001 | in_progress | P0 | R2 | Draft initial `@ecs-test/ui` primitive set | First pass of reusable UI bundles/components. |
+| WS-R1-003 | in_progress | P0 | R1 | Live editor v2 (multi-example support, diagnostics, global mode sync) | Reliable editable examples for JSX/non-JSX with isolated previews. |
+| WS-R1-004 | done | P0 | R1 | Build-time internal/API link validation | Broken refs fail the docs build instead of shipping 404s. |
+| WS-R1-005 | todo | P1 | R1 | Move live example sources to `apps/docs/examples` + generated manifest | Docs runtime reads examples from build artifact, not hardcoded system maps. |
+| WS-R1-006 | todo | P1 | R1 | Add page metadata UX (`Edit this page`, `Last updated`) | Better contributor/documentation workflow visibility. |
+| WS-R1-007 | todo | P1 | R1 | Add section TOC for long docs pages | Faster navigation for `overview/*` and `repo/*`. |
+| WS-R1-008 | todo | P1 | R1 | Tighten docs UX and navigation flow | Cleaner contributor path through guides/repo/api/examples. |
+| WS-R1-009 | done | P1 | R1 | Add TypeScript autocomplete + hover for live editors | Monaco-backed authoring shipped with TS language tooling and textarea fallback. |
+| WS-R2-001 | todo | P0 | R2 | Draft initial `@ecs-test/ui` primitive set | First pass of reusable UI bundles/components. |
 | WS-R2-002 | todo | P1 | R2 | Use `@ecs-test/ui` primitives in docs surfaces where sensible | Validate primitives through real usage. |
 | WS-R2-003 | todo | P2 | R2 | Document usage patterns for each primitive | API docs + examples for quick adoption. |
 | WS-R3-001 | todo | P1 | R3 | Convert top friction findings into actionable framework tasks | Prioritized implementation queue. |
 | WS-R4-001 | todo | P2 | R4 | Add targeted regression tests for discovered pain points | Prevent repeat breakage from resolved issues. |
+| WS-R4-002 | todo | P1 | R4 | Add `docs:check` CI gate (build + link checks + docs assertions) | Prevent stale docs and broken docs routes from landing. |
 
 ## Friction Log Template (R1/R3)
 
@@ -61,7 +68,15 @@ Use [Friction Log](/repo/friction-log.html) and this shape for each finding:
 ## Recently Completed
 
 - [x] 2026-02-14 ECS docs shell, API generation, and playground hydration baseline.
-- [x] 2026-02-14 Repository docs section established (`Design Choices`, `Roadmap`, `Working Set`).
+- [x] 2026-02-14 Repository docs section established (`Design Choices`, `Roadmap`, `Working Set`, `Friction Log`).
+- [x] 2026-02-14 Synchronized JSX/non-JSX code tabs added for docs examples.
+- [x] 2026-02-14 Live editor baseline added (`data-live-editor`) with isolated iframe previews and editable code.
+- [x] 2026-02-14 Build-time internal link validation added to docs pipeline (build now fails on broken internal links).
+- [x] 2026-02-14 Live editor now follows global JSX/non-JSX mode selection without overriding edited code.
+- [x] 2026-02-14 `docs:dev` fast mode added (skips API regeneration by default; regenerates when `packages/` changes).
+- [x] 2026-02-14 Live editor upgraded to Monaco (TS autocomplete/hover) with automatic textarea fallback.
+- [x] 2026-02-14 Live editor Monaco typings switched from handwritten shims to generated package `.d.ts` declarations.
+- [x] 2026-02-14 Live editor type build now includes source `.d.ts` augmentations (for example DOM `WorldExternals` augmentation).
 
 ## Backlog (Unscheduled)
 

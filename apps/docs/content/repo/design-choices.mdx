@@ -62,6 +62,8 @@ Data flows through a single `Value` component on an entity. External systems (DO
 - Bundles can hide extra components for ergonomics while keeping the model explicit
 
 **Example (conceptual):**
+<div data-code-tabs>
+
 ```tsx
 <Entity>
   <DOMElement tag="input" />
@@ -78,6 +80,32 @@ Data flows through a single `Value` component on an entity. External systems (DO
   />
 </Entity>
 ```
+
+Non-JSX alternative (conceptual):
+
+```ts
+const input = world.createEntity();
+world.add(input, DOMElement({ tag: "input" }));
+world.add(input, Value({ value: 0 }));
+world.add(
+  input,
+  DOMBinding({
+    trigger: "input",
+    toValue: (el) => parseFloat((el as HTMLInputElement).value),
+    fromValue: (v) => String(v),
+  }),
+);
+world.add(
+  input,
+  FormBinding({
+    field: f.age,
+    toValue: (formValue) => formValue,
+    fromValue: (value) => value,
+  }),
+);
+```
+
+</div>
 
 ### Feature-First Structure (Including Styles)
 Features should own their components, systems, and styles together (folder per feature). Styles are applied via `Classes` and are kept in feature-scoped CSS files imported by that feature's entry module.

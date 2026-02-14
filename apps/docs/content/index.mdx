@@ -19,23 +19,41 @@ Traditional UI frameworks couple behavior to component identity. ECS decouples t
 
 ## Quick Example
 
+<div data-code-tabs>
+
 ```tsx
 import { World, Entity, materialize } from "@ecs-test/ecs";
-import { DOMElement, Clickable, Classes } from "@ecs-test/dom";
+import { DOMElement, Classes, TextContent } from "@ecs-test/dom";
 
 const world = new World({ externals: { /* ... */ } });
 
 const ui = (
   <Entity>
     <DOMElement tag="button" />
-    <Classes classes={["btn", "btn-primary"]} />
-    <Clickable onClick={() => console.log("clicked!")} />
+    <Classes list={["btn", "btn-primary"]} />
+    <TextContent value="Click me" />
   </Entity>
 );
 
 materialize(world, ui);
 world.flush();
 ```
+
+```ts
+import { World } from "@ecs-test/ecs";
+import { DOMElement, Classes, TextContent } from "@ecs-test/dom";
+
+const world = new World({ externals: { /* ... */ } });
+
+const button = world.createEntity();
+world.add(button, DOMElement({ tag: "button" }));
+world.add(button, Classes({ list: ["btn", "btn-primary"] }));
+world.add(button, TextContent({ value: "Click me" }));
+
+world.flush();
+```
+
+</div>
 
 ## Get Started
 

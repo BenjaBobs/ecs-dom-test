@@ -22,7 +22,9 @@ import {
   ThemeToggle,
 } from './components.ts';
 import { BottomNavSystem } from './systems/bottom-nav-system.ts';
+import { CodeTabsSystem } from './systems/code-tabs-system.ts';
 import { ContentSystem } from './systems/content-system.ts';
+import { LiveEditorSystem } from './systems/live-editor-system.ts';
 import { PlaygroundSystem } from './systems/playground-system.ts';
 import {
   SearchFilterSystem,
@@ -151,6 +153,8 @@ export async function startDocsApp({ doc }: DocsDeps): Promise<void> {
   registerDebugUISystems(world);
 
   world.registerSystem(ContentSystem);
+  world.registerSystem(CodeTabsSystem);
+  world.registerSystem(LiveEditorSystem);
   world.registerSystem(PlaygroundSystem);
   world.registerSystem(SidebarSystem);
   world.registerSystem(BottomNavSystem);

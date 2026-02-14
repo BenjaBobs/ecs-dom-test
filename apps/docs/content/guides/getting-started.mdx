@@ -18,8 +18,8 @@ This guide walks you through installing the framework and rendering your first e
 The framework is a monorepo with several packages. Clone it and install dependencies:
 
 ```bash
-git clone https://github.com/your-org/ecs-ui-framework.git
-cd ecs-ui-framework
+# from your local clone
+# cd /path/to/ecs-dom-test
 bun install
 ```
 
@@ -36,9 +36,11 @@ bun install
 
 Create a minimal application that renders a button:
 
+<div data-code-tabs>
+
 ```tsx
 import { World, Entity, materialize } from "@ecs-test/ecs";
-import { registerDOMSystems, DOMElement, Clickable } from "@ecs-test/dom";
+import { registerDOMSystems, DOMElement, TextContent } from "@ecs-test/dom";
 
 // 1. Create a world with DOM externals
 const world = new World({
@@ -57,9 +59,7 @@ registerDOMSystems(world);
 const ui = (
   <Entity>
     <DOMElement tag="button" />
-    <Clickable onClick={() => {
-      console.log("Button clicked!");
-    }} />
+    <TextContent value="Button" />
   </Entity>
 );
 
@@ -68,13 +68,37 @@ materialize(world, ui);
 world.flush();
 ```
 
+```ts
+import { World } from "@ecs-test/ecs";
+import { registerDOMSystems, DOMElement, TextContent } from "@ecs-test/dom";
+
+const world = new World({
+  externals: {
+    createElement: document.createElement.bind(document),
+    rootContainer: document.getElementById("root")!,
+    window,
+    console,
+  },
+});
+
+registerDOMSystems(world);
+
+const button = world.createEntity();
+world.add(button, DOMElement({ tag: "button" }));
+world.add(button, TextContent({ value: "Button" }));
+
+world.flush();
+```
+
+</div>
+
 ## Running the Dev Server
 
 ```bash
 bun run dev
 ```
 
-This starts the playground application at `localhost:3000` where you can experiment with the framework.
+This starts the playground application (typically on `localhost:3000`) where you can experiment with the framework.
 
 ## Embedded Playground
 
@@ -82,6 +106,19 @@ The docs app hydrates playground placeholders with ECS systems. This embed runs 
 playground app inside an iframe:
 
 <div data-playground data-src="/playground/index.html" data-height="560"></div>
+
+## Live Editor (Isolated Preview)
+
+You can also embed a live editor with an isolated iframe renderer. Editing code updates the iframe preview.
+TypeScript and JSX are transpiled before execution, and the template follows the global JSX/Non-JSX mode selection used by code tabs:
+
+<div data-live-editor data-example="manual-button" data-height="220"></div>
+
+Authoring notes for docs contributors:
+- Use `data-live-editor` with `data-example="example-id"` to place a live example.
+- Monaco (with TS autocomplete/hover) is the default editor.
+- Monaco type information is loaded from generated package declarations (`/playground/types`) during docs build.
+- Use `data-editor="textarea"` only when Monaco must be disabled for a specific example.
 
 ## Next Steps
 

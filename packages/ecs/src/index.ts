@@ -43,6 +43,9 @@ export {
   isJSXEntity,
   type JSXChild,
   type JSXEntity,
+  jsx,
+  jsxDEV,
+  jsxs,
 } from './jsx-runtime.ts';
 // Materialization
 export { materialize } from './materialize.ts';

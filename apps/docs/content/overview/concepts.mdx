@@ -12,11 +12,20 @@ The ECS pattern has four key primitives: **entities**, **components**, **systems
 
 An entity is just an ID — a lightweight identifier for a UI node. Entities don't hold data or behavior directly. Instead, data is attached to them via components.
 
+<div data-code-tabs>
+
 ```tsx
 <Entity>
   {/* Components and children go here */}
 </Entity>
 ```
+
+```ts
+const entity = world.createEntity();
+// world.add(entity, SomeComponent(...));
+```
+
+</div>
 
 In the DOM, each entity with a `DOMElement` component renders as exactly one DOM node. This is a hard rule: **one `DOMElement` per entity**.
 
@@ -40,14 +49,14 @@ Common built-in components:
 |-----------|---------|
 | `DOMElement` | Renders a DOM element (`div`, `button`, etc.) |
 | `Classes` | CSS class names |
-| `Clickable` | Click event handler |
+| `Clickable` | Marks an entity as interactive (`Clicked` is set on click) |
 | `Disabled` | Disables interaction |
-| `Value` | Data binding value |
+| `TextContent` | Sets element text content |
 
 ### add vs set
 
-- `world.add(entity, Component, data)` — initial setup, throws if component already exists
-- `world.set(entity, Component, data)` — upsert, creates or updates
+- `world.add(entity, ComponentInstance)` — initial setup, throws if component already exists
+- `world.set(entity, ComponentInstance)` — upsert, creates or updates
 
 ## Systems
 
@@ -61,17 +70,15 @@ const HighlightSystem = defineReactiveSystem({
   onEnter(world, entities) {
     for (const entity of entities) {
       const classes = world.get(entity, Classes);
-      world.set(entity, Classes, {
-        classes: [...classes.classes, "highlighted"],
-      });
+      if (!classes) continue;
+      world.set(entity, Classes({ list: [...classes.list, "highlighted"] }));
     }
   },
   onExit(world, entities) {
     for (const entity of entities) {
       const classes = world.get(entity, Classes);
-      world.set(entity, Classes, {
-        classes: classes.classes.filter((c) => c !== "highlighted"),
-      });
+      if (!classes) continue;
+      world.set(entity, Classes({ list: classes.list.filter((c) => c !== "highlighted") }));
     }
   },
 });
@@ -84,7 +91,7 @@ Systems react to **query membership changes**:
 
 ### No Frame Loop
 
-Unlike game ECS, there is no `requestAnimationFrame` loop. Systems only run during `world.flush()`, which you call after mutations.
+Unlike game ECS, there is no `requestAnimationFrame` loop. Systems run during flush cycles. By default, mutations auto-trigger a flush (`autoFlush: true`), and you can disable that for manual batching.
 
 ## Bundles
 
@@ -92,21 +99,32 @@ Bundles group multiple components into a reusable unit. They're the primary comp
 
 ```ts
 import { defineBundle } from "@ecs-test/ecs";
-import { DOMElement, Clickable, Classes } from "@ecs-test/dom";
+import { DOMElement, Clickable, Classes, TextContent } from "@ecs-test/dom";
 
 const Button = defineBundle(({ label }: { label: string }) => [
-  DOMElement({ tag: "button", textContent: label }),
-  Classes({ classes: ["btn"] }),
+  DOMElement({ tag: "button" }),
+  Classes({ list: ["btn"] }),
+  TextContent({ value: label }),
   Clickable(),
 ]);
 ```
 
 Use in JSX:
 
+<div data-code-tabs>
+
 ```tsx
 <Entity>
   <Button label="Click me" />
 </Entity>
+```
+
+```ts
+const button = world.createEntity();
+world.add(button, DOMElement({ tag: "button" }));
+world.add(button, Classes({ list: ["btn"] }));
+world.add(button, TextContent({ value: "Click me" }));
+world.add(button, Clickable());
 ```
 
 ### Customizing Bundles
@@ -116,13 +134,25 @@ Use `except` to remove components from a bundle, or `only` to keep specific ones
 ```tsx
 {/* Button without click handling */}
 <Entity>
-  <Button label="Display only" except={[Clickable._tag]} />
+  <Button label="Display only" except={[Clickable]} />
 </Entity>
 ```
 
+```ts
+const displayOnly = world.createEntity();
+world.add(displayOnly, DOMElement({ tag: "button" }));
+world.add(displayOnly, Classes({ list: ["btn"] }));
+world.add(displayOnly, TextContent({ value: "Display only" }));
+// Intentionally no Clickable component.
+```
+
+</div>
+
 ## The Flush Cycle
 
-Mutations don't take effect immediately. They're batched and applied during `world.flush()`:
+With `autoFlush: true` (default), each mutation flushes immediately. For batching workflows, set `autoFlush: false` and flush manually.
+
+Manual flush flow:
 
 1. Add/set/remove components (queued)
 2. Call `world.flush()`

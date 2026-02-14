@@ -80,8 +80,22 @@ function normalizeLinks(markdown: string): string {
   });
 }
 
+function normalizeMediaMdxLinks(markdown: string): string {
+  return markdown.replace(/\]\(_media\/([^)]+)\.mdx\)/g, (_full, name: string) => {
+    if (name === 'design-choices') {
+      return '](/overview/design-choices.html)';
+    }
+
+    if (name === 'roadmap' || name === 'working-set' || name === 'friction-log') {
+      return `](/repo/${name}.html)`;
+    }
+
+    return `](/repo/${name}.html)`;
+  });
+}
+
 function normalizeMarkdown(markdown: string): string {
-  return normalizeLinks(normalizeHeadingPrefix(markdown));
+  return normalizeMediaMdxLinks(normalizeLinks(normalizeHeadingPrefix(markdown)));
 }
 
 async function listMarkdownFiles(rootDir: string): Promise<string[]> {
