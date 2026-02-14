@@ -1,0 +1,133 @@
+---
+title: Core Concepts
+description: Entities, components, systems, and bundles — the building blocks of the ECS UI framework.
+order: 2
+---
+
+# Core Concepts
+
+The ECS pattern has four key primitives: **entities**, **components**, **systems**, and **bundles**. Understanding how they interact is essential to building with this framework.
+
+## Entities
+
+An entity is just an ID — a lightweight identifier for a UI node. Entities don't hold data or behavior directly. Instead, data is attached to them via components.
+
+```tsx
+<Entity>
+  {/* Components and children go here */}
+</Entity>
+```
+
+In the DOM, each entity with a `DOMElement` component renders as exactly one DOM node. This is a hard rule: **one `DOMElement` per entity**.
+
+## Components
+
+Components are typed data containers attached to entities. They hold state, configuration, or references — but no logic.
+
+```ts
+import { defineComponent, defineMarker } from "@ecs-test/ecs";
+
+// A component with data
+const Position = defineComponent<{ x: number; y: number }>("Position");
+
+// A marker component (no data, just a flag)
+const Selected = defineMarker("Selected");
+```
+
+Common built-in components:
+
+| Component | Purpose |
+|-----------|---------|
+| `DOMElement` | Renders a DOM element (`div`, `button`, etc.) |
+| `Classes` | CSS class names |
+| `Clickable` | Click event handler |
+| `Disabled` | Disables interaction |
+| `Value` | Data binding value |
+
+### add vs set
+
+- `world.add(entity, Component, data)` — initial setup, throws if component already exists
+- `world.set(entity, Component, data)` — upsert, creates or updates
+
+## Systems
+
+Systems are reactive functions that run when entities enter, exit, or change within a query. They contain all the logic.
+
+```ts
+import { defineReactiveSystem, Entities } from "@ecs-test/ecs";
+
+const HighlightSystem = defineReactiveSystem({
+  query: Entities.with([Selected, Classes]),
+  onEnter(world, entities) {
+    for (const entity of entities) {
+      const classes = world.get(entity, Classes);
+      world.set(entity, Classes, {
+        classes: [...classes.classes, "highlighted"],
+      });
+    }
+  },
+  onExit(world, entities) {
+    for (const entity of entities) {
+      const classes = world.get(entity, Classes);
+      world.set(entity, Classes, {
+        classes: classes.classes.filter((c) => c !== "highlighted"),
+      });
+    }
+  },
+});
+```
+
+Systems react to **query membership changes**:
+- `onEnter` — entity just matched the query (component added)
+- `onExit` — entity no longer matches (component removed)
+- `onUpdate` — a required component's data changed
+
+### No Frame Loop
+
+Unlike game ECS, there is no `requestAnimationFrame` loop. Systems only run during `world.flush()`, which you call after mutations.
+
+## Bundles
+
+Bundles group multiple components into a reusable unit. They're the primary composition tool.
+
+```ts
+import { defineBundle } from "@ecs-test/ecs";
+import { DOMElement, Clickable, Classes } from "@ecs-test/dom";
+
+const Button = defineBundle(({ label }: { label: string }) => [
+  DOMElement({ tag: "button", textContent: label }),
+  Classes({ classes: ["btn"] }),
+  Clickable(),
+]);
+```
+
+Use in JSX:
+
+```tsx
+<Entity>
+  <Button label="Click me" />
+</Entity>
+```
+
+### Customizing Bundles
+
+Use `except` to remove components from a bundle, or `only` to keep specific ones:
+
+```tsx
+{/* Button without click handling */}
+<Entity>
+  <Button label="Display only" except={[Clickable._tag]} />
+</Entity>
+```
+
+## The Flush Cycle
+
+Mutations don't take effect immediately. They're batched and applied during `world.flush()`:
+
+1. Add/set/remove components (queued)
+2. Call `world.flush()`
+3. Query membership recalculated
+4. Systems run (`onEnter`, `onUpdate`, `onExit`)
+5. DOM updates applied by DOM systems
+
+This batching prevents cascading re-renders and keeps execution predictable.

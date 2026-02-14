@@ -13,12 +13,16 @@
     "test:ci": "bun test",
     "typecheck": "tsc --noEmit",
     "check:full": "bun run typecheck && bun run lint && bun test",
-    "dev": "bun --watch apps/playground/index.html"
+    "dev": "bun --watch apps/playground/index.html",
+    "docs:build": "bun run apps/docs/build/build.ts",
+    "docs:dev": "bun run apps/docs/build/dev.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest",
     "@biomejs/biome": "latest",
+    "@types/bun": "latest",
     "happy-dom": "^17.4.4",
+    "typedoc": "^0.28.17",
+    "typedoc-plugin-markdown": "^4.10.0",
     "typescript": "^5"
   }
 }

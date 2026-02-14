@@ -6,7 +6,10 @@
       "WebFetch(domain:bun.com)",
       "Bash(bun run:*)",
       "Bash(bun test)",
-      "Bash(bun test:*)"
+      "Bash(bun test:*)",
+      "Bash(git -C /home/bh/dev/ecs-dom-test log --oneline -10)",
+      "Bash(bun:*)",
+      "Bash(wc:*)"
     ]
   }
 }

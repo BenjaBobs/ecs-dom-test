@@ -1,0 +1,42 @@
+---
+title: ECS UI Framework
+description: A data-oriented UI framework applying Entity Component System architecture to the browser.
+order: 0
+---
+
+# ECS UI Framework
+
+A research project exploring **Entity Component System** architecture for browser UI. Instead of component trees with props and state, UI is built from entities, data components, and reactive systems.
+
+## Why ECS for UI?
+
+Traditional UI frameworks couple behavior to component identity. ECS decouples them — behavior emerges from the _combination_ of data attached to an entity, not from its position in a tree.
+
+- **Entities** are just IDs — lightweight UI nodes
+- **Components** are pure data — state, styles, event handlers
+- **Systems** are reactive functions — they run when component membership changes
+- **Bundles** are reusable groups of components — composable building blocks
+
+## Quick Example
+
+```tsx
+import { World, Entity, materialize } from "@ecs-test/ecs";
+import { DOMElement, Clickable, Classes } from "@ecs-test/dom";
+
+const world = new World({ externals: { /* ... */ } });
+
+const ui = (
+  <Entity>
+    <DOMElement tag="button" />
+    <Classes classes={["btn", "btn-primary"]} />
+    <Clickable onClick={() => console.log("clicked!")} />
+  </Entity>
+);
+
+materialize(world, ui);
+world.flush();
+```
+
+## Get Started
+
+Head to the [Getting Started](/guides/getting-started.html) guide to install and build your first world.

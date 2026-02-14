@@ -1,0 +1,97 @@
+---
+title: Design Choices
+description: Architectural decisions for the ECS UI framework — what we chose, what we didn't, and why.
+order: 3
+---
+
+# Design Choices
+
+Architectural decisions for this ECS UI framework, including what we chose NOT to do and why.
+
+## Context: UI vs Game ECS
+
+This framework targets browser UI, not games. This context shapes every decision:
+
+| Aspect | Game ECS | UI ECS |
+|--------|----------|--------|
+| Execution | 60+ FPS game loop | Event-driven |
+| Entity count | Thousands | Hundreds |
+| Read:write ratio | Read-heavy (query every frame) | Balanced (query only on events) |
+| Component churn | Low (stable archetypes) | High (dynamic state changes) |
+| Between events | Systems still run | Nothing happens |
+
+## What We Do
+
+### Reactive Systems
+
+Systems declare queries (`Entities.with([...]).without([...])`) and react via `onEnter`, `onUpdate`, and `onExit`.
+
+**Why:** Event-driven UI means no wasted work between interactions. Queries stay simple and systems only run when membership changes or required components update.
+
+### Component Index
+
+`Map<componentTag, Set<EntityId>>` maintained on add/set/remove.
+
+**Why:** O(1) lookup for "all entities with component X" without full archetype machinery. Good balance for UI's read:write ratio.
+
+### Two-Pass Materialization
+
+When materializing JSX, components/bundles are processed before child entities.
+
+**Why:** Ensures parent's `DOMElement` exists before children try to attach to it. Deterministic DOM tree construction.
+
+### Separate Reactive Systems for Behavior
+
+`ClickableSystem`, `DisabledSystem`, etc. are separate from `DOMElementSystem`.
+
+**Why:** Adding `Clickable` to an existing entity should work. Creation-time-only wiring is a bug, not a feature.
+
+### Classes as Single Source of Truth
+
+Removed `class` from `DOMElement`. All CSS classes go through `Classes` component.
+
+**Why:** Two systems writing to `el.className` will fight. One source of truth eliminates the conflict.
+
+### World Externals
+
+Worlds receive external dependencies (DOM factories, fetch, etc.) at construction time via `WorldExternals`. Packages extend the externals interface via module augmentation.
+
+**Why:** Keeps non-ECS dependencies explicit and world-scoped. Supports swapping dependencies for tests and non-DOM environments.
+
+### Runtime Entity
+
+Each world has a single runtime entity for system-owned runtime state. Systems attach runtime-only components (like `DomRuntime`) to this entity.
+
+**Why:** Keeps runtime wiring inside the world instead of in global WeakMaps. Provides O(1) access to runtime state via a single entity.
+
+### World Isolation
+
+Each `World` instance is fully independent. Multiple worlds can coexist in the same DOM.
+
+**Why:** Enables micro-frontends, isolated widgets, testing without cleanup.
+
+## What We Don't Do (and Why)
+
+### No Archetypes / Chunk Storage
+
+Archetypes group entities with identical component sets into contiguous memory tables.
+
+**Why not:** Optimizes for iteration-heavy workloads (query every frame). We're event-driven — systems only run on mutations. Component churn in UI would cause frequent archetype moves. Added complexity not justified for our access patterns.
+
+### No Frame-Based Scheduling
+
+No `requestAnimationFrame` loop running systems continuously.
+
+**Why not:** UI is event-driven, not frame-driven. Running systems when nothing changed wastes CPU and battery. Reactive queries naturally batch related changes within a single flush.
+
+### No Structural Sharing / Immutable Components
+
+Components are mutable. No copy-on-write or persistent data structures.
+
+**Why not:** Added complexity for time-travel debugging we don't need yet. Mutable is simpler and faster for our scale.
+
+### No Built-in Async Scheduling
+
+Async operations are started in systems, with callbacks adding components and calling `flush()`.
+
+**Why not build in async primitives:** Keeps the core synchronous and predictable. `flush()` in callbacks is explicit — no magic.

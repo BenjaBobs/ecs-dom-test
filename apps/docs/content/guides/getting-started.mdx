@@ -1,0 +1,82 @@
+---
+title: Getting Started
+description: Install the ECS UI framework and create your first world.
+order: 1
+---
+
+# Getting Started
+
+This guide walks you through installing the framework and rendering your first entity.
+
+## Prerequisites
+
+- [Bun](https://bun.sh/) v1.0 or later
+- TypeScript 5+
+
+## Installation
+
+The framework is a monorepo with several packages. Clone it and install dependencies:
+
+```bash
+git clone https://github.com/your-org/ecs-ui-framework.git
+cd ecs-ui-framework
+bun install
+```
+
+## Core Packages
+
+| Package | Purpose |
+|---------|---------|
+| `@ecs-test/ecs` | Core ECS engine — World, entities, components, systems |
+| `@ecs-test/dom` | DOM renderer — bridges ECS to the browser |
+| `@ecs-test/forms` | Type-safe form state management |
+| `@ecs-test/forms-ui` | ECS bindings for forms |
+
+## Your First World
+
+Create a minimal application that renders a button:
+
+```tsx
+import { World, Entity, materialize } from "@ecs-test/ecs";
+import { registerDOMSystems, DOMElement, Clickable } from "@ecs-test/dom";
+
+// 1. Create a world with DOM externals
+const world = new World({
+  externals: {
+    createElement: document.createElement.bind(document),
+    rootContainer: document.getElementById("root")!,
+    window,
+    console,
+  },
+});
+
+// 2. Register DOM systems
+registerDOMSystems(world);
+
+// 3. Define your UI as JSX
+const ui = (
+  <Entity>
+    <DOMElement tag="button" />
+    <Clickable onClick={() => {
+      console.log("Button clicked!");
+    }} />
+  </Entity>
+);
+
+// 4. Materialize and flush
+materialize(world, ui);
+world.flush();
+```
+
+## Running the Dev Server
+
+```bash
+bun run dev
+```
+
+This starts the playground application at `localhost:3000` where you can experiment with the framework.
+
+## Next Steps
+
+- [Core Concepts](/guides/core-concepts.html) — understand entities, components, and systems in depth
+- [Design Choices](/guides/design-choices.html) — why this architecture, and what we chose not to do

@@ -4,6 +4,7 @@ node_modules
 # output
 out
 dist
+apps/docs/content/api
 *.tgz
 
 # code coverage
