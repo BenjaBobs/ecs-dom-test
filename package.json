@@ -13,7 +13,7 @@
     "test:ci": "bun test",
     "typecheck": "tsc --noEmit",
     "check:full": "bun run typecheck && bun run lint && bun test",
-    "dev": "bun --watch apps/playground/index.html",
+    "dev": "bun run docs:dev",
     "docs:build": "bun run apps/docs/build/build.ts",
     "docs:dev": "bun run apps/docs/build/dev.ts"
   },

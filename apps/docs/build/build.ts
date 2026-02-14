@@ -93,7 +93,6 @@ function buildKnownRouteSet(pages: CompiledPage[]): Set<string> {
 
   known.add('/index.html');
   known.add('/');
-  known.add('/playground/index.html');
 
   return known;
 }
@@ -176,30 +175,6 @@ async function bundlePlaygroundModules(): Promise<void> {
     jsxRuntimeDist,
     `export { Fragment, jsx, jsxs, jsxDEV } from '/playground/modules/ecs.js';\n`,
   );
-}
-
-async function bundlePlaygroundApp(): Promise<void> {
-  const playgroundDist = resolve(DIST_DIR, 'playground');
-  await mkdir(playgroundDist, { recursive: true });
-
-  const result = await Bun.build({
-    entrypoints: [resolve(REPO_ROOT, 'apps/playground/src/main.tsx')],
-    outdir: playgroundDist,
-    naming: 'app.js',
-    target: 'browser',
-    format: 'esm',
-    sourcemap: 'external',
-    minify: false,
-    write: true,
-  });
-
-  if (!result.success) {
-    throw new AggregateError(result.logs, 'Failed to bundle playground app');
-  }
-
-  const template = await Bun.file(resolve(REPO_ROOT, 'apps/playground/index.html')).text();
-  const html = template.replace('./src/main.tsx', '/playground/app.js');
-  await Bun.write(resolve(playgroundDist, 'index.html'), html);
 }
 
 async function bundlePlaygroundTypes(): Promise<void> {
@@ -342,11 +317,7 @@ export async function build(options: BuildOptions = {}) {
   await bundlePlaygroundModules();
   console.log('Bundled playground modules');
 
-  // 8. Bundle playground app used by hydrated embeds
-  await bundlePlaygroundApp();
-  console.log('Bundled playground app');
-
-  // 8.5 Emit declaration files for Monaco-powered live editor typings
+  // 8. Emit declaration files for Monaco-powered live editor typings
   await bundlePlaygroundTypes();
   console.log('Bundled playground type declarations');
 

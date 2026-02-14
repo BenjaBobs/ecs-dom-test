@@ -1,0 +1,178 @@
+---
+title: Build a Small App
+description: Build a small ECS app with rendering, interaction, state updates, and conditional UI.
+order: 2
+---
+
+# Build a Small App
+
+This guide builds a small "Task Counter" app that samples core features:
+- DOM rendering (`DOMElement`, `TextContent`, `Classes`)
+- interactions (`Clickable`, `Clicked`)
+- state components + reactive systems
+- conditional UI (`Disabled`)
+
+## 1. Define App Components
+
+```ts
+import { defineComponent, defineMarker } from "@ecs-test/ecs";
+
+export const Count = defineComponent<{ value: number }>("Count");
+export const IncrementButton = defineMarker("IncrementButton");
+export const DecrementButton = defineMarker("DecrementButton");
+```
+
+## 2. Build the UI Tree
+
+<div data-code-tabs>
+
+```tsx
+import { Entity } from "@ecs-test/ecs";
+import { Classes, Clickable, DOMElement, TextContent } from "@ecs-test/dom";
+
+export const appUi = (
+  <Entity>
+    <DOMElement tag="section" />
+    <Classes list={["task-counter"]} />
+
+    <Entity>
+      <DOMElement tag="h2" />
+      <TextContent value="Task Counter" />
+    </Entity>
+
+    <Entity>
+      <DOMElement tag="p" />
+      <TextContent value="0 tasks completed" />
+    </Entity>
+
+    <Entity>
+      <DOMElement tag="div" />
+      <Classes list={["controls"]} />
+
+      <Entity>
+        <DOMElement tag="button" />
+        <TextContent value="-1" />
+        <Clickable />
+      </Entity>
+
+      <Entity>
+        <DOMElement tag="button" />
+        <TextContent value="+1" />
+        <Clickable />
+      </Entity>
+    </Entity>
+  </Entity>
+);
+```
+
+```ts
+import { Classes, Clickable, DOMElement, TextContent } from "@ecs-test/dom";
+
+export function buildAppUi(world: any) {
+  const root = world.createEntity();
+  world.add(root, DOMElement({ tag: "section" }));
+  world.add(root, Classes({ list: ["task-counter"] }));
+
+  const title = world.createEntity(root);
+  world.add(title, DOMElement({ tag: "h2" }));
+  world.add(title, TextContent({ value: "Task Counter" }));
+
+  const counterLabel = world.createEntity(root);
+  world.add(counterLabel, DOMElement({ tag: "p" }));
+  world.add(counterLabel, TextContent({ value: "0 tasks completed" }));
+
+  const controls = world.createEntity(root);
+  world.add(controls, DOMElement({ tag: "div" }));
+  world.add(controls, Classes({ list: ["controls"] }));
+
+  const decButton = world.createEntity(controls);
+  world.add(decButton, DOMElement({ tag: "button" }));
+  world.add(decButton, TextContent({ value: "-1" }));
+  world.add(decButton, Clickable());
+
+  const incButton = world.createEntity(controls);
+  world.add(incButton, DOMElement({ tag: "button" }));
+  world.add(incButton, TextContent({ value: "+1" }));
+  world.add(incButton, Clickable());
+
+  return { root, counterLabel, decButton, incButton };
+}
+```
+
+</div>
+
+## 3. Add Systems for Updates
+
+```ts
+import { defineReactiveSystem, Entities } from "@ecs-test/ecs";
+import { Clicked, Disabled, TextContent } from "@ecs-test/dom";
+import { Count, DecrementButton, IncrementButton } from "./components";
+
+export const CounterSystem = defineReactiveSystem({
+  name: "CounterSystem",
+  query: Entities.with([Clicked]),
+  onEnter(world, entities) {
+    const root = world.getRuntimeEntity();
+    const current = world.get(root, Count)?.value ?? 0;
+    let next = current;
+
+    for (const entity of entities) {
+      if (world.has(entity, IncrementButton)) next += 1;
+      if (world.has(entity, DecrementButton)) next -= 1;
+      world.remove(entity, Clicked);
+    }
+
+    world.set(root, Count({ value: Math.max(0, next) }));
+  },
+});
+
+export const CounterLabelSystem = defineReactiveSystem({
+  name: "CounterLabelSystem",
+  query: Entities.with([Count]),
+  onEnter(world) {
+    const root = world.getRuntimeEntity();
+    const value = world.get(root, Count)?.value ?? 0;
+    // Set this on your label entity in your app setup:
+    // world.set(counterLabelEntity, TextContent({ value: `${value} tasks completed` }));
+  },
+});
+
+export const DisableDecrementSystem = defineReactiveSystem({
+  name: "DisableDecrementSystem",
+  query: Entities.with([Count]),
+  onEnter(world) {
+    const root = world.getRuntimeEntity();
+    const value = world.get(root, Count)?.value ?? 0;
+    // Add/remove Disabled marker on decrement button based on value === 0
+    // world.add(decButtonEntity, Disabled()) / world.remove(decButtonEntity, Disabled)
+  },
+});
+```
+
+## 4. Wire and Run
+
+```ts
+import { World } from "@ecs-test/ecs";
+import { registerDOMSystems } from "@ecs-test/dom";
+
+const world = new World({
+  externals: {
+    createElement: document.createElement.bind(document),
+    rootContainer: document.getElementById("root")!,
+    window,
+    console,
+  },
+});
+
+registerDOMSystems(world);
+world.registerSystem(CounterSystem);
+world.registerSystem(CounterLabelSystem);
+world.registerSystem(DisableDecrementSystem);
+
+world.set(world.getRuntimeEntity(), Count({ value: 0 }));
+world.flush();
+```
+
+## 5. Try It Live
+
+<div data-live-editor data-example="task-counter" data-height="280"></div>

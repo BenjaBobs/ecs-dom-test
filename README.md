@@ -15,7 +15,7 @@ packages/
   ui/           # @ecs-test/ui - Reusable UI components (planned)
 
 apps/
-  playground/   # Demo application
+  docs/         # Dogfooded documentation application
 ```
 
 ### @ecs-test/ecs
@@ -73,7 +73,7 @@ bun install
 # Run type checking
 bun run typecheck
 
-# Run the playground
+# Run the docs app
 bun run dev
 ```
 

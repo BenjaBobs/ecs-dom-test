@@ -34,8 +34,40 @@ Use this with:
 
 ## Active Findings
 
-No active findings documented yet.
+- ID: FR-20260214-04
+- Date: 2026-02-14
+- Category: `verbosity`
+- Context: Building interactive docs examples requires substantial boilerplate (`defineMarker`, query lookups, manual label update systems) even for simple counters.
+- Impact: Intro examples become long, making onboarding harder and obscuring core ECS ideas.
+- Proposed direction: Add higher-level example primitives and tiny helper bundles in `@ecs-test/ui` for common patterns (counter state + button wiring + label binding).
+- Milestone: `R3`
+- Status: `todo`
 
 ## Completed Findings
 
-No completed findings documented yet.
+- ID: FR-20260214-01
+- Date: 2026-02-14
+- Category: `footgun`
+- Context: Live editor Monaco typing initially used handwritten shims; they drifted from real package APIs and produced false diagnostics.
+- Impact: Docs examples showed incorrect type errors, reducing trust in examples and in framework typings.
+- Proposed direction: Generate and load real package `.d.ts` files for live editor typing.
+- Milestone: `R3`
+- Status: `done`
+
+- ID: FR-20260214-02
+- Date: 2026-02-14
+- Category: `footgun`
+- Context: JSX runtime helper imports and `Entity` imports came from different module instances, causing silent render failures (white iframe).
+- Impact: No visible output without actionable errors; hard to debug for users and maintainers.
+- Proposed direction: Enforce shared runtime identity (`jsx/jsxs/jsxDEV` and `Entity`) by exporting helpers from `@ecs-test/ecs` and using a stable runtime import path.
+- Milestone: `R3`
+- Status: `done`
+
+- ID: FR-20260214-03
+- Date: 2026-02-14
+- Category: `missing_feature`
+- Context: Docs dev loop originally regenerated API docs on every start/rebuild.
+- Impact: Slow startup/rebuild times hurt iteration speed while dogfooding.
+- Proposed direction: Add fast dev mode with selective API regeneration when package sources change.
+- Milestone: `R3`
+- Status: `done`

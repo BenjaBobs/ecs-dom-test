@@ -19,7 +19,6 @@ packages/
   ui/         Reusable UI primitives (in progress)
 
 apps/
-  playground/ Demo app for feature experimentation
   docs/       Dogfooded documentation product
 ```
 
@@ -43,7 +42,6 @@ The docs app is itself an ECS application:
 - shell rendering (layout/sidebar/content/search/theme) is ECS-driven
 - debug UI is mounted to inspect real world state
 - API docs are generated via TypeDoc and compiled into docs pages
-- playground placeholders are hydrated at runtime with ECS systems
 - live editor placeholders are hydrated with isolated iframe previews
 
 ## Build Pipeline (Docs)
@@ -53,10 +51,9 @@ The docs app is itself an ECS application:
 2. content discovery + MDX compilation
 3. nav generation
 4. docs client bundle
-5. playground module bundles for live editor imports
-6. playground bundle for embed usage
-7. generated `.d.ts` bundle for live editor Monaco typing (`dist/playground/types`)
-8. static page rendering + search index generation
+5. module bundles for live editor imports (`dist/playground/modules`)
+6. generated `.d.ts` bundle for live editor Monaco typing (`dist/playground/types`)
+7. static page rendering + search index generation
 
 ## Architectural Intent
 
