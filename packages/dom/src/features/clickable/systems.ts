@@ -20,6 +20,10 @@ function getClickHandlers(world: World): Map<number, () => void> {
 
 /**
  * Attaches click handler when Clickable is added.
+ *
+ * If the Clickable component has an `onClick` handler, the handler is called
+ * directly on click. Otherwise, the entity receives a transient `Clicked`
+ * marker that downstream systems can query for.
  */
 export const ClickableSystem = defineReactiveSystem({
   name: 'ClickableSystem',
@@ -38,8 +42,17 @@ export const ClickableSystem = defineReactiveSystem({
         el.removeEventListener('click', existingHandler);
       }
 
+      const clickableData = world.get(entity, Clickable);
+      const onClick = clickableData?.onClick;
+
       const handler = () => {
-        if (!world.has(entity, Disabled)) {
+        if (world.has(entity, Disabled)) return;
+        if (onClick) {
+          // Direct handler — call it and flush for any mutations it made
+          onClick(world, entity);
+          world.flush();
+        } else {
+          // Marker-based — set Clicked for downstream systems to consume
           world.set(entity, Clicked());
           world.flush();
         }

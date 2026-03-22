@@ -17,63 +17,46 @@ import {
 import {
   DebugUIHeaderDragSystem,
   DebugUIHotkeySystem,
-  DebugUIIncludeDebugToggleSystem,
   DebugUIInitSystem,
   DebugUILayoutSystem,
-  DebugUIPauseToggleSystem,
   DebugUIRootStyleSystem,
-  DebugUISectionToggleSystem,
-  DebugUISelectionSystem,
   DebugUISubscriptionCleanupSystem,
   DebugUITimelineRenderSystem,
-  DebugUITimelineSelectionSystem,
   DebugUITreeSearchInputSystem,
   DebugUITreeSelectionRenderSystem,
-  DebugUITreeToggleSystem,
   DebugUIVisibilitySystem,
 } from './systems.ts';
 
 export {
   DebugUIConfig,
-  DebugUIEntityRef,
   DebugUIHeader,
   type DebugUIHotkey,
   DebugUIHotkeys,
-  DebugUIIncludeDebugToggle,
   DebugUILayout,
   DebugUIPanelState,
-  DebugUIPauseToggle,
   DebugUIRenderState,
   DebugUIRoot,
   DebugUIRuntime,
   DebugUISectionState,
-  DebugUISectionToggle,
   DebugUISelection,
   DebugUIState,
   DebugUITimeline,
-  DebugUITimelineRef,
   DebugUITreeSearch,
   DebugUITreeSearchInput,
   DebugUITreeState,
-  DebugUITreeToggle,
   DebugUIVisible,
 } from './components.ts';
 
 export {
   DebugUIHeaderDragSystem,
   DebugUIHotkeySystem,
-  DebugUIIncludeDebugToggleSystem,
   DebugUIInitSystem,
   DebugUILayoutSystem,
   DebugUIRootStyleSystem,
-  DebugUISectionToggleSystem,
-  DebugUISelectionSystem,
   DebugUISubscriptionCleanupSystem,
   DebugUITimelineRenderSystem,
-  DebugUITimelineSelectionSystem,
   DebugUITreeSearchInputSystem,
   DebugUITreeSelectionRenderSystem,
-  DebugUITreeToggleSystem,
   DebugUIVisibilitySystem,
 } from './systems.ts';
 
@@ -91,12 +74,6 @@ export function registerDebugUISystems(world: World): void {
   world.registerSystem(DebugUILayoutSystem);
   world.registerSystem(DebugUITreeSelectionRenderSystem);
   world.registerSystem(DebugUITimelineRenderSystem);
-  world.registerSystem(DebugUISelectionSystem);
-  world.registerSystem(DebugUIPauseToggleSystem);
-  world.registerSystem(DebugUIIncludeDebugToggleSystem);
-  world.registerSystem(DebugUISectionToggleSystem);
-  world.registerSystem(DebugUITimelineSelectionSystem);
-  world.registerSystem(DebugUITreeToggleSystem);
   world.registerSystem(DebugUITreeSearchInputSystem);
   world.registerSystem(DebugUIHeaderDragSystem);
   world.registerSystem(DebugUIVisibilitySystem);

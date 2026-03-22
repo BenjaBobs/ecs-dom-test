@@ -21,21 +21,17 @@ export {
 export { Classes } from './features/classes/components.ts';
 // Systems
 export { ClassesSystem } from './features/classes/systems.ts';
-export { Clickable, Clicked } from './features/clickable/components.ts';
+export { Clickable, Clicked, type ClickHandler } from './features/clickable/components.ts';
 export { ClickableSystem } from './features/clickable/systems.ts';
 export {
   createDebugUI,
-  DebugUIEntityRef,
   type DebugUIHotkey,
   DebugUIHotkeys,
-  DebugUIIncludeDebugToggle,
   DebugUIPanelState,
-  DebugUIPauseToggle,
   DebugUIRoot,
   DebugUISelection,
   DebugUIState,
   DebugUITimeline,
-  DebugUITimelineRef,
   DebugUIVisible,
   registerDebugUISystems,
 } from './features/debug-ui/index.ts';

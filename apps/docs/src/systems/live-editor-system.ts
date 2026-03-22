@@ -349,7 +349,12 @@ const PREVIEW_THEMES: Record<'light' | 'dark', PreviewTheme> = {
   dark: { bg: '#1a1a2e', text: '#e5e7eb', border: '#374151', muted: '#9ca3af', error: '#f87171' },
 };
 
-function buildSrcdoc(jsCode: string, moduleBaseUrl: string, theme: 'light' | 'dark', compileError?: string): string {
+function buildSrcdoc(
+  jsCode: string,
+  moduleBaseUrl: string,
+  theme: 'light' | 'dark',
+  compileError?: string,
+): string {
   const encoded = encodeBase64(jsCode);
   const moduleBaseLiteral = JSON.stringify(moduleBaseUrl);
   const compileErrorLiteral = JSON.stringify(compileError ?? '');
@@ -618,7 +623,12 @@ function mountLiveEditor(placeholder: HTMLElement, example: LiveExample): void {
   const render = () => {
     if (!editorHandle) return;
     const transpiled = transpileEditorCode(editorHandle.getValue(), mode);
-    frame.srcdoc = buildSrcdoc(transpiled.outputText, moduleBaseUrl, currentTheme, transpiled.compileError);
+    frame.srcdoc = buildSrcdoc(
+      transpiled.outputText,
+      moduleBaseUrl,
+      currentTheme,
+      transpiled.compileError,
+    );
   };
 
   // Watch for theme changes on <html data-theme>

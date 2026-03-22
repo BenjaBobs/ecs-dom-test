@@ -373,7 +373,7 @@ html {
 
 .live-editor-fullscreen .live-editor-editor-host {
   flex: 1;
-  height: auto !important;
+  height: auto;
   min-width: 0;
 }
 
@@ -389,7 +389,7 @@ html {
 
 .live-editor-fullscreen .live-editor-frame {
   flex: 1;
-  height: auto !important;
+  height: auto;
   min-width: 0;
 }
 

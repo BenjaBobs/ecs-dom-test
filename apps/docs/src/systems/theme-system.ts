@@ -2,7 +2,7 @@
  * ThemeSystem — toggles data-theme on <html>, persists to localStorage.
  */
 
-import { Clicked, getDOMElement } from '@ecs-test/dom';
+import { getDOMElement } from '@ecs-test/dom';
 import { defineReactiveSystem, Entities, type World } from '@ecs-test/ecs';
 import { ThemeState, ThemeToggle } from '../components.ts';
 
@@ -61,24 +61,16 @@ export const ThemeApplySystem = defineReactiveSystem({
   },
 });
 
-export const ThemeToggleClickSystem = defineReactiveSystem({
-  name: 'ThemeToggleClickSystem',
-  query: Entities.with([ThemeToggle, Clicked]),
-  onEnter(world, entities) {
-    const themeEntities = world.query(ThemeState);
-    if (themeEntities.length === 0) return;
+export function toggleTheme(world: World): void {
+  const themeEntities = world.query(ThemeState);
+  if (themeEntities.length === 0) return;
 
-    const themeEntity = themeEntities[0];
-    if (!themeEntity) return;
+  const themeEntity = themeEntities[0];
+  if (!themeEntity) return;
 
-    for (const entity of entities) {
-      world.remove(entity, Clicked);
+  const current = world.get(themeEntity, ThemeState);
+  if (!current) return;
 
-      const current = world.get(themeEntity, ThemeState);
-      if (!current) continue;
-
-      const next = current.mode === 'light' ? 'dark' : 'light';
-      world.set(themeEntity, ThemeState({ mode: next }));
-    }
-  },
-});
+  const next = current.mode === 'light' ? 'dark' : 'light';
+  world.set(themeEntity, ThemeState({ mode: next }));
+}

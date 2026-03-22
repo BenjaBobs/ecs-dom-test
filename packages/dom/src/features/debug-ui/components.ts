@@ -67,9 +67,6 @@ export type DebugUIPanelStateData = {
 
 export const DebugUIPanelState = defineComponent<DebugUIPanelStateData>('DebugUIPanelState');
 
-export type DebugUIEntityRefData = { id: EntityId };
-export const DebugUIEntityRef = defineComponent<DebugUIEntityRefData>('DebugUIEntityRef');
-
 export const DebugUIHeader = defineMarker('DebugUIHeader');
 export const DebugUIVisible = defineMarker('DebugUIVisible');
 
@@ -133,14 +130,6 @@ export type DebugUITimelineData = {
 
 export const DebugUITimeline = defineComponent<DebugUITimelineData>('DebugUITimeline');
 
-export const DebugUITimelineRef = defineComponent<{ id: number }>('DebugUITimelineRef');
-
-export const DebugUIPauseToggle = defineMarker('DebugUIPauseToggle');
-export const DebugUIIncludeDebugToggle = defineMarker('DebugUIIncludeDebugToggle');
-export const DebugUISectionToggle = defineComponent<{ section: 'selection' | 'timeline' }>(
-  'DebugUISectionToggle',
-);
-export const DebugUITreeToggle = defineComponent<{ id: EntityId }>('DebugUITreeToggle');
 export const DebugUITreeSearchInput = defineMarker('DebugUITreeSearchInput');
 
 export type DebugUIConfigData = {

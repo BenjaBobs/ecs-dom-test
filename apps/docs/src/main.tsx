@@ -32,7 +32,7 @@ import {
   SearchResultRenderSystem,
 } from './systems/search-system.ts';
 import { SidebarSystem } from './systems/sidebar-system.ts';
-import { ThemeApplySystem, ThemeToggleClickSystem } from './systems/theme-system.ts';
+import { ThemeApplySystem, toggleTheme } from './systems/theme-system.ts';
 
 type PageData = {
   title: string;
@@ -160,7 +160,6 @@ export async function startDocsApp({ doc }: DocsDeps): Promise<void> {
   world.registerSystem(SidebarSystem);
   world.registerSystem(BottomNavSystem);
   world.registerSystem(ThemeApplySystem);
-  world.registerSystem(ThemeToggleClickSystem);
   world.registerSystem(SearchInputSystem);
   world.registerSystem(SearchFilterSystem);
   world.registerSystem(SearchResultRenderSystem);
@@ -224,7 +223,7 @@ export async function startDocsApp({ doc }: DocsDeps): Promise<void> {
               <DOMElement tag="button" />
               <Classes list={['theme-toggle']} />
               <ThemeToggle />
-              <Clickable />
+              <Clickable onClick={world => toggleTheme(world)} />
               <TextContent value={mode === 'dark' ? 'Light Mode' : 'Dark Mode'} />
             </Entity>
           </Entity>

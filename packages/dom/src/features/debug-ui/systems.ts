@@ -14,23 +14,19 @@ import {
 import { DOMElement } from '../../dom-element-components.ts';
 import { getDOMElements } from '../../dom-element-systems.ts';
 import { Classes } from '../classes/components.ts';
-import { Clickable, Clicked } from '../clickable/components.ts';
+import { Clickable } from '../clickable/components.ts';
 import { Style } from '../style/components.ts';
 import { TextContent } from '../text/components.ts';
 import {
   DebugUIConfig,
   type DebugUIConfigData,
-  DebugUIEntityRef,
-  type DebugUIEntityRefData,
   DebugUIHeader,
   type DebugUIHotkey,
   DebugUIHotkeys,
-  DebugUIIncludeDebugToggle,
   DebugUILayout,
   type DebugUILayoutData,
   DebugUIPanelState,
   type DebugUIPanelStateData,
-  DebugUIPauseToggle,
   DebugUIRenderState,
   type DebugUIRenderStateData,
   DebugUIRoot,
@@ -38,21 +34,18 @@ import {
   type DebugUIRuntimeData,
   DebugUISectionState,
   type DebugUISectionStateData,
-  DebugUISectionToggle,
   DebugUISelection,
   type DebugUISelectionData,
   DebugUIState,
   type DebugUIStateData,
   DebugUITimeline,
   type DebugUITimelineData,
-  DebugUITimelineRef,
   type DebugUITimelineSample,
   DebugUITreeSearch,
   type DebugUITreeSearchData,
   DebugUITreeSearchInput,
   DebugUITreeState,
   type DebugUITreeStateData,
-  DebugUITreeToggle,
   DebugUIVisible,
 } from './components.ts';
 
@@ -984,14 +977,43 @@ export const DebugUITreeSelectionRenderSystem = defineReactiveSystem({
             cursor: entry.hasChildren ? 'pointer' : 'default',
           });
           if (entry.hasChildren) {
-            world.add(toggle, Clickable());
-            world.add(toggle, DebugUITreeToggle({ id: entry.id }));
+            const toggleId = entry.id;
+            world.add(
+              toggle,
+              Clickable({
+                onClick: (world, entity) => {
+                  const root = findDebugRoot(world, entity);
+                  if (!root) return;
+                  const current = (world.get(root, DebugUITreeState) as
+                    | DebugUITreeStateData
+                    | undefined) ?? {
+                    expanded: new Set(),
+                  };
+                  const nextExpanded = new Set(current.expanded);
+                  if (nextExpanded.has(toggleId)) {
+                    nextExpanded.delete(toggleId);
+                  } else {
+                    nextExpanded.add(toggleId);
+                  }
+                  world.set(root, DebugUITreeState({ expanded: nextExpanded }));
+                },
+              }),
+            );
           }
 
           const label = createDebugUIElementEntity(world, row, 'span');
           appendHighlightedText(world, label, entry.summary, tokens);
-          world.add(label, Clickable());
-          world.add(label, DebugUIEntityRef({ id: entry.id }));
+          const entryId = entry.id;
+          world.add(
+            label,
+            Clickable({
+              onClick: (world, entity) => {
+                const root = findDebugRoot(world, entity);
+                if (!root) return;
+                world.set(root, DebugUISelection({ entity: entryId }));
+              },
+            }),
+          );
 
           treeEntities.push(row);
           treeEntities.push(toggle);
@@ -1040,8 +1062,25 @@ export const DebugUITreeSelectionRenderSystem = defineReactiveSystem({
           `Selection ${selectionOpen ? '▾' : '▸'}`,
           sectionHeaderStyle,
         );
-        world.add(detailHeader, Clickable());
-        world.add(detailHeader, DebugUISectionToggle({ section: 'selection' }));
+        world.add(
+          detailHeader,
+          Clickable({
+            onClick: (world, entity) => {
+              const root = findDebugRoot(world, entity);
+              if (!root) return;
+              const current = (world.get(root, DebugUISectionState) as
+                | DebugUISectionStateData
+                | undefined) ?? { selectionOpen: true, timelineOpen: true };
+              world.set(
+                root,
+                DebugUISectionState({
+                  selectionOpen: !current.selectionOpen,
+                  timelineOpen: current.timelineOpen,
+                }),
+              );
+            },
+          }),
+        );
         selectionEntities.push(detailHeader);
 
         if (!selectionOpen) {
@@ -1149,8 +1188,25 @@ export const DebugUITimelineRenderSystem = defineReactiveSystem({
           `Systems (last ${maxTimelineSamples}) ${timelineOpen ? '▾' : '▸'}`,
           sectionHeaderStyle,
         );
-        world.add(sectionHeader, Clickable());
-        world.add(sectionHeader, DebugUISectionToggle({ section: 'timeline' }));
+        world.add(
+          sectionHeader,
+          Clickable({
+            onClick: (world, entity) => {
+              const root = findDebugRoot(world, entity);
+              if (!root) return;
+              const current = (world.get(root, DebugUISectionState) as
+                | DebugUISectionStateData
+                | undefined) ?? { selectionOpen: true, timelineOpen: true };
+              world.set(
+                root,
+                DebugUISectionState({
+                  selectionOpen: current.selectionOpen,
+                  timelineOpen: !current.timelineOpen,
+                }),
+              );
+            },
+          }),
+        );
         timelineEntities.push(sectionHeader);
 
         if (!timelineOpen) {
@@ -1191,8 +1247,25 @@ export const DebugUITimelineRenderSystem = defineReactiveSystem({
           pauseLabel,
           pauseButtonStyle,
         );
-        world.add(pauseButton, Clickable());
-        world.add(pauseButton, DebugUIPauseToggle());
+        world.add(
+          pauseButton,
+          Clickable({
+            onClick: (world, entity) => {
+              const root = findDebugRoot(world, entity);
+              if (!root) return;
+              const timeline = getTimelineData(world, root);
+              world.set(
+                root,
+                DebugUITimeline({
+                  samples: timeline.samples,
+                  selectedId: timeline.selectedId,
+                  paused: !timeline.paused,
+                  includeDebugUI: timeline.includeDebugUI,
+                }),
+              );
+            },
+          }),
+        );
         timelineEntities.push(pauseButton);
 
         const includeLabel = timeline.includeDebugUI ? 'Exclude Debug UI' : 'Include Debug UI';
@@ -1203,8 +1276,25 @@ export const DebugUITimelineRenderSystem = defineReactiveSystem({
           includeLabel,
           pauseButtonStyle,
         );
-        world.add(includeButton, Clickable());
-        world.add(includeButton, DebugUIIncludeDebugToggle());
+        world.add(
+          includeButton,
+          Clickable({
+            onClick: (world, entity) => {
+              const root = findDebugRoot(world, entity);
+              if (!root) return;
+              const timeline = getTimelineData(world, root);
+              world.set(
+                root,
+                DebugUITimeline({
+                  samples: timeline.samples,
+                  selectedId: timeline.selectedId,
+                  paused: timeline.paused,
+                  includeDebugUI: !timeline.includeDebugUI,
+                }),
+              );
+            },
+          }),
+        );
         timelineEntities.push(includeButton);
 
         const samples = timeline.samples;
@@ -1276,8 +1366,26 @@ export const DebugUITimelineRenderSystem = defineReactiveSystem({
               backgroundColor: barColor,
               ...(isSelected ? timelineBarSelectedStyle : {}),
             });
-            world.add(bar, Clickable());
-            world.add(bar, DebugUITimelineRef({ id: sample.id }));
+            const sampleId = sample.id;
+            world.add(
+              bar,
+              Clickable({
+                onClick: (world, entity) => {
+                  const root = findDebugRoot(world, entity);
+                  if (!root) return;
+                  const timeline = getTimelineData(world, root);
+                  world.set(
+                    root,
+                    DebugUITimeline({
+                      samples: timeline.samples,
+                      selectedId: sampleId,
+                      paused: timeline.paused,
+                      includeDebugUI: timeline.includeDebugUI,
+                    }),
+                  );
+                },
+              }),
+            );
             timelineEntities.push(bar);
           }
 
@@ -1339,95 +1447,6 @@ export const DebugUITimelineRenderSystem = defineReactiveSystem({
   },
 });
 
-export const DebugUISelectionSystem = defineReactiveSystem({
-  name: 'DebugUISelectionSystem',
-  query: Entities.with([DebugUIEntityRef, Clicked]),
-  onEnter(world, entities) {
-    for (const entity of entities) {
-      const target = world.get(entity, DebugUIEntityRef) as DebugUIEntityRefData | undefined;
-      if (!target) continue;
-      const root = findDebugRoot(world, entity);
-      if (!root) continue;
-
-      world.set(root, DebugUISelection({ entity: target.id }));
-      world.remove(entity, Clicked);
-      world.flush();
-    }
-  },
-});
-
-export const DebugUITimelineSelectionSystem = defineReactiveSystem({
-  name: 'DebugUITimelineSelectionSystem',
-  query: Entities.with([DebugUITimelineRef, Clicked]),
-  onEnter(world, entities) {
-    for (const entity of entities) {
-      const ref = world.get(entity, DebugUITimelineRef) as { id: number } | undefined;
-      if (!ref) continue;
-      const root = findDebugRoot(world, entity);
-      if (!root) continue;
-
-      const timeline = getTimelineData(world, root);
-      world.set(
-        root,
-        DebugUITimeline({
-          samples: timeline.samples,
-          selectedId: ref.id,
-          paused: timeline.paused,
-          includeDebugUI: timeline.includeDebugUI,
-        }),
-      );
-      world.remove(entity, Clicked);
-      world.flush();
-    }
-  },
-});
-
-export const DebugUIPauseToggleSystem = defineReactiveSystem({
-  name: 'DebugUIPauseToggleSystem',
-  query: Entities.with([DebugUIPauseToggle, Clicked]),
-  onEnter(world, entities) {
-    for (const entity of entities) {
-      const root = findDebugRoot(world, entity);
-      if (!root) continue;
-      const timeline = getTimelineData(world, root);
-      world.set(
-        root,
-        DebugUITimeline({
-          samples: timeline.samples,
-          selectedId: timeline.selectedId,
-          paused: !timeline.paused,
-          includeDebugUI: timeline.includeDebugUI,
-        }),
-      );
-      world.remove(entity, Clicked);
-      world.flush();
-    }
-  },
-});
-
-export const DebugUIIncludeDebugToggleSystem = defineReactiveSystem({
-  name: 'DebugUIIncludeDebugToggleSystem',
-  query: Entities.with([DebugUIIncludeDebugToggle, Clicked]),
-  onEnter(world, entities) {
-    for (const entity of entities) {
-      const root = findDebugRoot(world, entity);
-      if (!root) continue;
-      const timeline = getTimelineData(world, root);
-      world.set(
-        root,
-        DebugUITimeline({
-          samples: timeline.samples,
-          selectedId: timeline.selectedId,
-          paused: timeline.paused,
-          includeDebugUI: !timeline.includeDebugUI,
-        }),
-      );
-      world.remove(entity, Clicked);
-      world.flush();
-    }
-  },
-});
-
 export const DebugUITreeSearchInputSystem = defineReactiveSystem({
   name: 'DebugUITreeSearchInputSystem',
   query: Entities.with([DebugUITreeSearchInput]),
@@ -1485,61 +1504,6 @@ export const DebugUITreeSearchInputSystem = defineReactiveSystem({
         el.removeEventListener('input', existing);
       }
       runtime.searchHandlers.delete(entity);
-    }
-  },
-});
-
-export const DebugUISectionToggleSystem = defineReactiveSystem({
-  name: 'DebugUISectionToggleSystem',
-  query: Entities.with([DebugUISectionToggle, Clicked]),
-  onEnter(world, entities) {
-    for (const entity of entities) {
-      const root = findDebugRoot(world, entity);
-      if (!root) continue;
-      const toggle = world.get(entity, DebugUISectionToggle) as
-        | { section: 'selection' | 'timeline' }
-        | undefined;
-      if (!toggle) continue;
-
-      const current = (world.get(root, DebugUISectionState) as
-        | DebugUISectionStateData
-        | undefined) ?? { selectionOpen: true, timelineOpen: true };
-
-      const next =
-        toggle.section === 'selection'
-          ? { selectionOpen: !current.selectionOpen, timelineOpen: current.timelineOpen }
-          : { selectionOpen: current.selectionOpen, timelineOpen: !current.timelineOpen };
-
-      world.set(root, DebugUISectionState(next));
-      world.remove(entity, Clicked);
-      world.flush();
-    }
-  },
-});
-
-export const DebugUITreeToggleSystem = defineReactiveSystem({
-  name: 'DebugUITreeToggleSystem',
-  query: Entities.with([DebugUITreeToggle, Clicked]),
-  onEnter(world, entities) {
-    for (const entity of entities) {
-      const root = findDebugRoot(world, entity);
-      if (!root) continue;
-      const toggle = world.get(entity, DebugUITreeToggle) as { id: EntityId } | undefined;
-      if (!toggle) continue;
-
-      const current = (world.get(root, DebugUITreeState) as DebugUITreeStateData | undefined) ?? {
-        expanded: new Set(),
-      };
-      const nextExpanded = new Set(current.expanded);
-      if (nextExpanded.has(toggle.id)) {
-        nextExpanded.delete(toggle.id);
-      } else {
-        nextExpanded.add(toggle.id);
-      }
-
-      world.set(root, DebugUITreeState({ expanded: nextExpanded }));
-      world.remove(entity, Clicked);
-      world.flush();
     }
   },
 });

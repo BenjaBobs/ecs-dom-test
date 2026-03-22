@@ -82,6 +82,7 @@ Use [Friction Log](/repo/friction-log.html) and this shape for each finding:
 - [x] 2026-03-22 Fixed live editor splitter losing drag when mouse moves fast (iframe was stealing pointer events).
 - [x] 2026-03-22 Switched code blocks to dual shiki theme (github-light/github-dark) with subtle background and border for light mode readability.
 - [x] 2026-03-22 Rewrote "Build a Small App" guide as step-by-step todo list tutorial using entity-per-item ECS pattern, JSX/TS comparison at each step, and live editor.
+- [x] 2026-03-22 Added `onClick` handler to `Clickable` component — `Clickable({ onClick })` calls handler directly on click, eliminating marker-per-button boilerplate. Backwards-compatible: `Clickable()` without args still sets `Clicked` marker.
 
 ## Backlog (Unscheduled)
 
