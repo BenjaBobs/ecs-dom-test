@@ -70,6 +70,42 @@ Each `World` instance is fully independent. Multiple worlds can coexist in the s
 
 **Why:** Enables micro-frontends, isolated widgets, testing without cleanup.
 
+### ECS-DOM Cooperative Interaction Model
+
+The todo-list and forms dogfooding work exposed a recurring coordination issue:
+
+- interactions often start on one entity (e.g., a child button)
+- state often lives on a related entity (e.g., parent row/root widget)
+- visuals often render on different related entities (siblings/children)
+
+In a browser, trying to force all interaction through pure marker/system indirection increases boilerplate and can work against native semantics (input behavior, event flow, focus, form behavior).
+
+**Decision direction:** keep ECS as the source of truth for state, composition, and lifecycle, while allowing direct DOM-aligned handlers and bindings where they reduce indirection.
+
+**Current example of this direction:** `Clickable({ onClick })` short-circuits marker plumbing for self-contained actions while remaining ECS-aware.
+
+**Solutions under consideration:**
+
+1. Parent/child entity messaging
+   - Direction: typed, narrow APIs (`emitToParent`, `emitToChildren`) instead of a global event bus.
+2. Widget-root state for multi-entity controls
+   - Direction: one root entity owns the data object; child entities are interaction/render projections.
+3. Event bubbling across ECS parent-child links
+   - Direction: mirror browser mental model; reduce manual `getParent()` wiring.
+4. Scoped processing ("tick specific entities")
+   - Direction: consider only after profiling; may complicate reactive ordering semantics.
+5. Child-scoped query helpers (implemented)
+   - Added `world.queryChildren(parent, ...components)` for direct child lookups to avoid manual `getChildren()` loops.
+6. Binding primitives for form/input flows (additional viable option)
+   - Direction: introduce `InputValue`/binding-style components for DOM <-> ECS state sync without repeated `getDOMElement` casting.
+
+**Near-term priority order:**
+
+1. Event bubbling + payloads
+2. Widget-root state pattern (forms first)
+3. Child-scoped queries
+4. Re-evaluate targeted/scoped ticking only if measured bottlenecks remain
+
 ## What We Don't Do (and Why)
 
 ### No Archetypes / Chunk Storage

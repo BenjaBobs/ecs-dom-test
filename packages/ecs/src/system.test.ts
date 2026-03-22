@@ -34,8 +34,7 @@ describe('query helpers', () => {
 describe('ReactiveSystem.matchesEntity', () => {
   it('matches when required components are present', () => {
     const world = new World({ autoFlush: false });
-    const entity = world.createEntity();
-    world.add(entity, Position({ x: 0, y: 0 }));
+    const entity = world.createEntity(undefined, [Position({ x: 0, y: 0 })]);
 
     const system = defineReactiveSystem({
       query: Entities.with([Position]),
@@ -47,9 +46,7 @@ describe('ReactiveSystem.matchesEntity', () => {
 
   it('does not match when excluded component is present', () => {
     const world = new World({ autoFlush: false });
-    const entity = world.createEntity();
-    world.add(entity, Position({ x: 0, y: 0 }));
-    world.add(entity, Selected());
+    const entity = world.createEntity(undefined, [Position({ x: 0, y: 0 }), Selected()]);
 
     const system = defineReactiveSystem({
       query: Entities.with([Position]).without([Selected]),
@@ -74,8 +71,7 @@ describe('defineReactiveSystem', () => {
 
     world.registerSystem(system);
 
-    const entity = world.createEntity();
-    world.add(entity, Position({ x: 0, y: 0 }));
+    const entity = world.createEntity(undefined, [Position({ x: 0, y: 0 })]);
     world.flush();
 
     expect(entered).toContain(entity);

@@ -45,10 +45,11 @@ import { DOMElement, Classes, TextContent } from "@ecs-test/dom";
 
 const world = new World({ externals: { /* ... */ } });
 
-const button = world.createEntity();
-world.add(button, DOMElement({ tag: "button" }));
-world.add(button, Classes({ list: ["btn", "btn-primary"] }));
-world.add(button, TextContent({ value: "Click me" }));
+world.createEntity(undefined, [
+  DOMElement({ tag: "button" }),
+  Classes({ list: ["btn", "btn-primary"] }),
+  TextContent({ value: "Click me" }),
+]);
 
 world.flush();
 ```

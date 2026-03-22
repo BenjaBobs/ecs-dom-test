@@ -83,9 +83,10 @@ const world = new World({
 
 registerDOMSystems(world);
 
-const button = world.createEntity();
-world.add(button, DOMElement({ tag: "button" }));
-world.add(button, TextContent({ value: "Button" }));
+world.createEntity(undefined, [
+  DOMElement({ tag: "button" }),
+  TextContent({ value: "Button" }),
+]);
 
 world.flush();
 ```

@@ -42,7 +42,7 @@ Secondary (supporting) milestone:
 | WS-R2-001 | todo | P0 | R2 | Draft initial `@ecs-test/ui` primitive set | First pass of reusable UI bundles/components. |
 | WS-R2-002 | todo | P1 | R2 | Use `@ecs-test/ui` primitives in docs surfaces where sensible | Validate primitives through real usage. |
 | WS-R2-003 | todo | P2 | R2 | Document usage patterns for each primitive | API docs + examples for quick adoption. |
-| WS-R3-001 | todo | P1 | R3 | Convert top friction findings into actionable framework tasks | Prioritized implementation queue. |
+| WS-R3-001 | in_progress | P1 | R3 | Convert top friction findings into actionable framework tasks | Prioritized implementation queue. |
 | WS-R4-001 | todo | P2 | R4 | Add targeted regression tests for discovered pain points | Prevent repeat breakage from resolved issues. |
 | WS-R4-002 | todo | P1 | R4 | Add `docs:check` CI gate (build + link checks + docs assertions) | Prevent stale docs and broken docs routes from landing. |
 
@@ -83,6 +83,9 @@ Use [Friction Log](/repo/friction-log.html) and this shape for each finding:
 - [x] 2026-03-22 Switched code blocks to dual shiki theme (github-light/github-dark) with subtle background and border for light mode readability.
 - [x] 2026-03-22 Rewrote "Build a Small App" guide as step-by-step todo list tutorial using entity-per-item ECS pattern, JSX/TS comparison at each step, and live editor.
 - [x] 2026-03-22 Added `onClick` handler to `Clickable` component — `Clickable({ onClick })` calls handler directly on click, eliminating marker-per-button boilerplate. Backwards-compatible: `Clickable()` without args still sets `Clicked` marker.
+- [x] 2026-03-22 Added ECS-DOM cooperative interaction design section (todo/forms coordination issue + solution options) to Design Choices docs.
+- [x] 2026-03-22 Added `world.queryChildren(parent, ...components)` to `@ecs-test/ecs` and moved FR-20260322-07 from active to completed.
+- [x] 2026-03-22 Standardized docs/examples/tests to prefer `world.createEntity(parent?, [components...])` for immediate entity initialization.
 
 ## Backlog (Unscheduled)
 

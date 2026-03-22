@@ -174,8 +174,7 @@ export type WorldOptions = {
  * @example
  * ```typescript
  * const world = new World();
- * const entity = world.createEntity();
- * world.add(entity, Position({ x: 0, y: 0 }));
+ * const entity = world.createEntity(undefined, [Position({ x: 0, y: 0 })]);
  * world.registerSystem(MovementSystem);
  * ```
  */
@@ -1000,6 +999,34 @@ export class World {
     }
 
     return result;
+  }
+
+  /**
+   * Query direct children of a parent entity by component tags.
+   *
+   * @param parent - Parent entity whose direct children should be searched
+   * @param componentTags - Optional component types/tags required on each child
+   * @returns Array of matching direct child entity IDs
+   *
+   * @example
+   * ```typescript
+   * const label = world.queryChildren(todoRow, TodoLabel)[0];
+   * const interactiveChildren = world.queryChildren(todoRow, DOMElement, Clickable);
+   * ```
+   */
+  queryChildren(parent: EntityId, ...componentTags: ComponentRef[]): EntityId[] {
+    const children = this.getChildren(parent);
+    if (children.length === 0) {
+      return [];
+    }
+
+    if (componentTags.length === 0) {
+      return children;
+    }
+
+    return children.filter(child =>
+      componentTags.every(componentTag => this.has(child, componentTag)),
+    );
   }
 
   /**

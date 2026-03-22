@@ -20,9 +20,7 @@ const Health = defineComponent<{ value: number }>('Health');
 describe('World', () => {
   it('creates entities and manages components', () => {
     const world = new World();
-    const entity = world.createEntity();
-
-    world.add(entity, Position({ x: 1, y: 2 }));
+    const entity = world.createEntity(undefined, [Position({ x: 1, y: 2 })]);
     expect(world.has(entity, Position)).toBe(true);
     expect(world.get(entity, Position)).toEqual({ x: 1, y: 2 });
 
@@ -35,26 +33,49 @@ describe('World', () => {
 
   it('queries entities by component tags', () => {
     const world = new World();
-    const e1 = world.createEntity();
-    const e2 = world.createEntity();
-    const e3 = world.createEntity();
-
-    world.add(e1, Position({ x: 0, y: 0 }));
-    world.add(e1, Velocity({ x: 1, y: 1 }));
-    world.add(e2, Position({ x: 5, y: 5 }));
-    world.add(e3, Velocity({ x: 2, y: 2 }));
+    const e1 = world.createEntity(undefined, [Position({ x: 0, y: 0 }), Velocity({ x: 1, y: 1 })]);
+    const e2 = world.createEntity(undefined, [Position({ x: 5, y: 5 })]);
+    const e3 = world.createEntity(undefined, [Velocity({ x: 2, y: 2 })]);
 
     expect(world.query(Position._tag).sort()).toEqual([e1, e2].sort());
     expect(world.query(Velocity._tag).sort()).toEqual([e1, e3].sort());
     expect(world.query(Position._tag, Velocity._tag)).toEqual([e1]);
   });
 
-  it('removes entities recursively', () => {
+  it('queries direct children by component tags', () => {
     const world = new World();
     const parent = world.createEntity();
-    const child = world.createEntity(parent);
-    world.add(parent, Position({ x: 0, y: 0 }));
-    world.add(child, Position({ x: 1, y: 1 }));
+    const childWithBoth = world.createEntity(parent, [
+      Position({ x: 0, y: 0 }),
+      Velocity({ x: 1, y: 1 }),
+    ]);
+    const childWithPositionOnly = world.createEntity(parent, [Position({ x: 2, y: 2 })]);
+    world.createEntity(undefined, [Position({ x: 3, y: 3 })]);
+
+    expect(world.queryChildren(parent).sort()).toEqual(
+      [childWithBoth, childWithPositionOnly].sort(),
+    );
+    expect(world.queryChildren(parent, Position).sort()).toEqual(
+      [childWithBoth, childWithPositionOnly].sort(),
+    );
+    expect(world.queryChildren(parent, Position, Velocity)).toEqual([childWithBoth]);
+  });
+
+  it('returns empty results when parent has no children or does not exist', () => {
+    const world = new World();
+    const parentWithoutChildren = world.createEntity();
+    const removedParent = world.createEntity();
+    world.removeEntity(removedParent);
+
+    expect(world.queryChildren(parentWithoutChildren)).toEqual([]);
+    expect(world.queryChildren(removedParent)).toEqual([]);
+    expect(world.queryChildren(removedParent, Position)).toEqual([]);
+  });
+
+  it('removes entities recursively', () => {
+    const world = new World();
+    const parent = world.createEntity(undefined, [Position({ x: 0, y: 0 })]);
+    const child = world.createEntity(parent, [Position({ x: 1, y: 1 })]);
 
     world.removeEntity(parent);
     expect(world.exists(parent)).toBe(false);
@@ -63,7 +84,7 @@ describe('World', () => {
 
   it('runs reactive systems with queries', () => {
     const world = new World({ autoFlush: false });
-    const entity = world.createEntity();
+    world.createEntity(undefined, [Position({ x: 1, y: 2 }), Selected()]);
     let executed = 0;
 
     world.registerSystem(
@@ -75,8 +96,6 @@ describe('World', () => {
       }),
     );
 
-    world.add(entity, Position({ x: 1, y: 2 }));
-    world.add(entity, Selected());
     world.flush();
 
     expect(executed).toBe(1);
@@ -84,7 +103,7 @@ describe('World', () => {
 
   it('dedupes entities across multiple matching mutations', () => {
     const world = new World({ autoFlush: false });
-    const entity = world.createEntity();
+    const entity = world.createEntity(undefined, [Position({ x: 0, y: 0 })]);
     let executions = 0;
 
     world.registerSystem(
@@ -96,7 +115,6 @@ describe('World', () => {
       }),
     );
 
-    world.add(entity, Position({ x: 0, y: 0 }));
     world.set(entity, Position({ x: 1, y: 1 }));
     world.flush();
 
@@ -126,7 +144,7 @@ describe('World', () => {
 
   it('batches mutations into single flush', () => {
     const world = new World(); // autoFlush enabled by default
-    const entity = world.createEntity();
+    const entity = world.createEntity(undefined, [Position({ x: 0, y: 0 })]);
     let executions = 0;
 
     world.registerSystem(
@@ -139,7 +157,6 @@ describe('World', () => {
     );
 
     world.batch(() => {
-      world.add(entity, Position({ x: 0, y: 0 }));
       world.set(entity, Position({ x: 1, y: 1 }));
       world.set(entity, Position({ x: 2, y: 2 }));
     });
@@ -180,7 +197,7 @@ describe('World', () => {
     const world = new World({
       scheduler: createMicrotaskScheduler(callback => Promise.resolve().then(callback)),
     });
-    const entity = world.createEntity();
+    world.createEntity(undefined, [Position({ x: 1, y: 2 })]);
     let executed = 0;
 
     world.registerSystem(
@@ -192,7 +209,6 @@ describe('World', () => {
       }),
     );
 
-    world.add(entity, Position({ x: 1, y: 2 }));
     world.flush();
 
     expect(executed).toBe(0);
@@ -221,11 +237,11 @@ describe('World inspection', () => {
 
   it('inspect returns entity snapshot', () => {
     const world = new World();
-    const parent = world.createEntity();
+    const parent = world.createEntity(undefined, [
+      Position({ x: 10, y: 20 }),
+      Health({ value: 100 }),
+    ]);
     const child = world.createEntity(parent);
-
-    world.add(parent, Position({ x: 10, y: 20 }));
-    world.add(parent, Health({ value: 100 }));
 
     const snapshot = world.inspect(parent);
 
@@ -259,11 +275,8 @@ describe('World inspection', () => {
 
   it('snapshot returns complete world state', () => {
     const world = new World();
-    const e1 = world.createEntity();
-    const e2 = world.createEntity(e1);
-
-    world.add(e1, Position({ x: 0, y: 0 }));
-    world.add(e2, Velocity({ x: 1, y: 1 }));
+    const e1 = world.createEntity(undefined, [Position({ x: 0, y: 0 })]);
+    const e2 = world.createEntity(e1, [Velocity({ x: 1, y: 1 })]);
 
     world.registerSystem(
       defineReactiveSystem({
@@ -337,14 +350,12 @@ describe('World mutation tracking', () => {
     });
 
     world.add(entity, Position({ x: 1, y: 2 }));
-
     expect(events).toEqual([{ type: 'added', componentTag: 'Position' }]);
   });
 
   it('notifies subscribers when components are replaced', () => {
     const world = new World();
-    const entity = world.createEntity();
-    world.add(entity, Position({ x: 1, y: 2 }));
+    const entity = world.createEntity(undefined, [Position({ x: 1, y: 2 })]);
 
     const events: { type: string; data: unknown; previousData: unknown }[] = [];
     world.onMutation(event => {
@@ -360,8 +371,7 @@ describe('World mutation tracking', () => {
 
   it('notifies subscribers when components are removed', () => {
     const world = new World();
-    const entity = world.createEntity();
-    world.add(entity, Position({ x: 1, y: 2 }));
+    const entity = world.createEntity(undefined, [Position({ x: 1, y: 2 })]);
 
     const events: { type: string; previousData: unknown }[] = [];
     world.onMutation(event => {
@@ -375,9 +385,10 @@ describe('World mutation tracking', () => {
 
   it('notifies subscribers when entity is removed', () => {
     const world = new World();
-    const entity = world.createEntity();
-    world.add(entity, Position({ x: 1, y: 2 }));
-    world.add(entity, Velocity({ x: 3, y: 4 }));
+    const entity = world.createEntity(undefined, [
+      Position({ x: 1, y: 2 }),
+      Velocity({ x: 3, y: 4 }),
+    ]);
 
     const events: { entity: number; componentTag: string }[] = [];
     world.onMutation(event => {
@@ -505,9 +516,10 @@ describe('World debug helpers', () => {
 
     registerDebugSystems(world, { output: { type: 'buffer', buffer } });
 
-    const entity = world.createEntity();
-    world.add(entity, Debug({ label: 'Root' }));
-    world.add(entity, Position({ x: 1, y: 2 }));
+    const entity = world.createEntity(undefined, [
+      Debug({ label: 'Root' }),
+      Position({ x: 1, y: 2 }),
+    ]);
 
     const entry = buffer.entries.find(e => e.mutation.componentTag === 'Position');
     expect(entry?.entity).toBe(entity);
@@ -521,12 +533,8 @@ describe('World debug helpers', () => {
 
     registerDebugSystems(world, { output: { type: 'buffer', buffer } });
 
-    const root = world.createEntity();
-    const child = world.createEntity(root);
-    world.add(root, Debug());
-    world.add(root, DebugChildren());
-
-    world.add(child, Position({ x: 5, y: 6 }));
+    const root = world.createEntity(undefined, [Debug(), DebugChildren()]);
+    const child = world.createEntity(root, [Position({ x: 5, y: 6 })]);
 
     const entry = buffer.entries.find(
       e => e.entity === child && e.mutation.componentTag === 'Position',
@@ -540,8 +548,7 @@ describe('World debug helpers', () => {
 
     const handle = registerDebugSystems(world, { output: { type: 'buffer', buffer } });
 
-    const entity = world.createEntity();
-    world.add(entity, Debug());
+    const entity = world.createEntity(undefined, [Debug()]);
     handle.disable();
 
     world.add(entity, Position({ x: 9, y: 9 }));
@@ -561,8 +568,7 @@ describe('World debug helpers', () => {
         },
       },
     });
-    const parent = world.createEntity();
-    world.add(parent, Position({ x: 1, y: 2 }));
+    const parent = world.createEntity(undefined, [Position({ x: 1, y: 2 })]);
 
     const output = world.debug(parent);
 
@@ -583,11 +589,8 @@ describe('World debug helpers', () => {
         },
       },
     });
-    const parent = world.createEntity();
-    const child = world.createEntity(parent);
-
-    world.add(parent, Position({ x: 0, y: 0 }));
-    world.add(child, Velocity({ x: 1, y: 1 }));
+    const parent = world.createEntity(undefined, [Position({ x: 0, y: 0 })]);
+    const child = world.createEntity(parent, [Velocity({ x: 1, y: 1 })]);
 
     const output = world.debugTree(parent);
 
@@ -606,8 +609,7 @@ describe('World debug helpers', () => {
 describe('World enhanced errors', () => {
   it('includes entity context for duplicate component errors', () => {
     const world = new World();
-    const entity = world.createEntity();
-    world.add(entity, Position({ x: 1, y: 2 }));
+    const entity = world.createEntity(undefined, [Position({ x: 1, y: 2 })]);
 
     let message = '';
     try {
@@ -623,7 +625,7 @@ describe('World enhanced errors', () => {
 
   it('wraps system errors with system name and entity info', () => {
     const world = new World({ autoFlush: false });
-    const entity = world.createEntity();
+    const entity = world.createEntity(undefined, [Position({ x: 1, y: 2 })]);
 
     world.registerSystem(
       defineReactiveSystem({
@@ -634,8 +636,6 @@ describe('World enhanced errors', () => {
         },
       }),
     );
-
-    world.add(entity, Position({ x: 1, y: 2 }));
 
     let message = '';
     try {
@@ -657,7 +657,7 @@ describe('World enhanced errors', () => {
 describe('World profiling', () => {
   it('records per-flush profiling data', () => {
     const world = new World({ autoFlush: false });
-    const entity = world.createEntity();
+    world.createEntity(undefined, [Position({ x: 1, y: 2 })]);
 
     world.enableProfiling();
     world.registerSystem(
@@ -668,7 +668,6 @@ describe('World profiling', () => {
       }),
     );
 
-    world.add(entity, Position({ x: 1, y: 2 }));
     world.flush();
 
     const profile = world.getLastFlushProfile();
@@ -680,7 +679,7 @@ describe('World profiling', () => {
 
   it('tracks aggregate profiling stats', () => {
     const world = new World({ autoFlush: false });
-    const entity = world.createEntity();
+    world.createEntity(undefined, [Position({ x: 2, y: 3 })]);
 
     world.enableProfiling();
     world.registerSystem(
@@ -691,7 +690,6 @@ describe('World profiling', () => {
       }),
     );
 
-    world.add(entity, Position({ x: 2, y: 3 }));
     world.flush();
 
     const stats = world.getProfilingStats();

@@ -21,8 +21,9 @@ An entity is just an ID — a lightweight identifier for a UI node. Entities don
 ```
 
 ```ts
-const entity = world.createEntity();
-// world.add(entity, SomeComponent(...));
+const entity = world.createEntity(undefined, [
+  // SomeComponent(...),
+]);
 ```
 
 </div>
@@ -120,11 +121,12 @@ Use in JSX:
 ```
 
 ```ts
-const button = world.createEntity();
-world.add(button, DOMElement({ tag: "button" }));
-world.add(button, Classes({ list: ["btn"] }));
-world.add(button, TextContent({ value: "Click me" }));
-world.add(button, Clickable());
+const button = world.createEntity(undefined, [
+  DOMElement({ tag: "button" }),
+  Classes({ list: ["btn"] }),
+  TextContent({ value: "Click me" }),
+  Clickable(),
+]);
 ```
 
 ### Customizing Bundles
@@ -139,10 +141,11 @@ Use `except` to remove components from a bundle, or `only` to keep specific ones
 ```
 
 ```ts
-const displayOnly = world.createEntity();
-world.add(displayOnly, DOMElement({ tag: "button" }));
-world.add(displayOnly, Classes({ list: ["btn"] }));
-world.add(displayOnly, TextContent({ value: "Display only" }));
+const displayOnly = world.createEntity(undefined, [
+  DOMElement({ tag: "button" }),
+  Classes({ list: ["btn"] }),
+  TextContent({ value: "Display only" }),
+]);
 // Intentionally no Clickable component.
 ```
 

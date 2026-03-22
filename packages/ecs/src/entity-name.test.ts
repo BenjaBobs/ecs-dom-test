@@ -11,9 +11,7 @@ describe('EntityName', () => {
 
   it('adds name to entity', () => {
     const world = new World();
-    const entity = world.createEntity();
-
-    world.add(entity, EntityName({ value: 'Player' }));
+    const entity = world.createEntity(undefined, [EntityName({ value: 'Player' })]);
 
     const retrieved = world.get(entity, EntityName);
     expect(retrieved?.value).toBe('Player');
@@ -21,9 +19,7 @@ describe('EntityName', () => {
 
   it('getEntityName returns name', () => {
     const world = new World();
-    const entity = world.createEntity();
-
-    world.add(entity, EntityName({ value: 'Enemy' }));
+    const entity = world.createEntity(undefined, [EntityName({ value: 'Enemy' })]);
 
     expect(getEntityName(world, entity)).toBe('Enemy');
   });
@@ -37,9 +33,7 @@ describe('EntityName', () => {
 
   it('name appears in snapshot', () => {
     const world = new World();
-    const entity = world.createEntity();
-
-    world.add(entity, EntityName({ value: 'TestSnapshot' }));
+    const entity = world.createEntity(undefined, [EntityName({ value: 'TestSnapshot' })]);
 
     const snapshot = world.snapshot();
     const entitySnapshot = snapshot.entities.find(e => e.id === entity);
@@ -49,9 +43,7 @@ describe('EntityName', () => {
 
   it('name appears in inspect', () => {
     const world = new World();
-    const entity = world.createEntity();
-
-    world.add(entity, EntityName({ value: 'TestInspect' }));
+    const entity = world.createEntity(undefined, [EntityName({ value: 'TestInspect' })]);
 
     const inspected = world.inspect(entity);
 

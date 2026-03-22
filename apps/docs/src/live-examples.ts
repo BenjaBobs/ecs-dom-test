@@ -19,17 +19,11 @@ const world = new World({
 
 registerDOMSystems(world);
 
-const card = world.createEntity();
-world.add(card, DOMElement({ tag: 'div' }));
-world.add(card, Classes({ list: ['live-card'] }));
+const card = world.createEntity(undefined, [DOMElement({ tag: 'div' }), Classes({ list: ['live-card'] })]);
 
-const title = world.createEntity(card);
-world.add(title, DOMElement({ tag: 'h3' }));
-world.add(title, TextContent({ value: 'Hello from a live editor' }));
+const title = world.createEntity(card, [DOMElement({ tag: 'h3' }), TextContent({ value: 'Hello from a live editor' })]);
 
-const body = world.createEntity(card);
-world.add(body, DOMElement({ tag: 'p' }));
-world.add(body, TextContent({ value: 'Edit this code and the iframe updates.' }));
+const body = world.createEntity(card, [DOMElement({ tag: 'p' }), TextContent({ value: 'Edit this code and the iframe updates.' })]);
 
 world.flush();
 `;
@@ -115,40 +109,43 @@ function buildTodoRow(world, todoEntity) {
 
   // Toggle checkbox button — onClick handler toggles the Done marker
   // on the parent todo entity directly, no extra system needed
-  const toggle = world.createEntity(todoEntity);
-  world.add(toggle, DOMElement({ tag: 'button' }));
-  world.add(toggle, TextContent({ value: done ? '\\u2611' : '\\u2610' }));
-  world.add(toggle, Style({ border: 'none', background: 'none', fontSize: '18px', cursor: 'pointer', padding: '0' }));
-  world.add(toggle, Clickable({ onClick: (world, entity) => {
-    const todo = world.getParent(entity);
-    if (todo == null) return;
-    if (world.has(todo, Done)) {
-      world.remove(todo, Done);
-    } else {
-      world.add(todo, Done());
-    }
-  }}));
+  const toggle = world.createEntity(todoEntity, [
+    DOMElement({ tag: 'button' }),
+    TextContent({ value: done ? '\\u2611' : '\\u2610' }),
+    Style({ border: 'none', background: 'none', fontSize: '18px', cursor: 'pointer', padding: '0' }),
+    Clickable({ onClick: (world, entity) => {
+      const todo = world.getParent(entity);
+      if (todo == null) return;
+      if (world.has(todo, Done)) {
+        world.remove(todo, Done);
+      } else {
+        world.add(todo, Done());
+      }
+    }}),
+  ]);
 
   // Label showing the todo text
-  const label = world.createEntity(todoEntity);
-  world.add(label, DOMElement({ tag: 'span' }));
-  world.add(label, TextContent({ value: text }));
-  world.add(label, Style({
-    flex: '1',
-    textDecoration: done ? 'line-through' : 'none',
-    opacity: done ? '0.5' : '1',
-  }));
+  world.createEntity(todoEntity, [
+    DOMElement({ tag: 'span' }),
+    TextContent({ value: text }),
+    Style({
+      flex: '1',
+      textDecoration: done ? 'line-through' : 'none',
+      opacity: done ? '0.5' : '1',
+    }),
+  ]);
 
   // Delete button — removes the entire todo entity on click
-  const del = world.createEntity(todoEntity);
-  world.add(del, DOMElement({ tag: 'button' }));
-  world.add(del, TextContent({ value: 'Remove' }));
-  world.add(del, Style({ border: 'none', background: 'none', color: '#ef4444', fontSize: '18px', cursor: 'pointer', padding: '0 4px' }));
-  world.add(del, Clickable({ onClick: (world, entity) => {
-    const todo = world.getParent(entity);
-    if (todo == null) return;
-    world.removeEntity(todo);
-  }}));
+  world.createEntity(todoEntity, [
+    DOMElement({ tag: 'button' }),
+    TextContent({ value: 'Remove' }),
+    Style({ border: 'none', background: 'none', color: '#ef4444', fontSize: '18px', cursor: 'pointer', padding: '0 4px' }),
+    Clickable({ onClick: (world, entity) => {
+      const todo = world.getParent(entity);
+      if (todo == null) return;
+      world.removeEntity(todo);
+    }}),
+  ]);
 }
 
 // Helper: tear down a todo's children and rebuild them
@@ -220,50 +217,40 @@ function addTodoFromInput(world) {
 
   const listEntity = world.query(TodoListContainer)[0];
   if (listEntity == null) return;
-  const todo = world.createEntity(listEntity);
-  world.add(todo, TodoText({ value: text }));
+  world.createEntity(listEntity, [TodoText({ value: text })]);
 }
 
 // ── Build the static UI shell ───────────────────────────
-const card = world.createEntity();
-world.add(card, DOMElement({ tag: 'section' }));
-world.add(card, Classes({ list: ['live-card'] }));
+const card = world.createEntity(undefined, [DOMElement({ tag: 'section' }), Classes({ list: ['live-card'] })]);
 
-const heading = world.createEntity(card);
-world.add(heading, DOMElement({ tag: 'h3' }));
-world.add(heading, TextContent({ value: 'Todo List' }));
+world.createEntity(card, [DOMElement({ tag: 'h3' }), TextContent({ value: 'Todo List' })]);
 
-const form = world.createEntity(card);
-world.add(form, DOMElement({ tag: 'div' }));
-world.add(form, Style({ display: 'flex', gap: '8px', marginBottom: '12px' }));
+const form = world.createEntity(card, [
+  DOMElement({ tag: 'div' }),
+  Style({ display: 'flex', gap: '8px', marginBottom: '12px' }),
+]);
 
-const input = world.createEntity(form);
-world.add(input, DOMElement({ tag: 'input' }));
-world.add(input, TodoInput());
-world.add(input, Style({ flex: '1', padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: '4px', font: 'inherit' }));
+const input = world.createEntity(form, [
+  DOMElement({ tag: 'input' }),
+  TodoInput(),
+  Style({ flex: '1', padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: '4px', font: 'inherit' }),
+]);
 
 // Add button — onClick reads the input and creates a new todo entity
-const addBtn = world.createEntity(form);
-world.add(addBtn, DOMElement({ tag: 'button' }));
-world.add(addBtn, TextContent({ value: 'Add' }));
-world.add(addBtn, Clickable({ onClick: (world) => addTodoFromInput(world) }));
+world.createEntity(form, [
+  DOMElement({ tag: 'button' }),
+  TextContent({ value: 'Add' }),
+  Clickable({ onClick: (world) => addTodoFromInput(world) }),
+]);
 
-const list = world.createEntity(card);
-world.add(list, DOMElement({ tag: 'div' }));
-world.add(list, TodoListContainer());
+const list = world.createEntity(card, [DOMElement({ tag: 'div' }), TodoListContainer()]);
 
 // ── Seed initial todos ──────────────────────────────────
 // Each todo is just an entity with TodoText, parented under the list container.
 // Adding Done() marks it as completed. The systems handle the rest.
-const todo1 = world.createEntity(list);
-world.add(todo1, TodoText({ value: 'Learn about ECS entities' }));
-world.add(todo1, Done());
-
-const todo2 = world.createEntity(list);
-world.add(todo2, TodoText({ value: 'Build a todo app' }));
-
-const todo3 = world.createEntity(list);
-world.add(todo3, TodoText({ value: 'Try the live editor' }));
+world.createEntity(list, [TodoText({ value: 'Learn about ECS entities' }), Done()]);
+world.createEntity(list, [TodoText({ value: 'Build a todo app' })]);
+world.createEntity(list, [TodoText({ value: 'Try the live editor' })]);
 
 world.flush();
 
@@ -433,8 +420,7 @@ function addTodoFromInput(world) {
 
   const listEntity = world.query(TodoListContainer)[0];
   if (listEntity == null) return;
-  const todo = world.createEntity(listEntity);
-  world.add(todo, TodoText({ value: text }));
+  world.createEntity(listEntity, [TodoText({ value: text })]);
 }
 
 // ── Build the static UI shell ───────────────────────────
@@ -480,15 +466,9 @@ materialize(world, ui);
 // Adding Done() marks it as completed. The systems handle the rest.
 const listEntity = world.query(TodoListContainer)[0];
 
-const t1 = world.createEntity(listEntity);
-world.add(t1, TodoText({ value: 'Learn about ECS entities' }));
-world.add(t1, Done());
-
-const t2 = world.createEntity(listEntity);
-world.add(t2, TodoText({ value: 'Build a todo app' }));
-
-const t3 = world.createEntity(listEntity);
-world.add(t3, TodoText({ value: 'Try the live editor' }));
+world.createEntity(listEntity, [TodoText({ value: 'Learn about ECS entities' }), Done()]);
+world.createEntity(listEntity, [TodoText({ value: 'Build a todo app' })]);
+world.createEntity(listEntity, [TodoText({ value: 'Try the live editor' })]);
 
 world.flush();
 

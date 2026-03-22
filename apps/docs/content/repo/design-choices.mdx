@@ -84,25 +84,20 @@ Data flows through a single `Value` component on an entity. External systems (DO
 Non-JSX alternative (conceptual):
 
 ```ts
-const input = world.createEntity();
-world.add(input, DOMElement({ tag: "input" }));
-world.add(input, Value({ value: 0 }));
-world.add(
-  input,
+world.createEntity(undefined, [
+  DOMElement({ tag: "input" }),
+  Value({ value: 0 }),
   DOMBinding({
     trigger: "input",
     toValue: (el) => parseFloat((el as HTMLInputElement).value),
     fromValue: (v) => String(v),
   }),
-);
-world.add(
-  input,
   FormBinding({
     field: f.age,
     toValue: (formValue) => formValue,
     fromValue: (value) => value,
   }),
-);
+]);
 ```
 
 </div>
@@ -147,6 +142,39 @@ Each `World` instance is fully independent. Multiple worlds can coexist in the s
 **Why:** Enables micro-frontends, isolated widgets, testing without cleanup.
 
 **Implementation:** Runtime-only state is stored on the world's runtime entity (e.g., `DomRuntime`). External dependencies (like `createElement` and `rootContainer`) live in `WorldExternals`.
+
+### ECS-DOM Cooperative Interaction Model
+Todo-list and forms dogfooding exposed a recurring coordination issue:
+
+- interaction often starts on one entity (child button/input)
+- state often lives on a related entity (parent row/root widget)
+- visuals often render on different related entities (siblings/children)
+
+For browser UI, forcing every interaction through pure marker/system indirection creates extra boilerplate and can fight native semantics (input behavior, event flow, focus, form behavior).
+
+**Decision direction:** keep ECS authoritative for state/composition/lifecycle, and use DOM-aligned handlers/bindings when they reduce unnecessary indirection.
+
+**Current example:** `Clickable({ onClick })` short-circuits marker plumbing for local actions while keeping world mutations explicit.
+
+**Solutions under consideration:**
+1. Parent/child entity messaging
+   - Typed, narrow APIs (`emitToParent`, `emitToChildren`) rather than a global event bus.
+2. Widget-root state for multi-entity controls
+   - One root entity owns widget data; child entities are interaction/render projections.
+3. Event bubbling across ECS parent-child links
+   - Mirror browser mental model; reduce manual `getParent()` wiring.
+4. Scoped processing ("tick specific entities")
+   - Consider only after profiling because it may complicate ordering semantics.
+5. Child-scoped query helpers (implemented)
+   - Added `world.queryChildren(parent, ...components)` to avoid manual `getChildren()` iteration for direct child lookups.
+6. Binding primitives for forms/inputs
+   - `InputValue`/binding-style components for DOM <-> ECS sync without repeated raw DOM casting.
+
+**Near-term priority order:**
+1. Event bubbling + payloads
+2. Widget-root state pattern (forms first)
+3. Child-scoped queries
+4. Revisit scoped ticking only if measured bottlenecks remain
 
 ## What We Don't Do (and Why)
 
