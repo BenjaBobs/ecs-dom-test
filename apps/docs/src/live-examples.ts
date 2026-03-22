@@ -66,6 +66,7 @@ world.flush();
 const TODO_NONJSX = `import {
   World,
   defineComponent,
+  defineEvent,
   defineMarker,
   defineReactiveSystem,
   Entities,
@@ -87,6 +88,10 @@ const TodoText = defineComponent<{ value: string }>('TodoText');
 const Done = defineMarker('Done');
 const TodoInput = defineMarker('TodoInput');
 const TodoListContainer = defineMarker('TodoListContainer');
+const TodoToggleButton = defineMarker('TodoToggleButton');
+const TodoLabel = defineMarker('TodoLabel');
+const TodoToggleRequested = defineEvent('todo.toggleRequested');
+const TodoRemoveRequested = defineEvent('todo.removeRequested');
 
 // ── World setup ─────────────────────────────────────────
 const world = new World({
@@ -100,60 +105,53 @@ const world = new World({
 });
 registerDOMSystems(world);
 
-// ── Helper: build child entities for a todo row ─────────
-// Each todo entity gets three children: toggle button, label, delete button.
-// This is called once when the todo is created, and again when Done changes.
+// ── Helpers: row rendering + updates ─────────────────────
 function buildTodoRow(world, todoEntity) {
   const text = world.get(todoEntity, TodoText)?.value ?? '';
-  const done = world.has(todoEntity, Done);
 
-  // Toggle checkbox button — onClick handler toggles the Done marker
-  // on the parent todo entity directly, no extra system needed
-  const toggle = world.createEntity(todoEntity, [
+  world.createEntity(todoEntity, [
     DOMElement({ tag: 'button' }),
-    TextContent({ value: done ? '\\u2611' : '\\u2610' }),
+    TodoToggleButton(),
+    TextContent({ value: '\\u2610' }),
     Style({ border: 'none', background: 'none', fontSize: '18px', cursor: 'pointer', padding: '0' }),
     Clickable({ onClick: (world, entity) => {
-      const todo = world.getParent(entity);
-      if (todo == null) return;
-      if (world.has(todo, Done)) {
-        world.remove(todo, Done);
-      } else {
-        world.add(todo, Done());
-      }
+      world.emit(entity, TodoToggleRequested);
     }}),
   ]);
 
-  // Label showing the todo text
   world.createEntity(todoEntity, [
     DOMElement({ tag: 'span' }),
+    TodoLabel(),
     TextContent({ value: text }),
-    Style({
-      flex: '1',
-      textDecoration: done ? 'line-through' : 'none',
-      opacity: done ? '0.5' : '1',
-    }),
+    Style({ flex: '1', textDecoration: 'none', opacity: '1' }),
   ]);
 
-  // Delete button — removes the entire todo entity on click
   world.createEntity(todoEntity, [
     DOMElement({ tag: 'button' }),
     TextContent({ value: 'Remove' }),
     Style({ border: 'none', background: 'none', color: '#ef4444', fontSize: '18px', cursor: 'pointer', padding: '0 4px' }),
     Clickable({ onClick: (world, entity) => {
-      const todo = world.getParent(entity);
-      if (todo == null) return;
-      world.removeEntity(todo);
+      world.emit(entity, TodoRemoveRequested);
     }}),
   ]);
 }
 
-// Helper: tear down a todo's children and rebuild them
-function rebuildTodoRow(world, entity) {
-  for (const child of world.getChildren(entity)) {
-    world.removeEntity(child);  // Recursively removes children + their DOM nodes
+function updateTodoVisuals(world, todoEntity) {
+  const done = world.has(todoEntity, Done);
+
+  const toggle = world.queryChildren(todoEntity, TodoToggleButton)[0];
+  if (toggle != null) {
+    world.set(toggle, TextContent({ value: done ? '\\u2611' : '\\u2610' }));
   }
-  buildTodoRow(world, entity);
+
+  const label = world.queryChildren(todoEntity, TodoLabel)[0];
+  if (label != null) {
+    world.set(label, Style({
+      flex: '1',
+      textDecoration: done ? 'line-through' : 'none',
+      opacity: done ? '0.5' : '1',
+    }));
+  }
 }
 
 // ── Systems ─────────────────────────────────────────────
@@ -164,45 +162,31 @@ const TodoEnterSystem = defineReactiveSystem({
   query: Entities.with([TodoText]),
   onEnter(world, entities) {
     for (const entity of entities) {
-      // Turn the todo entity itself into a flex row
       world.add(entity, DOMElement({ tag: 'div' }));
       world.add(entity, Style({
         display: 'flex', alignItems: 'center', gap: '8px',
         padding: '6px 0', borderBottom: '1px solid #e5e7eb',
       }));
       buildTodoRow(world, entity);
-    }
-  },
-});
+      updateTodoVisuals(world, entity);
 
-// When a todo gains Done, rebuild its children to show the completed style.
-// We need two systems because reactive queries fire onEnter when an entity
-// starts matching — by querying for Done directly, we catch the transition.
-const TodoMarkedDoneSystem = defineReactiveSystem({
-  name: 'TodoMarkedDoneSystem',
-  query: Entities.with([TodoText, Done]),
-  onEnter(world, entities) {
-    for (const entity of entities) {
-      rebuildTodoRow(world, entity);
-    }
-  },
-});
+      world.on(entity, TodoToggleRequested, () => {
+        if (world.has(entity, Done)) {
+          world.remove(entity, Done);
+        } else {
+          world.add(entity, Done());
+        }
+        updateTodoVisuals(world, entity);
+      });
 
-// When a todo loses Done, rebuild to show the incomplete style.
-// This mirrors TodoMarkedDoneSystem for the opposite direction.
-const TodoUnmarkedDoneSystem = defineReactiveSystem({
-  name: 'TodoUnmarkedDoneSystem',
-  query: Entities.with([TodoText, DOMElement]).without([Done]),
-  onEnter(world, entities) {
-    for (const entity of entities) {
-      rebuildTodoRow(world, entity);
+      world.on(entity, TodoRemoveRequested, () => {
+        world.removeEntity(entity);
+      });
     }
   },
 });
 
 world.registerSystem(TodoEnterSystem);
-world.registerSystem(TodoMarkedDoneSystem);
-world.registerSystem(TodoUnmarkedDoneSystem);
 
 // ── Helper: add a todo from the input field ─────────────
 function addTodoFromInput(world) {
@@ -268,6 +252,7 @@ const TODO_JSX = `import {
   Entity,
   materialize,
   defineComponent,
+  defineEvent,
   defineMarker,
   defineReactiveSystem,
   Entities,
@@ -289,6 +274,10 @@ const TodoText = defineComponent<{ value: string }>('TodoText');
 const Done = defineMarker('Done');
 const TodoInput = defineMarker('TodoInput');
 const TodoListContainer = defineMarker('TodoListContainer');
+const TodoToggleButton = defineMarker('TodoToggleButton');
+const TodoLabel = defineMarker('TodoLabel');
+const TodoToggleRequested = defineEvent('todo.toggleRequested');
+const TodoRemoveRequested = defineEvent('todo.removeRequested');
 
 // ── World setup ─────────────────────────────────────────
 const world = new World({
@@ -302,61 +291,56 @@ const world = new World({
 });
 registerDOMSystems(world);
 
-// ── Helper: build child entities for a todo row ─────────
-// Each todo entity gets three children: toggle button, label, delete button.
-// materialize() creates entities from JSX and parents them under todoEntity.
+// ── Helpers: row rendering + updates ─────────────────────
 function buildTodoRow(world, todoEntity) {
   const text = world.get(todoEntity, TodoText)?.value ?? '';
-  const done = world.has(todoEntity, Done);
 
   materialize(world, [
-    // Toggle checkbox — onClick handler toggles Done on the parent entity
-    // directly, no extra marker or system needed
     <Entity>
       <DOMElement tag="button" />
-      <TextContent value={done ? '\\u2611' : '\\u2610'} />
+      <TodoToggleButton />
+      <TextContent value={'\\u2610'} />
       <Style border="none" background="none" fontSize="18px" cursor="pointer" padding="0" />
       <Clickable onClick={(world, entity) => {
-        const todo = world.getParent(entity);
-        if (todo == null) return;
-        if (world.has(todo, Done)) {
-          world.remove(todo, Done);
-        } else {
-          world.add(todo, Done());
-        }
+        world.emit(entity, TodoToggleRequested);
       }} />
     </Entity>,
 
-    // Label showing the todo text
     <Entity>
       <DOMElement tag="span" />
+      <TodoLabel />
       <TextContent value={text} />
-      <Style flex="1"
-             textDecoration={done ? 'line-through' : 'none'}
-             opacity={done ? '0.5' : '1'} />
+      <Style flex="1" textDecoration="none" opacity="1" />
     </Entity>,
 
-    // Delete button — removes the entire todo entity on click
     <Entity>
       <DOMElement tag="button" />
       <TextContent value="Remove" />
       <Style border="none" background="none" color="#ef4444"
              fontSize="18px" cursor="pointer" padding="0 4px" />
       <Clickable onClick={(world, entity) => {
-        const todo = world.getParent(entity);
-        if (todo == null) return;
-        world.removeEntity(todo);
+        world.emit(entity, TodoRemoveRequested);
       }} />
     </Entity>,
   ], todoEntity);
 }
 
-// Helper: tear down a todo's children and rebuild them
-function rebuildTodoRow(world, entity) {
-  for (const child of world.getChildren(entity)) {
-    world.removeEntity(child);  // Recursively removes children + their DOM nodes
+function updateTodoVisuals(world, todoEntity) {
+  const done = world.has(todoEntity, Done);
+
+  const toggle = world.queryChildren(todoEntity, TodoToggleButton)[0];
+  if (toggle != null) {
+    world.set(toggle, TextContent({ value: done ? '\\u2611' : '\\u2610' }));
   }
-  buildTodoRow(world, entity);
+
+  const label = world.queryChildren(todoEntity, TodoLabel)[0];
+  if (label != null) {
+    world.set(label, Style({
+      flex: '1',
+      textDecoration: done ? 'line-through' : 'none',
+      opacity: done ? '0.5' : '1',
+    }));
+  }
 }
 
 // ── Systems ─────────────────────────────────────────────
@@ -367,45 +351,31 @@ const TodoEnterSystem = defineReactiveSystem({
   query: Entities.with([TodoText]),
   onEnter(world, entities) {
     for (const entity of entities) {
-      // Turn the todo entity itself into a flex row
       world.add(entity, DOMElement({ tag: 'div' }));
       world.add(entity, Style({
         display: 'flex', alignItems: 'center', gap: '8px',
         padding: '6px 0', borderBottom: '1px solid #e5e7eb',
       }));
       buildTodoRow(world, entity);
-    }
-  },
-});
+      updateTodoVisuals(world, entity);
 
-// When a todo gains Done, rebuild its children to show the completed style.
-// We need two systems because reactive queries fire onEnter when an entity
-// starts matching — by querying for Done directly, we catch the transition.
-const TodoMarkedDoneSystem = defineReactiveSystem({
-  name: 'TodoMarkedDoneSystem',
-  query: Entities.with([TodoText, Done]),
-  onEnter(world, entities) {
-    for (const entity of entities) {
-      rebuildTodoRow(world, entity);
-    }
-  },
-});
+      world.on(entity, TodoToggleRequested, () => {
+        if (world.has(entity, Done)) {
+          world.remove(entity, Done);
+        } else {
+          world.add(entity, Done());
+        }
+        updateTodoVisuals(world, entity);
+      });
 
-// When a todo loses Done, rebuild to show the incomplete style.
-// This mirrors TodoMarkedDoneSystem for the opposite direction.
-const TodoUnmarkedDoneSystem = defineReactiveSystem({
-  name: 'TodoUnmarkedDoneSystem',
-  query: Entities.with([TodoText, DOMElement]).without([Done]),
-  onEnter(world, entities) {
-    for (const entity of entities) {
-      rebuildTodoRow(world, entity);
+      world.on(entity, TodoRemoveRequested, () => {
+        world.removeEntity(entity);
+      });
     }
   },
 });
 
 world.registerSystem(TodoEnterSystem);
-world.registerSystem(TodoMarkedDoneSystem);
-world.registerSystem(TodoUnmarkedDoneSystem);
 
 // ── Helper: add a todo from the input field ─────────────
 function addTodoFromInput(world) {

@@ -86,7 +86,8 @@ Use [Friction Log](/repo/friction-log.html) and this shape for each finding:
 - [x] 2026-03-22 Added ECS-DOM cooperative interaction design section (todo/forms coordination issue + solution options) to Design Choices docs.
 - [x] 2026-03-22 Added `world.queryChildren(parent, ...components)` to `@ecs-test/ecs` and moved FR-20260322-07 from active to completed.
 - [x] 2026-03-22 Standardized docs/examples/tests to prefer `world.createEntity(parent?, [components...])` for immediate entity initialization.
-- [x] 2026-03-22 Added typed entity events to `@ecs-test/ecs` (`defineEvent`, `world.on`, `world.emit`) with stop-by-default propagation and explicit `"bubble"` continuation.
+- [x] 2026-03-22 Added typed entity events to `@ecs-test/ecs` (`defineEvent`, `world.on`, `world.emit`) with stop-by-default propagation and explicit `event.bubble()` continuation.
+- [x] 2026-03-22 Updated todo small-app guide/live example to use typed entity events + `queryChildren(...)` for targeted visual updates (removed row teardown/rebuild pattern).
 
 ## Backlog (Unscheduled)
 
