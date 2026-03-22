@@ -77,7 +77,7 @@ const panelBaseStyle: Partial<CSSStyleDeclaration> = {
   boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
   resize: 'both',
   overflow: 'hidden',
-  opacity: '0.75',
+  opacity: '0.9',
 };
 
 const headerStyle: Partial<CSSStyleDeclaration> = {

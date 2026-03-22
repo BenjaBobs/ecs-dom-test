@@ -19,55 +19,18 @@ Use this with:
 - `inflexibility`: valid composition the framework currently resists
 - `missing_feature`: capability needed but not present
 
-## Entry Template
-
-```md
-- ID: FR-YYYYMMDD-XX
-- Date: YYYY-MM-DD
-- Category: footgun | verbosity | inflexibility | missing_feature
-- Context:
-- Impact:
-- Proposed direction:
-- Milestone: R3
-- Status: todo | in_progress | done
-```
-
 ## Active Findings
 
-- ID: FR-20260214-04
-- Date: 2026-02-14
-- Category: `verbosity`
-- Context: Building interactive docs examples requires substantial boilerplate (`defineMarker`, query lookups, manual label update systems) even for simple counters.
-- Impact: Intro examples become long, making onboarding harder and obscuring core ECS ideas.
-- Proposed direction: Add higher-level example primitives and tiny helper bundles in `@ecs-test/ui` for common patterns (counter state + button wiring + label binding).
-- Milestone: `R3`
-- Status: `todo`
+| ID | Date | Category | Finding | Milestone |
+| --- | --- | --- | --- | --- |
+| FR-20260214-04 | 2026-02-14 | verbosity | Interactive docs examples require too much boilerplate (`defineMarker`, query lookups, manual label systems) even for simple counters. Direction: higher-level primitives in `@ecs-test/ui`. | R3 |
 
 ## Completed Findings
 
-- ID: FR-20260214-01
-- Date: 2026-02-14
-- Category: `footgun`
-- Context: Live editor Monaco typing initially used handwritten shims; they drifted from real package APIs and produced false diagnostics.
-- Impact: Docs examples showed incorrect type errors, reducing trust in examples and in framework typings.
-- Proposed direction: Generate and load real package `.d.ts` files for live editor typing.
-- Milestone: `R3`
-- Status: `done`
-
-- ID: FR-20260214-02
-- Date: 2026-02-14
-- Category: `footgun`
-- Context: JSX runtime helper imports and `Entity` imports came from different module instances, causing silent render failures (white iframe).
-- Impact: No visible output without actionable errors; hard to debug for users and maintainers.
-- Proposed direction: Enforce shared runtime identity (`jsx/jsxs/jsxDEV` and `Entity`) by exporting helpers from `@ecs-test/ecs` and using a stable runtime import path.
-- Milestone: `R3`
-- Status: `done`
-
-- ID: FR-20260214-03
-- Date: 2026-02-14
-- Category: `missing_feature`
-- Context: Docs dev loop originally regenerated API docs on every start/rebuild.
-- Impact: Slow startup/rebuild times hurt iteration speed while dogfooding.
-- Proposed direction: Add fast dev mode with selective API regeneration when package sources change.
-- Milestone: `R3`
-- Status: `done`
+| ID | Date | Category | Finding | Milestone |
+| --- | --- | --- | --- | --- |
+| FR-20260322-01 | 2026-03-22 | footgun | Code blocks used hardcoded `github-dark` theme regardless of site theme — jarring in light mode. Fixed with dual shiki theme + `--color-bg-subtle` background. | R1 |
+| FR-20260322-02 | 2026-03-22 | footgun | Live editor splitter lost drag on fast mouse movement — iframe captured pointer events. Fixed with `pointer-events: none` during drag. | R1 |
+| FR-20260214-01 | 2026-02-14 | footgun | Monaco typing used handwritten shims that drifted from real APIs, producing false diagnostics. Fixed by generating and loading real `.d.ts` files. | R3 |
+| FR-20260214-02 | 2026-02-14 | footgun | JSX runtime and `Entity` imports came from different module instances, causing silent white-iframe failures. Fixed by enforcing shared runtime identity. | R3 |
+| FR-20260214-03 | 2026-02-14 | missing_feature | Docs dev loop regenerated API docs on every rebuild. Fixed with fast dev mode and selective regeneration. | R3 |

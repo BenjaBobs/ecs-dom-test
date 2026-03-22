@@ -26,7 +26,7 @@ const processor = unified()
   .use(remarkFrontmatter, ["yaml"])
   .use(remarkGfm)
   .use(remarkRehype, { allowDangerousHtml: true })
-  .use(rehypePrettyCode, { theme: "github-dark" })
+  .use(rehypePrettyCode, { theme: { dark: "github-dark", light: "github-light" } })
   .use(rehypeStringify, { allowDangerousHtml: true });
 
 export async function compileMdxFile(

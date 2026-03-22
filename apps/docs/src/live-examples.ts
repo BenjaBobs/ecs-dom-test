@@ -86,7 +86,7 @@ import {
   registerDOMSystems,
 } from '/playground/modules/dom.js';
 
-const Count = defineComponent('Count');
+const Count = defineComponent<{ value: number }>('Count');
 const CounterState = defineMarker('CounterState');
 const CounterLabel = defineMarker('CounterLabel');
 const IncrementButton = defineMarker('IncrementButton');
@@ -228,7 +228,7 @@ import {
   registerDOMSystems,
 } from '/playground/modules/dom.js';
 
-const Count = defineComponent('Count');
+const Count = defineComponent<{ value: number }>('Count');
 const CounterState = defineMarker('CounterState');
 const CounterLabel = defineMarker('CounterLabel');
 const IncrementButton = defineMarker('IncrementButton');

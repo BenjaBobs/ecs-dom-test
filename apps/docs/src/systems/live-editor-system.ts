@@ -22,6 +22,7 @@ type EditorHandle = {
   getValue: () => string;
   setValue: (value: string) => void;
   setMode?: (mode: DocsCodeMode) => void;
+  setTheme?: (theme: 'light' | 'dark') => void;
   onDidChange: (cb: () => void) => void;
 };
 
@@ -38,6 +39,7 @@ type MonacoEditor = {
   getValue: () => string;
   setValue: (value: string) => void;
   setModel: (model: MonacoModel) => void;
+  updateOptions: (opts: Record<string, unknown>) => void;
   onDidChangeModelContent: (cb: () => void) => void;
 };
 
@@ -289,9 +291,10 @@ async function createMonacoEditor(
 
   let currentMode: DocsCodeMode = mode;
   let model = monaco.editor.createModel(initialValue, 'typescript', mkUri(mode));
+  const currentTheme = resolveTheme(doc);
   const editor = monaco.editor.create(host, {
     model,
-    theme: 'vs-dark',
+    theme: monacoTheme(currentTheme),
     automaticLayout: true,
     minimap: { enabled: false },
     fontSize: 13,
@@ -315,6 +318,9 @@ async function createMonacoEditor(
       prev.dispose();
       currentMode = nextMode;
     },
+    setTheme: (theme: 'light' | 'dark') => {
+      editor.updateOptions({ theme: monacoTheme(theme) });
+    },
     onDidChange: (cb: () => void) => {
       editor.onDidChangeModelContent(() => cb());
     },
@@ -330,10 +336,24 @@ function encodeBase64(input: string): string {
   return btoa(binary);
 }
 
-function buildSrcdoc(jsCode: string, moduleBaseUrl: string, compileError?: string): string {
+type PreviewTheme = {
+  bg: string;
+  text: string;
+  border: string;
+  muted: string;
+  error: string;
+};
+
+const PREVIEW_THEMES: Record<'light' | 'dark', PreviewTheme> = {
+  light: { bg: '#ffffff', text: '#111827', border: '#d1d5db', muted: '#4b5563', error: '#b91c1c' },
+  dark: { bg: '#1a1a2e', text: '#e5e7eb', border: '#374151', muted: '#9ca3af', error: '#f87171' },
+};
+
+function buildSrcdoc(jsCode: string, moduleBaseUrl: string, theme: 'light' | 'dark', compileError?: string): string {
   const encoded = encodeBase64(jsCode);
   const moduleBaseLiteral = JSON.stringify(moduleBaseUrl);
   const compileErrorLiteral = JSON.stringify(compileError ?? '');
+  const t = PREVIEW_THEMES[theme];
 
   return `<!doctype html>
 <html>
@@ -341,12 +361,16 @@ function buildSrcdoc(jsCode: string, moduleBaseUrl: string, compileError?: strin
     <meta charset="utf-8" />
     <style>
       :root { font-family: system-ui, sans-serif; }
-      body { margin: 0; padding: 12px; background: #ffffff; color: #111827; }
+      body { margin: 0; padding: 12px; background: ${t.bg}; color: ${t.text}; }
       #root { min-height: 120px; }
-      .live-card { border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; max-width: 420px; }
+      .live-card { border: 1px solid ${t.border}; border-radius: 8px; padding: 12px; max-width: 420px; }
       .live-card h3 { margin: 0 0 8px; font-size: 1rem; }
-      .live-card p { margin: 0; color: #4b5563; }
-      #error { margin-top: 10px; color: #b91c1c; white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 12px; }
+      .live-card p { margin: 0; color: ${t.muted}; }
+      .controls { display: flex; gap: 8px; margin-top: 8px; }
+      button { padding: 4px 12px; border: 1px solid ${t.border}; border-radius: 4px; background: ${t.bg}; color: ${t.text}; cursor: pointer; font: inherit; }
+      button:hover { opacity: 0.8; }
+      button:disabled { opacity: 0.4; cursor: not-allowed; }
+      #error { margin-top: 10px; color: ${t.error}; white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 12px; }
     </style>
   </head>
   <body>
@@ -445,6 +469,14 @@ function transpileEditorCode(
   return { outputText: result.outputText };
 }
 
+function resolveTheme(doc: Document): 'light' | 'dark' {
+  return doc.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+}
+
+function monacoTheme(theme: 'light' | 'dark'): string {
+  return theme === 'dark' ? 'vs-dark' : 'vs';
+}
+
 function resolveCurrentMode(win: Window | null): DocsCodeMode {
   const stored = win?.localStorage.getItem(DOCS_CODE_MODE_STORAGE_KEY);
   if (stored === 'jsx' || stored === 'nonjsx') {
@@ -484,10 +516,15 @@ function mountLiveEditor(placeholder: HTMLElement, example: LiveExample): void {
 
   const resetButton = doc.createElement('button');
   resetButton.type = 'button';
-  resetButton.className = 'live-editor-reset';
+  resetButton.className = 'live-editor-btn live-editor-reset';
   resetButton.textContent = 'Reset';
 
-  header.append(title, modePill, resetButton);
+  const fullscreenButton = doc.createElement('button');
+  fullscreenButton.type = 'button';
+  fullscreenButton.className = 'live-editor-btn';
+  fullscreenButton.textContent = 'Fullscreen';
+
+  header.append(title, modePill, resetButton, fullscreenButton);
 
   const frame = doc.createElement('iframe');
   frame.className = 'live-editor-frame';
@@ -513,17 +550,86 @@ function mountLiveEditor(placeholder: HTMLElement, example: LiveExample): void {
   enginePill.textContent = preferredEngine === 'monaco' ? 'Editor: Monaco' : 'Editor: Textarea';
   header.insertBefore(enginePill, resetButton);
 
+  const body = doc.createElement('div');
+  body.className = 'live-editor-body';
+
   const editorHost = doc.createElement('div');
   editorHost.className = 'live-editor-editor-host';
 
+  const splitter = doc.createElement('div');
+  splitter.className = 'live-editor-splitter';
+
+  // Drag-to-resize splitter (vertical in normal mode, horizontal in fullscreen)
+  if (win) {
+    let dragging = false;
+    let startPos = 0;
+    let startEditorSize = 0;
+    let startFrameSize = 0;
+
+    splitter.addEventListener('mousedown', (e: MouseEvent) => {
+      e.preventDefault();
+      dragging = true;
+      splitter.classList.add('active');
+      // Block the iframe from stealing mouse events during drag
+      frame.style.pointerEvents = 'none';
+      if (isFullscreen) {
+        startPos = e.clientX;
+        startEditorSize = editorHost.offsetWidth;
+        startFrameSize = frame.offsetWidth;
+      } else {
+        startPos = e.clientY;
+        startEditorSize = editorHost.offsetHeight;
+        startFrameSize = frame.offsetHeight;
+      }
+    });
+
+    win.addEventListener('mousemove', (e: MouseEvent) => {
+      if (!dragging) return;
+      e.preventDefault();
+      if (isFullscreen) {
+        const dx = e.clientX - startPos;
+        const newEditor = Math.max(200, startEditorSize + dx);
+        const newFrame = Math.max(200, startFrameSize - dx);
+        editorHost.style.width = `${newEditor}px`;
+        editorHost.style.flex = 'none';
+        frame.style.width = `${newFrame}px`;
+        frame.style.flex = 'none';
+      } else {
+        const dy = e.clientY - startPos;
+        const newEditorH = Math.max(80, startEditorSize + dy);
+        const newFrameH = Math.max(60, startFrameSize - dy);
+        editorHost.style.height = `${newEditorH}px`;
+        frame.style.height = `${newFrameH}px`;
+      }
+    });
+
+    win.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      splitter.classList.remove('active');
+      frame.style.pointerEvents = '';
+    });
+  }
+
   let timer: ReturnType<typeof setTimeout> | null = null;
   let editorHandle: EditorHandle | null = null;
+  let currentTheme = resolveTheme(doc);
 
   const render = () => {
     if (!editorHandle) return;
     const transpiled = transpileEditorCode(editorHandle.getValue(), mode);
-    frame.srcdoc = buildSrcdoc(transpiled.outputText, moduleBaseUrl, transpiled.compileError);
+    frame.srcdoc = buildSrcdoc(transpiled.outputText, moduleBaseUrl, currentTheme, transpiled.compileError);
   };
+
+  // Watch for theme changes on <html data-theme>
+  const observer = new MutationObserver(() => {
+    const newTheme = resolveTheme(doc);
+    if (newTheme === currentTheme) return;
+    currentTheme = newTheme;
+    editorHandle?.setTheme?.(newTheme);
+    render();
+  });
+  observer.observe(doc.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
   const scheduleRender = () => {
     if (timer) clearTimeout(timer);
@@ -561,6 +667,44 @@ function mountLiveEditor(placeholder: HTMLElement, example: LiveExample): void {
     render();
   });
 
+  let isFullscreen = false;
+  let savedEditorH = '';
+  let savedFrameH = '';
+
+  fullscreenButton.addEventListener('click', () => {
+    isFullscreen = !isFullscreen;
+    wrapper.classList.toggle('live-editor-fullscreen', isFullscreen);
+    fullscreenButton.textContent = isFullscreen ? 'Exit Fullscreen' : 'Fullscreen';
+
+    if (isFullscreen) {
+      // Save current sizes and clear inline styles so flex takes over
+      savedEditorH = editorHost.style.height;
+      savedFrameH = frame.style.height;
+      editorHost.style.height = '';
+      editorHost.style.width = '';
+      editorHost.style.flex = '';
+      frame.style.height = '';
+      frame.style.width = '';
+      frame.style.flex = '';
+    } else {
+      // Restore saved sizes and clear fullscreen inline styles
+      editorHost.style.height = savedEditorH || '';
+      editorHost.style.width = '';
+      editorHost.style.flex = '';
+      frame.style.height = savedFrameH || '';
+      frame.style.width = '';
+      frame.style.flex = '';
+    }
+  });
+
+  if (win) {
+    win.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        fullscreenButton.click();
+      }
+    });
+  }
+
   if (win) {
     win.addEventListener('storage', event => {
       if (event.key !== DOCS_CODE_MODE_STORAGE_KEY) return;
@@ -593,7 +737,8 @@ function mountLiveEditor(placeholder: HTMLElement, example: LiveExample): void {
     render();
   };
 
-  wrapper.append(header, editorHost, frame);
+  body.append(editorHost, splitter, frame);
+  wrapper.append(header, body);
   placeholder.append(wrapper);
   placeholder.dataset.hydrated = 'true';
   void mountEditor();
