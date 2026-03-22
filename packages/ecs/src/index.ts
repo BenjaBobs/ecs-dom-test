@@ -36,6 +36,14 @@ export {
 } from './debug.ts';
 // Entity Name
 export { EntityName, type EntityNameData, getEntityName } from './entity-name.ts';
+// Events
+export {
+  defineEvent,
+  type EventInstance,
+  type EventRef,
+  type EventType,
+  getEventTag,
+} from './event.ts';
 // JSX
 export {
   Entity,
@@ -72,6 +80,7 @@ export {
 export {
   type EntityId,
   type EntitySnapshot,
+  type EventHandler,
   type FlushProfile,
   type FlushProfileCallback,
   type FlushScheduler,
@@ -82,6 +91,7 @@ export {
   type SystemExecutionProfile,
   type SystemProfilingStats,
   World,
+  type WorldEvent,
   type WorldOptions,
   type WorldSnapshot,
 } from './world.ts';

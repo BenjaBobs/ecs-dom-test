@@ -94,6 +94,27 @@ Systems react to **query membership changes**:
 
 Unlike game ECS, there is no `requestAnimationFrame` loop. Systems run during flush cycles. By default, mutations auto-trigger a flush (`autoFlush: true`), and you can disable that for manual batching.
 
+## Entity Events
+
+For cross-entity UI intent wiring, define typed events and emit them through entity hierarchy:
+
+```ts
+import { defineEvent } from "@ecs-test/ecs";
+
+const TodoToggle = defineEvent<{ todoId: number }>("todo.toggle");
+
+world.on(todoRow, TodoToggle, (event) => {
+  const { todoId } = event.payload;
+  // update state...
+  event.bubble();
+});
+
+world.emit(toggleButton, TodoToggle, { todoId: 42 });
+// equivalent: world.emit(toggleButton, TodoToggle({ todoId: 42 }))
+```
+
+Event propagation walks from `sourceEntity` up through parents. A handler stops propagation by default, and can continue upward only by calling `event.bubble()`.
+
 ## Bundles
 
 Bundles group multiple components into a reusable unit. They're the primary composition tool.

@@ -7,6 +7,8 @@ import type { DeepReadonly } from '@ecs-test/ecs/utility-types.ts';
 import { assert } from './assert.ts';
 import type { ComponentInstance, ComponentRef, ComponentType } from './component.ts';
 import { getTag } from './component.ts';
+import type { EventInstance, EventRef, EventType } from './event.ts';
+import { getEventTag } from './event.ts';
 import { createSyncScheduler } from './scheduler.ts';
 import type { Mutation, ReactiveSystem, SystemInfo } from './system.ts';
 import { buildQueryKey } from './system.ts';
@@ -91,6 +93,17 @@ type MutationSubscription = {
   options?: MutationSubscriptionOptions;
   componentTags?: Set<string>;
 };
+
+export type WorldEvent<T = unknown> = {
+  type: string;
+  sourceEntity: EntityId;
+  handlerEntity: EntityId;
+  payload: T;
+  path: EntityId[];
+  bubble: () => void;
+};
+
+export type EventHandler<T = unknown> = (event: WorldEvent<DeepReadonly<T>>, world: World) => void;
 
 export type SystemExecutionProfile = {
   name: string;
@@ -201,6 +214,7 @@ export class World {
   private autoFlush: boolean;
   private batchDepth = 0;
   private mutationSubscribers = new Set<MutationSubscription>();
+  private eventHandlers = new Map<string, Map<EntityId, Set<EventHandler>>>();
   private profilingEnabled = false;
   private lastFlushProfile: FlushProfile | null = null;
   private profilingSequence = 0;
@@ -309,6 +323,7 @@ export class World {
     this.components.delete(id);
     this.parents.delete(id);
     this.childrenMap.delete(id);
+    this.clearEventHandlersForEntity(id);
 
     if (this.autoFlush && this.batchDepth === 0) this.flush();
   }
@@ -793,6 +808,52 @@ export class World {
     return false;
   }
 
+  /**
+   * Build source -> root path for event bubbling.
+   * @internal
+   */
+  private buildEventPath(sourceEntity: EntityId): EntityId[] {
+    const path: EntityId[] = [sourceEntity];
+    let current = this.parents.get(sourceEntity);
+    while (current !== undefined) {
+      path.push(current);
+      current = this.parents.get(current);
+    }
+    return path;
+  }
+
+  /**
+   * Resolve emitted event tag/payload from supported emit call signatures.
+   * @internal
+   */
+  private resolveEmittedEvent<T>(
+    event: EventInstance<T> | EventType<T> | EventRef,
+    payload?: T,
+  ): { eventTag: string; resolvedPayload: T } {
+    if (typeof event === 'object' && event !== null && '_tag' in event && 'payload' in event) {
+      return { eventTag: event._tag, resolvedPayload: event.payload };
+    }
+
+    if (typeof event === 'string') {
+      return { eventTag: event, resolvedPayload: payload as T };
+    }
+
+    return { eventTag: getEventTag(event), resolvedPayload: payload as T };
+  }
+
+  /**
+   * Remove all event handlers registered on an entity.
+   * @internal
+   */
+  private clearEventHandlersForEntity(entity: EntityId): void {
+    for (const [eventTag, handlersByEntity] of this.eventHandlers.entries()) {
+      handlersByEntity.delete(entity);
+      if (handlersByEntity.size === 0) {
+        this.eventHandlers.delete(eventTag);
+      }
+    }
+  }
+
   // ===========================================================================
   // Performance Profiling
   // ===========================================================================
@@ -1027,6 +1088,94 @@ export class World {
     return children.filter(child =>
       componentTags.every(componentTag => this.has(child, componentTag)),
     );
+  }
+
+  /**
+   * Register an event handler on an entity.
+   *
+   * Events emitted from descendant entities can bubble up through parents.
+   * Handlers default to stopping propagation unless they explicitly call `event.bubble()`.
+   *
+   * @param entity - Entity that owns this handler
+   * @param eventRef - Event type or tag to handle
+   * @param handler - Handler callback
+   * @returns Unsubscribe function
+   */
+  on<T>(entity: EntityId, eventRef: EventType<T> | EventRef, handler: EventHandler<T>): () => void {
+    assert(this.exists(entity), `Cannot register event handler on non-existent entity ${entity}`);
+    const eventTag = getEventTag(eventRef);
+    let handlersByEntity = this.eventHandlers.get(eventTag);
+    if (!handlersByEntity) {
+      handlersByEntity = new Map<EntityId, Set<EventHandler>>();
+      this.eventHandlers.set(eventTag, handlersByEntity);
+    }
+
+    let handlers = handlersByEntity.get(entity);
+    if (!handlers) {
+      handlers = new Set<EventHandler>();
+      handlersByEntity.set(entity, handlers);
+    }
+    handlers.add(handler as EventHandler);
+
+    return () => {
+      const entityHandlers = handlersByEntity.get(entity);
+      if (!entityHandlers) return;
+      entityHandlers.delete(handler as EventHandler);
+      if (entityHandlers.size === 0) {
+        handlersByEntity.delete(entity);
+      }
+      if (handlersByEntity.size === 0) {
+        this.eventHandlers.delete(eventTag);
+      }
+    };
+  }
+
+  /**
+   * Emit an event from a source entity.
+   *
+   * Propagation walks source -> parent -> ... -> root until a handler returns
+   * `"handled"` (or `void`), or no parent remains.
+   *
+   * @param sourceEntity - Entity where the event originates
+   * @param event - Event instance, event type, or tag
+   * @param payload - Payload (required when event is an event type or tag)
+   */
+  emit<T>(
+    sourceEntity: EntityId,
+    event: EventInstance<T> | EventType<T> | EventRef,
+    payload?: T,
+  ): void {
+    assert(this.exists(sourceEntity), `Cannot emit event from non-existent entity ${sourceEntity}`);
+
+    const { eventTag, resolvedPayload } = this.resolveEmittedEvent(event, payload);
+    const path = this.buildEventPath(sourceEntity);
+    const handlersByEntity = this.eventHandlers.get(eventTag);
+    if (!handlersByEntity) return;
+
+    for (const handlerEntity of path) {
+      const handlers = handlersByEntity.get(handlerEntity);
+      if (!handlers || handlers.size === 0) continue;
+
+      const evt: WorldEvent = {
+        type: eventTag,
+        sourceEntity,
+        handlerEntity,
+        payload: resolvedPayload,
+        path,
+        bubble: () => {
+          shouldBubble = true;
+        },
+      };
+
+      let shouldBubble = false;
+      for (const handler of handlers) {
+        shouldBubble = false;
+        handler(evt, this);
+        if (!shouldBubble) {
+          return;
+        }
+      }
+    }
   }
 
   /**

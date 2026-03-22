@@ -162,7 +162,8 @@ For browser UI, forcing every interaction through pure marker/system indirection
 2. Widget-root state for multi-entity controls
    - One root entity owns widget data; child entities are interaction/render projections.
 3. Event bubbling across ECS parent-child links
-   - Mirror browser mental model; reduce manual `getParent()` wiring.
+   - Implemented via typed entity events: `defineEvent`, `world.emit(...)`, `world.on(...)`.
+   - Propagation model: handlers stop by default; call `event.bubble()` to continue upward.
 4. Scoped processing ("tick specific entities")
    - Consider only after profiling because it may complicate ordering semantics.
 5. Child-scoped query helpers (implemented)

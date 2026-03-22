@@ -5,6 +5,7 @@ import {
   type DebugBuffer,
   DebugChildren,
   defineComponent,
+  defineEvent,
   defineMarker,
   defineReactiveSystem,
   Entities,
@@ -16,6 +17,7 @@ const Position = defineComponent<{ x: number; y: number }>('Position');
 const Velocity = defineComponent<{ x: number; y: number }>('Velocity');
 const Selected = defineMarker('Selected');
 const Health = defineComponent<{ value: number }>('Health');
+const Toggled = defineEvent<{ count: number }>('test.toggled');
 
 describe('World', () => {
   it('creates entities and manages components', () => {
@@ -214,6 +216,164 @@ describe('World', () => {
     expect(executed).toBe(0);
     await world.whenFlushed();
     expect(executed).toBe(1);
+  });
+});
+
+// =============================================================================
+// Entity Events
+// =============================================================================
+
+describe('World events', () => {
+  it('supports typed event definitions and instance emission', () => {
+    const world = new World();
+    const entity = world.createEntity();
+    const received: number[] = [];
+
+    world.on(entity, Toggled, event => {
+      received.push(event.payload.count);
+    });
+
+    world.emit(entity, Toggled({ count: 3 }));
+    expect(received).toEqual([3]);
+  });
+
+  it('bubbles to parent when child handler calls bubble()', () => {
+    const world = new World();
+    const parent = world.createEntity();
+    const child = world.createEntity(parent);
+    const calls: string[] = [];
+
+    world.on(child, Toggled, event => {
+      calls.push('child');
+      event.bubble();
+    });
+
+    world.on(parent, Toggled, () => {
+      calls.push('parent');
+    });
+
+    world.emit(child, Toggled, { count: 1 });
+    expect(calls).toEqual(['child', 'parent']);
+  });
+
+  it('stops propagation by default when handler returns void', () => {
+    const world = new World();
+    const parent = world.createEntity();
+    const child = world.createEntity(parent);
+    const calls: string[] = [];
+
+    world.on(child, Toggled, () => {
+      calls.push('child');
+      // void => handled
+    });
+
+    world.on(parent, Toggled, () => {
+      calls.push('parent');
+    });
+
+    world.emit(child, Toggled, { count: 1 });
+    expect(calls).toEqual(['child']);
+  });
+
+  it('unsubscribes event handlers', () => {
+    const world = new World();
+    const entity = world.createEntity();
+    const calls: number[] = [];
+
+    const unsubscribe = world.on(entity, Toggled, event => {
+      calls.push(event.payload.count);
+    });
+
+    world.emit(entity, Toggled, { count: 1 });
+    unsubscribe();
+    world.emit(entity, Toggled, { count: 2 });
+
+    expect(calls).toEqual([1]);
+  });
+
+  it('removes handlers when entity is removed', () => {
+    const world = new World();
+    const entity = world.createEntity();
+    const calls: number[] = [];
+
+    world.on(entity, Toggled, event => {
+      calls.push(event.payload.count);
+    });
+
+    world.removeEntity(entity);
+    expect(() => world.emit(entity, Toggled, { count: 1 })).toThrow(
+      /Cannot emit event from non-existent entity/,
+    );
+    expect(calls).toEqual([]);
+  });
+
+  it('does not bubble past parent when parent handles', () => {
+    const world = new World();
+    const grandparent = world.createEntity();
+    const parent = world.createEntity(grandparent);
+    const child = world.createEntity(parent);
+    const calls: string[] = [];
+
+    world.on(child, Toggled, event => {
+      calls.push('child');
+      event.bubble();
+    });
+
+    world.on(parent, Toggled, () => {
+      calls.push('parent');
+      // handled by default
+    });
+
+    world.on(grandparent, Toggled, () => {
+      calls.push('grandparent');
+    });
+
+    world.emit(child, Toggled, { count: 1 });
+    expect(calls).toEqual(['child', 'parent']);
+  });
+
+  it('can bubble to grandparent when parent also bubbles', () => {
+    const world = new World();
+    const grandparent = world.createEntity();
+    const parent = world.createEntity(grandparent);
+    const child = world.createEntity(parent);
+    const calls: string[] = [];
+
+    world.on(child, Toggled, event => {
+      calls.push('child');
+      event.bubble();
+    });
+
+    world.on(parent, Toggled, event => {
+      calls.push('parent');
+      event.bubble();
+    });
+
+    world.on(grandparent, Toggled, () => {
+      calls.push('grandparent');
+    });
+
+    world.emit(child, Toggled, { count: 1 });
+    expect(calls).toEqual(['child', 'parent', 'grandparent']);
+  });
+
+  it('supports event.bubble() for direct child->parent propagation', () => {
+    const world = new World();
+    const parent = world.createEntity();
+    const child = world.createEntity(parent);
+    const calls: string[] = [];
+
+    world.on(child, Toggled, event => {
+      calls.push('child');
+      event.bubble();
+    });
+
+    world.on(parent, Toggled, () => {
+      calls.push('parent');
+    });
+
+    world.emit(child, Toggled, { count: 1 });
+    expect(calls).toEqual(['child', 'parent']);
   });
 });
 
