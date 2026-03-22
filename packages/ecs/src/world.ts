@@ -279,10 +279,14 @@ export class World {
       this.childrenMap.set(parent, siblings);
     }
 
-    if (components) {
-      for (const component of components) {
-        this.add(id, component);
-      }
+    if (components && components.length > 0) {
+      // Ensure initial components are applied as one atomic setup step.
+      // This avoids order-dependent reactive behavior when autoFlush is enabled.
+      this.batch(() => {
+        for (const component of components) {
+          this.add(id, component);
+        }
+      });
     }
 
     return id;
@@ -1088,6 +1092,48 @@ export class World {
     return children.filter(child =>
       componentTags.every(componentTag => this.has(child, componentTag)),
     );
+  }
+
+  /**
+   * Find exactly one direct child matching component tags.
+   *
+   * Throws if no matching child exists, or if multiple matching children exist.
+   * Use `findChildMaybe` when absence is expected.
+   *
+   * @param parent - Parent entity whose direct children should be searched
+   * @param componentTags - Optional component types/tags required on the child
+   * @returns The matching direct child entity ID
+   */
+  findChild(parent: EntityId, ...componentTags: ComponentRef[]): EntityId {
+    const found = this.findChildMaybe(parent, ...componentTags);
+    assert(
+      found !== undefined,
+      `Could not find child of entity ${parent} matching [${componentTags.map(getTag).join(', ')}]`,
+    );
+    return found;
+  }
+
+  /**
+   * Find a direct child matching component tags.
+   *
+   * Returns `undefined` when no match exists. Throws if multiple children match.
+   *
+   * @param parent - Parent entity whose direct children should be searched
+   * @param componentTags - Optional component types/tags required on the child
+   * @returns Matching direct child entity ID, or `undefined` when not found
+   */
+  findChildMaybe(parent: EntityId, ...componentTags: ComponentRef[]): EntityId | undefined {
+    const matches = this.queryChildren(parent, ...componentTags);
+    if (matches.length === 0) {
+      return undefined;
+    }
+    assert(
+      matches.length === 1,
+      `Expected exactly one child of entity ${parent} matching [${componentTags
+        .map(getTag)
+        .join(', ')}], found ${matches.length}`,
+    );
+    return matches[0];
   }
 
   /**

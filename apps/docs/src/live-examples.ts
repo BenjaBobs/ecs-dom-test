@@ -83,9 +83,9 @@ import {
 
 // ── Components ──────────────────────────────────────────
 // TodoText holds the text for a single todo item.
-// Done is a marker — its presence means "completed".
+// Status stores completion state.
 const TodoText = defineComponent<{ value: string }>('TodoText');
-const Done = defineMarker('Done');
+const Status = defineComponent<{ completed: boolean }>('Status');
 const TodoInput = defineMarker('TodoInput');
 const TodoListContainer = defineMarker('TodoListContainer');
 const TodoToggleButton = defineMarker('TodoToggleButton');
@@ -137,14 +137,14 @@ function buildTodoRow(world, todoEntity) {
 }
 
 function updateTodoVisuals(world, todoEntity) {
-  const done = world.has(todoEntity, Done);
+  const done = world.get(todoEntity, Status)?.completed ?? false;
 
-  const toggle = world.queryChildren(todoEntity, TodoToggleButton)[0];
+  const toggle = world.findChildMaybe(todoEntity, TodoToggleButton);
   if (toggle != null) {
     world.set(toggle, TextContent({ value: done ? '\\u2611' : '\\u2610' }));
   }
 
-  const label = world.queryChildren(todoEntity, TodoLabel)[0];
+  const label = world.findChildMaybe(todoEntity, TodoLabel);
   if (label != null) {
     world.set(label, Style({
       flex: '1',
@@ -171,11 +171,8 @@ const TodoEnterSystem = defineReactiveSystem({
       updateTodoVisuals(world, entity);
 
       world.on(entity, TodoToggleRequested, () => {
-        if (world.has(entity, Done)) {
-          world.remove(entity, Done);
-        } else {
-          world.add(entity, Done());
-        }
+        const status = world.get(entity, Status) ?? { completed: false };
+        world.set(entity, Status({ completed: !status.completed }));
         updateTodoVisuals(world, entity);
       });
 
@@ -201,7 +198,7 @@ function addTodoFromInput(world) {
 
   const listEntity = world.query(TodoListContainer)[0];
   if (listEntity == null) return;
-  world.createEntity(listEntity, [TodoText({ value: text })]);
+  world.createEntity(listEntity, [TodoText({ value: text }), Status({ completed: false })]);
 }
 
 // ── Build the static UI shell ───────────────────────────
@@ -230,11 +227,10 @@ world.createEntity(form, [
 const list = world.createEntity(card, [DOMElement({ tag: 'div' }), TodoListContainer()]);
 
 // ── Seed initial todos ──────────────────────────────────
-// Each todo is just an entity with TodoText, parented under the list container.
-// Adding Done() marks it as completed. The systems handle the rest.
-world.createEntity(list, [TodoText({ value: 'Learn about ECS entities' }), Done()]);
-world.createEntity(list, [TodoText({ value: 'Build a todo app' })]);
-world.createEntity(list, [TodoText({ value: 'Try the live editor' })]);
+// Each todo is an entity with TodoText and Status, parented under the list container.
+world.createEntity(list, [TodoText({ value: 'Learn about ECS entities' }), Status({ completed: true })]);
+world.createEntity(list, [TodoText({ value: 'Build a todo app' }), Status({ completed: false })]);
+world.createEntity(list, [TodoText({ value: 'Try the live editor' }), Status({ completed: false })]);
 
 world.flush();
 
@@ -269,9 +265,9 @@ import {
 
 // ── Components ──────────────────────────────────────────
 // TodoText holds the text for a single todo item.
-// Done is a marker — its presence means "completed".
+// Status stores completion state.
 const TodoText = defineComponent<{ value: string }>('TodoText');
-const Done = defineMarker('Done');
+const Status = defineComponent<{ completed: boolean }>('Status');
 const TodoInput = defineMarker('TodoInput');
 const TodoListContainer = defineMarker('TodoListContainer');
 const TodoToggleButton = defineMarker('TodoToggleButton');
@@ -326,14 +322,14 @@ function buildTodoRow(world, todoEntity) {
 }
 
 function updateTodoVisuals(world, todoEntity) {
-  const done = world.has(todoEntity, Done);
+  const done = world.get(todoEntity, Status)?.completed ?? false;
 
-  const toggle = world.queryChildren(todoEntity, TodoToggleButton)[0];
+  const toggle = world.findChildMaybe(todoEntity, TodoToggleButton);
   if (toggle != null) {
     world.set(toggle, TextContent({ value: done ? '\\u2611' : '\\u2610' }));
   }
 
-  const label = world.queryChildren(todoEntity, TodoLabel)[0];
+  const label = world.findChildMaybe(todoEntity, TodoLabel);
   if (label != null) {
     world.set(label, Style({
       flex: '1',
@@ -360,11 +356,8 @@ const TodoEnterSystem = defineReactiveSystem({
       updateTodoVisuals(world, entity);
 
       world.on(entity, TodoToggleRequested, () => {
-        if (world.has(entity, Done)) {
-          world.remove(entity, Done);
-        } else {
-          world.add(entity, Done());
-        }
+        const status = world.get(entity, Status) ?? { completed: false };
+        world.set(entity, Status({ completed: !status.completed }));
         updateTodoVisuals(world, entity);
       });
 
@@ -390,7 +383,7 @@ function addTodoFromInput(world) {
 
   const listEntity = world.query(TodoListContainer)[0];
   if (listEntity == null) return;
-  world.createEntity(listEntity, [TodoText({ value: text })]);
+  world.createEntity(listEntity, [TodoText({ value: text }), Status({ completed: false })]);
 }
 
 // ── Build the static UI shell ───────────────────────────
@@ -432,13 +425,12 @@ const ui = (
 materialize(world, ui);
 
 // ── Seed initial todos ──────────────────────────────────
-// Each todo is just an entity with TodoText, parented under the list container.
-// Adding Done() marks it as completed. The systems handle the rest.
+// Each todo is an entity with TodoText and Status, parented under the list container.
 const listEntity = world.query(TodoListContainer)[0];
 
-world.createEntity(listEntity, [TodoText({ value: 'Learn about ECS entities' }), Done()]);
-world.createEntity(listEntity, [TodoText({ value: 'Build a todo app' })]);
-world.createEntity(listEntity, [TodoText({ value: 'Try the live editor' })]);
+world.createEntity(listEntity, [TodoText({ value: 'Learn about ECS entities' }), Status({ completed: true })]);
+world.createEntity(listEntity, [TodoText({ value: 'Build a todo app' }), Status({ completed: false })]);
+world.createEntity(listEntity, [TodoText({ value: 'Try the live editor' }), Status({ completed: false })]);
 
 world.flush();
 

@@ -167,7 +167,7 @@ For browser UI, forcing every interaction through pure marker/system indirection
 4. Scoped processing ("tick specific entities")
    - Consider only after profiling because it may complicate ordering semantics.
 5. Child-scoped query helpers (implemented)
-   - Added `world.queryChildren(parent, ...components)` to avoid manual `getChildren()` iteration for direct child lookups.
+   - Added `world.queryChildren(parent, ...components)` plus `world.findChild(...)` / `world.findChildMaybe(...)` to avoid manual `getChildren()` iteration and `[0]` lookups.
 6. Binding primitives for forms/inputs
    - `InputValue`/binding-style components for DOM <-> ECS sync without repeated raw DOM casting.
 

@@ -96,7 +96,7 @@ In a browser, trying to force all interaction through pure marker/system indirec
 4. Scoped processing ("tick specific entities")
    - Direction: consider only after profiling; may complicate reactive ordering semantics.
 5. Child-scoped query helpers (implemented)
-   - Added `world.queryChildren(parent, ...components)` for direct child lookups to avoid manual `getChildren()` loops.
+   - Added `world.queryChildren(parent, ...components)` for list lookups and `world.findChild(...)` / `world.findChildMaybe(...)` for single-child lookups.
 6. Binding primitives for form/input flows (additional viable option)
    - Direction: introduce `InputValue`/binding-style components for DOM <-> ECS state sync without repeated `getDOMElement` casting.
 

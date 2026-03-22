@@ -44,6 +44,27 @@ describe('World', () => {
     expect(world.query(Position._tag, Velocity._tag)).toEqual([e1]);
   });
 
+  it('applies initial createEntity components atomically regardless of component order', () => {
+    const world = new World();
+    const selectedAtEnter: boolean[] = [];
+
+    world.registerSystem(
+      defineReactiveSystem({
+        query: Entities.with([Position]),
+        onEnter(world, entities) {
+          for (const entity of entities) {
+            selectedAtEnter.push(world.has(entity, Selected));
+          }
+        },
+      }),
+    );
+
+    world.createEntity(undefined, [Position({ x: 1, y: 1 }), Selected()]);
+    world.createEntity(undefined, [Selected(), Position({ x: 2, y: 2 })]);
+
+    expect(selectedAtEnter).toEqual([true, true]);
+  });
+
   it('queries direct children by component tags', () => {
     const world = new World();
     const parent = world.createEntity();
@@ -72,6 +93,42 @@ describe('World', () => {
     expect(world.queryChildren(parentWithoutChildren)).toEqual([]);
     expect(world.queryChildren(removedParent)).toEqual([]);
     expect(world.queryChildren(removedParent, Position)).toEqual([]);
+  });
+
+  it('findChild returns exactly one matching direct child', () => {
+    const world = new World();
+    const parent = world.createEntity();
+    const match = world.createEntity(parent, [Position({ x: 1, y: 1 }), Velocity({ x: 2, y: 2 })]);
+    world.createEntity(parent, [Position({ x: 3, y: 3 })]);
+
+    expect(world.findChild(parent, Position, Velocity)).toBe(match);
+    expect(world.findChildMaybe(parent, Position, Velocity)).toBe(match);
+  });
+
+  it('findChildMaybe returns undefined when no child matches', () => {
+    const world = new World();
+    const parent = world.createEntity();
+    world.createEntity(parent, [Position({ x: 1, y: 1 })]);
+
+    expect(world.findChildMaybe(parent, Velocity)).toBeUndefined();
+  });
+
+  it('findChild throws when no child matches', () => {
+    const world = new World();
+    const parent = world.createEntity();
+    world.createEntity(parent, [Position({ x: 1, y: 1 })]);
+
+    expect(() => world.findChild(parent, Velocity)).toThrow(/Could not find child/);
+  });
+
+  it('findChildMaybe and findChild throw when multiple children match', () => {
+    const world = new World();
+    const parent = world.createEntity();
+    world.createEntity(parent, [Position({ x: 1, y: 1 })]);
+    world.createEntity(parent, [Position({ x: 2, y: 2 })]);
+
+    expect(() => world.findChildMaybe(parent, Position)).toThrow(/Expected exactly one child/);
+    expect(() => world.findChild(parent, Position)).toThrow(/Expected exactly one child/);
   });
 
   it('removes entities recursively', () => {
@@ -676,10 +733,9 @@ describe('World debug helpers', () => {
 
     registerDebugSystems(world, { output: { type: 'buffer', buffer } });
 
-    const entity = world.createEntity(undefined, [
-      Debug({ label: 'Root' }),
-      Position({ x: 1, y: 2 }),
-    ]);
+    const entity = world.createEntity();
+    world.add(entity, Debug({ label: 'Root' }));
+    world.add(entity, Position({ x: 1, y: 2 }));
 
     const entry = buffer.entries.find(e => e.mutation.componentTag === 'Position');
     expect(entry?.entity).toBe(entity);

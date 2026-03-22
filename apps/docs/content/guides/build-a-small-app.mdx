@@ -10,23 +10,23 @@ This guide walks through building a working todo list from scratch. Each todo it
 
 - DOM rendering (`DOMElement`, `TextContent`, `Classes`, `Style`)
 - inline click handlers (`Clickable` with `onClick`)
-- entity-per-item state with markers (`Done`)
+- entity-per-item state with structured data (`Status`)
 - parent/child entity relationships
 - reactive systems for lifecycle and updates
 
 ## 1. Define Your Components
 
-Each todo item will be an entity with a `TodoText` component. Completed items get a `Done` marker:
+Each todo item will be an entity with `TodoText` and `Status` components:
 
 <div data-code-tabs>
 
 ```tsx
 import { defineComponent, defineMarker } from "@ecs-test/ecs";
 
-// TodoText holds the actual text. Done is a marker — its
-// presence/absence IS the completed state. No booleans needed.
+// TodoText holds the task text.
+// Status stores completion state as explicit data.
 const TodoText = defineComponent<{ value: string }>("TodoText");
-const Done = defineMarker("Done");
+const Status = defineComponent<{ completed: boolean }>("Status");
 
 // Markers to tag key UI entities so systems can find them
 const TodoInput = defineMarker("TodoInput");
@@ -36,10 +36,10 @@ const TodoListContainer = defineMarker("TodoListContainer");
 ```ts
 import { defineComponent, defineMarker } from "@ecs-test/ecs";
 
-// TodoText holds the actual text. Done is a marker — its
-// presence/absence IS the completed state. No booleans needed.
+// TodoText holds the task text.
+// Status stores completion state as explicit data.
 const TodoText = defineComponent<{ value: string }>("TodoText");
-const Done = defineMarker("Done");
+const Status = defineComponent<{ completed: boolean }>("Status");
 
 // Markers to tag key UI entities so systems can find them
 const TodoInput = defineMarker("TodoInput");
@@ -48,7 +48,7 @@ const TodoListContainer = defineMarker("TodoListContainer");
 
 </div>
 
-Notice there's no `Todos` array or `completed: boolean` field. Each todo is its own entity — `TodoText` holds the text, and the presence or absence of `Done` is the completed state. This is the ECS way: state is expressed as components on entities, not data in objects.
+Notice there's no `Todos` array. Each todo is its own entity — `TodoText` holds the text, and `Status.completed` holds completion state.
 
 ## 2. Build the Static UI Shell
 
@@ -72,7 +72,7 @@ function addTodoFromInput(world) {
 
   const listEntity = world.query(TodoListContainer)[0];
   if (listEntity == null) return;
-  world.createEntity(listEntity, [TodoText({ value: text })]);
+  world.createEntity(listEntity, [TodoText({ value: text }), Status({ completed: false })]);
 }
 
 const ui = (
@@ -130,7 +130,7 @@ function addTodoFromInput(world) {
 
   const listEntity = world.query(TodoListContainer)[0];
   if (listEntity == null) return;
-  world.createEntity(listEntity, [TodoText({ value: text })]);
+  world.createEntity(listEntity, [TodoText({ value: text }), Status({ completed: false })]);
 }
 
 const card = world.createEntity(undefined, [
@@ -191,6 +191,8 @@ const TodoRemoveRequested = defineEvent("todo.removeRequested");
 
 function buildTodoRow(world, todoEntity) {
   const text = world.get(todoEntity, TodoText)?.value ?? "";
+
+  // Toggle button emits an intent event.
   materialize(world, [
     <Entity>
       <DOMElement tag="button" />
@@ -202,6 +204,8 @@ function buildTodoRow(world, todoEntity) {
         world.emit(entity, TodoToggleRequested);
       }} />
     </Entity>,
+
+    // Label is updated by updateTodoVisuals().
     <Entity>
       <DOMElement tag="span" />
       <TodoLabel />
@@ -221,14 +225,20 @@ function buildTodoRow(world, todoEntity) {
 }
 
 function updateTodoVisuals(world, todoEntity) {
-  const done = world.has(todoEntity, Done);
-  const toggle = world.queryChildren(todoEntity, TodoToggleButton)[0];
+  const done = world.get(todoEntity, Status)?.completed ?? false;
+
+  const toggle = world.findChildMaybe(todoEntity, TodoToggleButton);
   if (toggle != null) {
     world.set(toggle, TextContent({ value: done ? "\u2611" : "\u2610" }));
   }
-  const label = world.queryChildren(todoEntity, TodoLabel)[0];
+
+  const label = world.findChildMaybe(todoEntity, TodoLabel);
   if (label != null) {
-    world.set(label, Style({ flex: "1", textDecoration: done ? "line-through" : "none", opacity: done ? "0.5" : "1" }));
+    world.set(label, Style({
+      flex: "1",
+      textDecoration: done ? "line-through" : "none",
+      opacity: done ? "0.5" : "1",
+    }));
   }
 }
 
@@ -237,16 +247,27 @@ const TodoEnterSystem = defineReactiveSystem({
   query: Entities.with([TodoText]),
   onEnter(world, entities) {
     for (const entity of entities) {
+      // Row shell
       world.add(entity, DOMElement({ tag: "div" }));
-      world.add(entity, Style({ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0", borderBottom: "1px solid #e5e7eb" }));
+      world.add(entity, Style({
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        padding: "6px 0",
+        borderBottom: "1px solid #e5e7eb",
+      }));
+
+      // Row children + initial visuals
       buildTodoRow(world, entity);
       updateTodoVisuals(world, entity);
 
+      // Root-level intent handlers for this todo row
       world.on(entity, TodoToggleRequested, () => {
-        if (world.has(entity, Done)) world.remove(entity, Done);
-        else world.add(entity, Done());
+        const status = world.get(entity, Status) ?? { completed: false };
+        world.set(entity, Status({ completed: !status.completed }));
         updateTodoVisuals(world, entity);
       });
+
       world.on(entity, TodoRemoveRequested, () => {
         world.removeEntity(entity);
       });
@@ -265,6 +286,8 @@ const TodoRemoveRequested = defineEvent("todo.removeRequested");
 
 function buildTodoRow(world, todoEntity) {
   const text = world.get(todoEntity, TodoText)?.value ?? "";
+
+  // Toggle button emits an intent event.
   world.createEntity(todoEntity, [
     DOMElement({ tag: "button" }),
     TodoToggleButton(),
@@ -274,6 +297,8 @@ function buildTodoRow(world, todoEntity) {
       world.emit(entity, TodoToggleRequested);
     }}),
   ]);
+
+  // Label is updated by updateTodoVisuals().
   world.createEntity(todoEntity, [
     DOMElement({ tag: "span" }),
     TodoLabel(),
@@ -291,12 +316,20 @@ function buildTodoRow(world, todoEntity) {
 }
 
 function updateTodoVisuals(world, todoEntity) {
-  const done = world.has(todoEntity, Done);
-  const toggle = world.queryChildren(todoEntity, TodoToggleButton)[0];
-  if (toggle != null) world.set(toggle, TextContent({ value: done ? "\u2611" : "\u2610" }));
-  const label = world.queryChildren(todoEntity, TodoLabel)[0];
+  const done = world.get(todoEntity, Status)?.completed ?? false;
+
+  const toggle = world.findChildMaybe(todoEntity, TodoToggleButton);
+  if (toggle != null) {
+    world.set(toggle, TextContent({ value: done ? "\u2611" : "\u2610" }));
+  }
+
+  const label = world.findChildMaybe(todoEntity, TodoLabel);
   if (label != null) {
-    world.set(label, Style({ flex: "1", textDecoration: done ? "line-through" : "none", opacity: done ? "0.5" : "1" }));
+    world.set(label, Style({
+      flex: "1",
+      textDecoration: done ? "line-through" : "none",
+      opacity: done ? "0.5" : "1",
+    }));
   }
 }
 
@@ -305,16 +338,27 @@ const TodoEnterSystem = defineReactiveSystem({
   query: Entities.with([TodoText]),
   onEnter(world, entities) {
     for (const entity of entities) {
+      // Row shell
       world.add(entity, DOMElement({ tag: "div" }));
-      world.add(entity, Style({ display: "flex", alignItems: "center", gap: "8px", padding: "6px 0", borderBottom: "1px solid #e5e7eb" }));
+      world.add(entity, Style({
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        padding: "6px 0",
+        borderBottom: "1px solid #e5e7eb",
+      }));
+
+      // Row children + initial visuals
       buildTodoRow(world, entity);
       updateTodoVisuals(world, entity);
 
+      // Root-level intent handlers for this todo row
       world.on(entity, TodoToggleRequested, () => {
-        if (world.has(entity, Done)) world.remove(entity, Done);
-        else world.add(entity, Done());
+        const status = world.get(entity, Status) ?? { completed: false };
+        world.set(entity, Status({ completed: !status.completed }));
         updateTodoVisuals(world, entity);
       });
+
       world.on(entity, TodoRemoveRequested, () => {
         world.removeEntity(entity);
       });
@@ -327,21 +371,21 @@ const TodoEnterSystem = defineReactiveSystem({
 
 The `onClick` handler on `Clickable` now emits typed events (`todo.toggleRequested`, `todo.removeRequested`), and handlers are registered on the todo entity itself. That means no repeated `getParent()` plumbing in button handlers.
 
-`queryChildren(todo, TodoToggleButton/TodoLabel)` enables targeted updates to the exact child entities that need visual changes.
+`findChildMaybe(todo, TodoToggleButton/TodoLabel)` enables targeted updates to the exact child entities that need visual changes without `[0]` indexing.
 
 ## 4. Update Visuals on State Change
 
-When `Done` changes, visuals are updated directly by the todo entity's toggle handler:
+When `Status.completed` changes, visuals are updated directly by the todo entity's toggle handler:
 
 ```ts
 world.on(entity, TodoToggleRequested, () => {
-  if (world.has(entity, Done)) world.remove(entity, Done);
-  else world.add(entity, Done());
+  const status = world.get(entity, Status) ?? { completed: false };
+  world.set(entity, Status({ completed: !status.completed }));
   updateTodoVisuals(world, entity);
 });
 ```
 
-No child teardown/rebuild is needed: `queryChildren(...)` finds the exact row children to patch.
+No child teardown/rebuild is needed: `findChildMaybe(...)` (or `findChild(...)` when required) finds exact row children to patch.
 
 ## 5. Handle Adding Todos
 
@@ -365,7 +409,7 @@ function addTodoFromInput(world) {
   // TodoEnterSystem will pick it up and build its DOM children.
   const listEntity = world.query(TodoListContainer)[0];
   if (listEntity == null) return;
-  world.createEntity(listEntity, [TodoText({ value: text })]);
+  world.createEntity(listEntity, [TodoText({ value: text }), Status({ completed: false })]);
 }
 ```
 
@@ -394,14 +438,17 @@ world.registerSystem(TodoEnterSystem);
 // materialize(world, ui) — the shell from step 2
 
 // Seed initial todos under the list container.
-// Each is just an entity with TodoText, optionally Done.
+// Each is an entity with TodoText and Status.
 const listEntity = world.query(TodoListContainer)[0];
 
 world.createEntity(listEntity, [
   TodoText({ value: "Learn about ECS entities" }),
-  Done(),  // This one starts completed
+  Status({ completed: true }),  // This one starts completed
 ]);
-world.createEntity(listEntity, [TodoText({ value: "Build a todo app" })]);
+world.createEntity(listEntity, [
+  TodoText({ value: "Build a todo app" }),
+  Status({ completed: false }),
+]);
 
 world.flush();
 ```
@@ -425,19 +472,22 @@ world.registerSystem(TodoEnterSystem);
 // Build the shell from step 2...
 
 // Seed initial todos under the list container.
-// Each is just an entity with TodoText, optionally Done.
+// Each is an entity with TodoText and Status.
 world.createEntity(list, [
   TodoText({ value: "Learn about ECS entities" }),
-  Done(),  // This one starts completed
+  Status({ completed: true }),  // This one starts completed
 ]);
-world.createEntity(list, [TodoText({ value: "Build a todo app" })]);
+world.createEntity(list, [
+  TodoText({ value: "Build a todo app" }),
+  Status({ completed: false }),
+]);
 
 world.flush();
 ```
 
 </div>
 
-The full app now needs only **1 system** (`TodoEnterSystem`). Click handlers emit typed events, todo-entity handlers mutate state, and `queryChildren(...)` keeps visual updates targeted.
+The full app now needs only **1 system** (`TodoEnterSystem`). Click handlers emit typed events, todo-entity handlers mutate state, and `findChildMaybe(...)` keeps visual updates targeted.
 
 ## 7. Try It Live
 
