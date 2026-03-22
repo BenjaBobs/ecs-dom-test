@@ -28,16 +28,6 @@
         "unified": "^11.0.5",
       },
     },
-    "apps/playground": {
-      "name": "@ecs-test/playground",
-      "version": "0.0.1",
-      "dependencies": {
-        "@ecs-test/dom": "workspace:*",
-        "@ecs-test/ecs": "workspace:*",
-        "@ecs-test/forms": "workspace:*",
-        "@ecs-test/forms-ui": "workspace:*",
-      },
-    },
     "packages/dom": {
       "name": "@ecs-test/dom",
       "version": "0.0.1",
@@ -99,8 +89,6 @@
     "@ecs-test/forms": ["@ecs-test/forms@workspace:packages/forms"],
 
     "@ecs-test/forms-ui": ["@ecs-test/forms-ui@workspace:packages/forms-ui"],
-
-    "@ecs-test/playground": ["@ecs-test/playground@workspace:apps/playground"],
 
     "@ecs-test/ui": ["@ecs-test/ui@workspace:packages/ui"],
 

@@ -5,6 +5,7 @@
 import { Classes, getDOMElement } from '@ecs-test/dom';
 import { defineReactiveSystem, Entities } from '@ecs-test/ecs';
 import { NavItemData } from '../components.ts';
+import { pathToRoot } from '../site-root.ts';
 
 export const SidebarSystem = defineReactiveSystem({
   name: 'SidebarSystem',
@@ -19,7 +20,7 @@ export const SidebarSystem = defineReactiveSystem({
       if (data.isActive) classes.push('active');
       world.set(entity, Classes({ list: classes }));
 
-      el.href = `/${data.slug}.html`;
+      el.href = `${pathToRoot}${data.slug}.html`;
       el.textContent = data.title;
       if (data.isActive) {
         el.setAttribute('aria-current', 'page');
@@ -38,7 +39,7 @@ export const SidebarSystem = defineReactiveSystem({
       if (data.isActive) classes.push('active');
       world.set(entity, Classes({ list: classes }));
 
-      el.href = `/${data.slug}.html`;
+      el.href = `${pathToRoot}${data.slug}.html`;
       el.textContent = data.title;
       if (data.isActive) {
         el.setAttribute('aria-current', 'page');

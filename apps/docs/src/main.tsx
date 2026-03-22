@@ -21,6 +21,7 @@ import {
   ThemeState,
   ThemeToggle,
 } from './components.ts';
+import { setPathToRoot } from './site-root.ts';
 import { BottomNavSystem } from './systems/bottom-nav-system.ts';
 import { CodeTabsSystem } from './systems/code-tabs-system.ts';
 import { ContentSystem } from './systems/content-system.ts';
@@ -40,6 +41,7 @@ type PageData = {
   contentHtml: string;
   navTree: NavItem[];
   flatNav: FlatNavItem[];
+  pathToRoot: string;
 };
 
 type DocsDeps = {
@@ -128,6 +130,7 @@ function navItemEntities(navTree: NavItem[], activeSlug: string) {
 
 export async function startDocsApp({ doc }: DocsDeps): Promise<void> {
   const pageData = parsePageData(doc);
+  setPathToRoot(pageData.pathToRoot);
 
   const container = doc.getElementById('root');
   if (!container) {
@@ -261,7 +264,7 @@ export async function startDocsApp({ doc }: DocsDeps): Promise<void> {
   world.flush();
 
   try {
-    const response = await win.fetch('/search-index.json');
+    const response = await win.fetch(`${pageData.pathToRoot}search-index.json`);
     if (!response.ok) {
       return;
     }

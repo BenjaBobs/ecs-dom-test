@@ -7,6 +7,7 @@ type PageData = {
   html: string;
   navTree: NavItem[];
   flatNav: FlatNavItem[];
+  pathToRoot: string;
 };
 
 function escapeHtml(str: string): string {
@@ -25,6 +26,7 @@ export function renderPage(data: PageData): string {
     contentHtml: data.html,
     navTree: data.navTree,
     flatNav: data.flatNav,
+    pathToRoot: data.pathToRoot,
   });
 
   return `<!DOCTYPE html>
@@ -34,12 +36,12 @@ export function renderPage(data: PageData): string {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${escapeHtml(data.title)} — ECS UI Framework</title>
   ${data.description ? `<meta name="description" content="${escapeHtml(data.description)}" />` : ''}
-  <link rel="stylesheet" href="/base.css" />
+  <link rel="stylesheet" href="${data.pathToRoot}base.css" />
 </head>
 <body>
   <div id="root"></div>
   <script type="application/json" id="page-data">${pageDataJson}</script>
-  <script type="module" src="/app.js"></script>
+  <script type="module" src="${data.pathToRoot}app.js"></script>
 </body>
 </html>`;
 }

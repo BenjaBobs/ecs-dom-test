@@ -12,6 +12,7 @@ import {
   SearchResultItem,
   SearchResults,
 } from '../components.ts';
+import { pathToRoot } from '../site-root.ts';
 
 /** Handles input events on the search field */
 export const SearchInputSystem = defineReactiveSystem({
@@ -107,7 +108,7 @@ export const SearchResultRenderSystem = defineReactiveSystem({
       const data = world.get(entity, SearchResultItem);
       if (!el || !data) continue;
 
-      el.href = `/${data.slug}.html`;
+      el.href = `${pathToRoot}${data.slug}.html`;
       el.innerHTML = `<span class="search-result-title">${escapeHtml(data.title)}</span><span class="search-result-desc">${escapeHtml(data.description)}</span>`;
     }
   },

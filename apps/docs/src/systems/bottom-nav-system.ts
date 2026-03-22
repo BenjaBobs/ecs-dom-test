@@ -5,6 +5,7 @@
 import { getDOMElement } from '@ecs-test/dom';
 import { defineReactiveSystem, Entities } from '@ecs-test/ecs';
 import { BottomNavData } from '../components.ts';
+import { pathToRoot } from '../site-root.ts';
 
 function renderBottomNav(
   el: Element,
@@ -13,7 +14,7 @@ function renderBottomNav(
   let html = '';
 
   if (data.prev) {
-    html += `<a href="/${data.prev.slug}.html" class="bottom-nav-link prev">`;
+    html += `<a href="${pathToRoot}${data.prev.slug}.html" class="bottom-nav-link prev">`;
     html += `<span class="bottom-nav-direction">Previous</span>`;
     html += `<span class="bottom-nav-title">${escapeHtml(data.prev.title)}</span>`;
     html += `</a>`;
@@ -22,7 +23,7 @@ function renderBottomNav(
   }
 
   if (data.next) {
-    html += `<a href="/${data.next.slug}.html" class="bottom-nav-link next">`;
+    html += `<a href="${pathToRoot}${data.next.slug}.html" class="bottom-nav-link next">`;
     html += `<span class="bottom-nav-direction">Next</span>`;
     html += `<span class="bottom-nav-title">${escapeHtml(data.next.title)}</span>`;
     html += `</a>`;

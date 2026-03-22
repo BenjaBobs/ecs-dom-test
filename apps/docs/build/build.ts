@@ -17,6 +17,18 @@ export type BuildOptions = {
   generateApiDocs?: boolean;
 };
 
+/** Compute the relative prefix from a page back to the site root. */
+function pathToRoot(slug: string): string {
+  const depth = slug.split('/').length - 1;
+  return depth === 0 ? './' : '../'.repeat(depth);
+}
+
+/** Rewrite absolute internal hrefs in content HTML to relative paths. */
+function rewriteContentLinks(html: string, pageSlug: string): string {
+  const prefix = pathToRoot(pageSlug);
+  return html.replace(/(<a\b[^>]*\bhref=["'])\//g, `$1${prefix}`);
+}
+
 function fileToSlug(filePath: string): string {
   const rel = relative(CONTENT_DIR, filePath);
   return rel.replace(/\.mdx?$/, '');
@@ -173,7 +185,7 @@ async function bundlePlaygroundModules(): Promise<void> {
   await mkdir(dirname(jsxRuntimeDist), { recursive: true });
   await Bun.write(
     jsxRuntimeDist,
-    `export { Fragment, jsx, jsxs, jsxDEV } from '/playground/modules/ecs.js';\n`,
+    `export { Fragment, jsx, jsxs, jsxDEV } from '../ecs.js';\n`,
   );
 }
 
@@ -323,13 +335,15 @@ export async function build(options: BuildOptions = {}) {
 
   // 9. Render HTML pages
   for (const page of pages) {
+    const ptr = pathToRoot(page.slug);
     const html = renderPage({
       title: page.frontmatter.title,
       description: page.frontmatter.description,
       slug: page.slug,
-      html: page.html,
+      html: rewriteContentLinks(page.html, page.slug),
       navTree,
       flatNav,
+      pathToRoot: ptr,
     });
 
     const outPath = resolve(DIST_DIR, `${page.slug}.html`);

@@ -12,6 +12,7 @@ import {
 } from '../code-mode.ts';
 import { HtmlContent } from '../components.ts';
 import { LIVE_EXAMPLES, type LiveExample } from '../live-examples.ts';
+import { pathToRoot } from '../site-root.ts';
 
 type EditorEngine = 'monaco' | 'textarea';
 
@@ -129,7 +130,7 @@ async function registerGeneratedTypeLibs(monaco: MonacoApi, doc: Document): Prom
     if (!fetchFn) return;
 
     const defaults = monaco.languages.typescript.typescriptDefaults;
-    const manifestRes = await fetchFn('/playground/types/manifest.json');
+    const manifestRes = await fetchFn(`${pathToRoot}playground/types/manifest.json`);
     if (!manifestRes.ok) return;
 
     const manifest = (await manifestRes.json()) as { files?: unknown };
@@ -138,7 +139,7 @@ async function registerGeneratedTypeLibs(monaco: MonacoApi, doc: Document): Prom
       : [];
 
     for (const relPath of files) {
-      const response = await fetchFn(`/playground/types/${relPath}`);
+      const response = await fetchFn(`${pathToRoot}playground/types/${relPath}`);
       if (!response.ok) continue;
       const content = await response.text();
 
@@ -467,7 +468,7 @@ function resolveExampleCode(example: LiveExample, mode: DocsCodeMode): string {
 function mountLiveEditor(placeholder: HTMLElement, example: LiveExample): void {
   const doc = placeholder.ownerDocument;
   const win = doc.defaultView;
-  const moduleBaseUrl = win ? `${win.location.protocol}//${win.location.host}` : '';
+  const moduleBaseUrl = win ? new URL(pathToRoot, win.location.href).href.replace(/\/$/, '') : '';
 
   const wrapper = doc.createElement('section');
   wrapper.className = 'live-editor';
