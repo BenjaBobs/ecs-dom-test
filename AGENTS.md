@@ -76,3 +76,15 @@ At minimum, agents must update applicable files under:
 - `apps/docs/content/api/` (when API generation or API-facing behavior changes)
 
 Do not defer docs updates for \"later\" when shipping implementation changes.
+
+## Minimap Metadata (Required)
+
+Agent-facing search metadata lives with the source:
+- TypeScript / TSX files: top-of-file `// @minimap summary: ...` and `// @minimap tags: ...`
+- Authored MDX pages: frontmatter `minimapSummary` and `minimapTags`
+
+When creating a new file, add minimap metadata as part of the initial file creation.
+
+When editing an existing file, update its minimap metadata if the file's responsibility, behavior, or purpose changed enough that the current summary/tags are no longer accurate.
+
+Treat minimap metadata maintenance as part of the definition of done for file creation and file edits.
