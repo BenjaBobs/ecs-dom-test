@@ -1,3 +1,5 @@
+// @minimap summary: Verifies non-visual debug UI behavior such as search filtering, selection, expansion, and section toggling in the inspector panel.
+// @minimap tags: dom debug-ui tests search selection expansion panel
 /**
  * Debug UI behavior tests (non-visual).
  */

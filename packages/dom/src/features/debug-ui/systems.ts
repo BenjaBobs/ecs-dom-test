@@ -1,3 +1,5 @@
+// @minimap summary: Implements the debug UI systems that build the inspector panel, subscribe to world snapshots, handle search, hotkeys, and dragging.
+// @minimap tags: dom debug-ui systems inspector snapshots hotkeys dragging search
 /**
  * Debug UI systems.
  */

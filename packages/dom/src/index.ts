@@ -1,3 +1,5 @@
+// @minimap summary: Exports the DOM renderer surface and provides the helper that registers the standard DOM systems on a world.
+// @minimap tags: dom index exports registerDOMSystems renderer ecs
 /**
  * @ecs-test/dom - DOM rendering layer for ECS
  *

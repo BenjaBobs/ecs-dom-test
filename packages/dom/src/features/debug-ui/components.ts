@@ -1,3 +1,5 @@
+// @minimap summary: Defines the ECS state, layout, selection, visibility, and runtime components used by the in-browser debug panel.
+// @minimap tags: dom debug-ui components panel snapshot selection runtime
 /**
  * Debug UI components.
  */

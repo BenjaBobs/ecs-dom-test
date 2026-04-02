@@ -1,3 +1,5 @@
+// @minimap summary: Defines the TextContent component for plain text rendered into a DOM-backed entity.
+// @minimap tags: dom text component content string render
 /**
  * Text content components.
  */

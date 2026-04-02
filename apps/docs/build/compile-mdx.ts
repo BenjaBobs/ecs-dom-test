@@ -1,3 +1,5 @@
+// @minimap summary: Compiles authored MDX files into HTML and extracts frontmatter metadata used by the docs build and navigation pipeline.
+// @minimap tags: docs build mdx compile frontmatter html
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkFrontmatter from "remark-frontmatter";

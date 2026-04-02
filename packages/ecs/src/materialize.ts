@@ -1,3 +1,5 @@
+// @minimap summary: Converts JSX entity trees into live ECS entities by creating parents first and then applying components, bundles, and children.
+// @minimap tags: materialize jsx entity tree bundles setup ecs
 /**
  * Materializes JSX trees into ECS entities.
  *

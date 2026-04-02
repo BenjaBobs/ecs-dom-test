@@ -1,3 +1,5 @@
+// @minimap summary: Hydrates live code examples with editors and iframe previews, handling Monaco setup, mode switching, and preview recompilation.
+// @minimap tags: docs live-editor monaco iframe preview examples compile
 /**
  * LiveEditorSystem — hydrates editable code blocks with isolated iframe previews.
  */

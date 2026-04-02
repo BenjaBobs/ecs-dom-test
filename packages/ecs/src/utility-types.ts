@@ -1,3 +1,5 @@
+// @minimap summary: Defines shared recursive TypeScript utility types such as DeepReadonly used by the ECS and event APIs.
+// @minimap tags: ecs utility-types DeepReadonly typescript helpers types
 /**
  * Recursive Readonly<T>.
  */

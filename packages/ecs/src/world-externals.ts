@@ -1,3 +1,5 @@
+// @minimap summary: Declares the extensible WorldExternals interface that packages augment to describe environment dependencies like DOM factories.
+// @minimap tags: ecs world-externals module-augmentation dependencies environment
 /**
  * World external dependencies interface.
  *

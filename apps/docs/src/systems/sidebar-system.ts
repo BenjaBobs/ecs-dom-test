@@ -1,3 +1,5 @@
+// @minimap summary: Renders the docs sidebar navigation links, active state, and relative hrefs from NavItemData components.
+// @minimap tags: docs sidebar navigation active links ecs
 /**
  * SidebarSystem — renders sidebar nav items with active state.
  */

@@ -1,3 +1,5 @@
+// @minimap summary: Implements the World runtime that owns entities, components, child relationships, reactive flushes, events, and inspection APIs for the ECS core.
+// @minimap tags: world runtime entities components flush events queries ecs
 /**
  * ECS World - the container for all entities and components.
  * @module

@@ -1,3 +1,5 @@
+// @minimap summary: Comprehensive tests for the World runtime covering components, queries, events, debug hooks, and initialization behavior.
+// @minimap tags: ecs world tests components queries events debug flush
 import { describe, expect, it } from 'bun:test';
 import {
   createMicrotaskScheduler,

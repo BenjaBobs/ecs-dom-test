@@ -1,3 +1,5 @@
+// @minimap summary: Defines the Clickable component, transient Clicked marker, and click-handler runtime state for DOM click interactions.
+// @minimap tags: dom clickable clicked click handler interaction events
 /**
  * Click interaction components.
  */

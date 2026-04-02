@@ -1,3 +1,5 @@
+// @minimap summary: Defines the core TypeScript types for form factories, instances, validation schemas, and bound or unbound field accessors.
+// @minimap tags: forms types schema validation accessors form-instance
 /**
  * Core types for the forms package.
  */

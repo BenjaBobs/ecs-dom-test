@@ -1,3 +1,5 @@
+// @minimap summary: Defines typed ECS event factories and tag helpers used for payloaded entity-to-entity messaging and bubbling workflows.
+// @minimap tags: event defineEvent payload messaging bubbling ecs
 /**
  * Event definitions and helpers for ECS entity messaging.
  * @module

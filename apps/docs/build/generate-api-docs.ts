@@ -1,3 +1,5 @@
+// @minimap summary: Generates MDX API reference pages from TypeDoc output and normalizes metadata, headings, and links for the docs site.
+// @minimap tags: docs api typedoc generation mdx links metadata
 import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, extname, join, relative, resolve } from 'node:path';
 import { tmpdir } from 'node:os';

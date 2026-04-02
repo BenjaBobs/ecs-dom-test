@@ -1,3 +1,5 @@
+// @minimap summary: Stores the built-in live editor example source strings for docs guides in both JSX and non-JSX modes.
+// @minimap tags: docs live-editor examples jsx nonjsx source snippets
 export type CodeMode = 'jsx' | 'nonjsx';
 
 export type LiveExample = {

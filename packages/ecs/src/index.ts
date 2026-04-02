@@ -1,3 +1,5 @@
+// @minimap summary: Re-exports the public @ecs-test/ecs API surface, including world, systems, components, bundles, events, schedulers, and JSX helpers.
+// @minimap tags: ecs index exports api world systems components jsx
 /**
  * @ecs-test/ecs - Core ECS engine
  *

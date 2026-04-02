@@ -1,3 +1,5 @@
+// @minimap summary: Creates, mounts, looks up, and removes DOM nodes for entities with DOMElement while storing per-world element mappings.
+// @minimap tags: dom system mount unmount render element mapping ecs
 /**
  * DOM element creation/removal systems.
  */

@@ -1,3 +1,5 @@
+// @minimap summary: Implements ECS mutation debugging components and helper systems for tracking entity changes and sending logs to console, buffers, or callbacks.
+// @minimap tags: ecs debug logging mutations tracking snapshots diagnostics
 import { defineComponent, defineMarker } from './component.ts';
 import { defineReactiveSystem, Entities } from './system.ts';
 import type { EntityId, MutationEvent, World } from './world.ts';

@@ -1,3 +1,5 @@
+// @minimap summary: Implements ECS systems that create form instances, bind DOM inputs to form fields, and render field values or validation errors.
+// @minimap tags: forms-ui systems bindings inputs validation errors ecs
 /**
  * Form UI systems for ECS.
  */

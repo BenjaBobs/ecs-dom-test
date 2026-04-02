@@ -1,3 +1,5 @@
+// @minimap summary: Wires DOM drag-and-drop listeners for Draggable and Droppable entities and stores transient drag state in the world runtime.
+// @minimap tags: dom drag-drop systems listeners dragstate dropped runtime
 /**
  * Drag and drop systems.
  */

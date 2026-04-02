@@ -1,3 +1,5 @@
+// @minimap summary: Tests the form factory implementation including accessors, dirty state, array helpers, validation, and computed fields.
+// @minimap tags: forms tests factory validation computed dirty accessors
 import { describe, expect, it } from 'bun:test';
 import { createFormFactory } from './index.ts';
 

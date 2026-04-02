@@ -1,3 +1,5 @@
+// @minimap summary: Defines component factories, component instances, marker helpers, and tag lookup utilities for attaching typed data to entities.
+// @minimap tags: component marker defineComponent defineMarker tags ecs data
 /**
  * Component definitions and helpers for the ECS system.
  * @module

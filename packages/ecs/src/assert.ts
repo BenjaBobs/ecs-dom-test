@@ -1,3 +1,5 @@
+// @minimap summary: Provides the core runtime assertion helper used across the ECS packages for invariant checks and narrowing.
+// @minimap tags: ecs assert invariant runtime helper validation
 /**
  * Assertion helpers for runtime validation.
  * @module

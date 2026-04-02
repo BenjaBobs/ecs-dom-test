@@ -1,3 +1,5 @@
+// @minimap summary: Applies the docs light or dark theme to the document, updates the toggle label, and persists the selected mode.
+// @minimap tags: docs theme light dark toggle storage ecs
 /**
  * ThemeSystem — toggles data-theme on <html>, persists to localStorage.
  */

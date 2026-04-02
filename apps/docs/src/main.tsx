@@ -1,3 +1,5 @@
+// @minimap summary: Boots the docs ECS app, materializes the shell, wires theme and navigation systems, and loads the generated docs search index.
+// @minimap tags: docs app bootstrap search navigation theme ecs
 import {
   Classes,
   Clickable,

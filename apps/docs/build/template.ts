@@ -1,3 +1,5 @@
+// @minimap summary: Renders the static HTML shell for each docs page, embedding page data and wiring the client app entrypoint.
+// @minimap tags: docs template html shell page-data render
 import type { NavItem, FlatNavItem } from './generate-nav.ts';
 
 type PageData = {

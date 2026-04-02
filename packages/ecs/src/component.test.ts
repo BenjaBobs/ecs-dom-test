@@ -1,3 +1,5 @@
+// @minimap summary: Tests component and marker definitions, tag validation, and tag lookup helpers for the ECS component layer.
+// @minimap tags: ecs component tests defineComponent defineMarker getTag
 import { describe, expect, it } from 'bun:test';
 import { defineComponent, defineMarker, getTag } from './component.ts';
 

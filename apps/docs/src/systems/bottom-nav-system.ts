@@ -1,3 +1,5 @@
+// @minimap summary: Renders the previous and next page links at the bottom of docs pages from BottomNavData components.
+// @minimap tags: docs bottom-nav pagination previous next links ecs
 /**
  * BottomNavSystem — renders prev/next page links.
  */

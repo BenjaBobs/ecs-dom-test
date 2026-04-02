@@ -1,3 +1,5 @@
+// @minimap summary: Runs the full docs build pipeline, including API generation, MDX compilation, navigation, static rendering, assets, and search index output.
+// @minimap tags: docs build pipeline mdx api navigation render search
 import { resolve, relative, dirname, join } from 'node:path';
 import { rm, cp, mkdir, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';

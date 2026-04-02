@@ -1,3 +1,5 @@
+// @minimap summary: Re-exports the public @ecs-test/forms API for type-safe form factories, instances, validators, and accessors.
+// @minimap tags: forms index exports api factory validation accessors
 /**
  * @ecs-test/forms - Type-safe form state management
  *

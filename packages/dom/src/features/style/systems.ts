@@ -1,3 +1,5 @@
+// @minimap summary: Applies and clears inline CSS styles on DOM nodes based on the ECS Style component.
+// @minimap tags: dom style system inline css apply clear
 /**
  * Inline style systems.
  */

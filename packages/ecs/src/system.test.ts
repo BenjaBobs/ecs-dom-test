@@ -1,3 +1,5 @@
+// @minimap summary: Tests query builders, entity matching, and reactive system behavior for the ECS system layer.
+// @minimap tags: ecs system tests queries reactive matching lifecycle
 import { describe, expect, it } from 'bun:test';
 import { defineComponent, defineMarker } from './component.ts';
 import { defineReactiveSystem, Entities } from './system.ts';

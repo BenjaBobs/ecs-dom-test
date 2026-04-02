@@ -1,3 +1,5 @@
+// @minimap summary: Provides DOM test helpers that create an isolated world, register DOM systems, and clean up mounted elements automatically.
+// @minimap tags: dom test-utils testing world helpers cleanup container
 /**
  * Test utilities for @ecs-test/dom.
  * Provides isolated test environments with automatic cleanup.

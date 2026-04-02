@@ -1,3 +1,5 @@
+// @minimap summary: Exports the debug UI surface and registers the systems that render and manage the draggable ECS inspector panel.
+// @minimap tags: dom debug-ui index register systems inspector panel
 /**
  * Debug UI exports.
  */

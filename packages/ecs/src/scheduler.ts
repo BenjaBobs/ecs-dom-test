@@ -1,3 +1,5 @@
+// @minimap summary: Provides flush scheduler implementations for immediate, microtask, and requestAnimationFrame-based reactive world execution.
+// @minimap tags: ecs scheduler flush sync microtask raf batching
 /**
  * Flush schedulers for controlling when reactive systems execute.
  * @module

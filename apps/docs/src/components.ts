@@ -1,3 +1,5 @@
+// @minimap summary: Defines the ECS components and markers that hold docs app state for content rendering, navigation, search, and theme UI.
+// @minimap tags: docs components markers search navigation theme content ecs
 /**
  * ECS components for the docs site client app.
  */

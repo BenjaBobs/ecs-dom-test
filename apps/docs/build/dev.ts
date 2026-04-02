@@ -1,3 +1,5 @@
+// @minimap summary: Runs the docs development server with file watching, selective rebuilds, and simple live reload for local authoring.
+// @minimap tags: docs dev server watch rebuild livereload authoring
 import { resolve, extname } from "node:path";
 import { watch } from "node:fs";
 import { build, DIST_DIR, CONTENT_DIR, PUBLIC_DIR, DOCS_ROOT } from './build.ts';

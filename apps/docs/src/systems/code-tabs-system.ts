@@ -1,3 +1,5 @@
+// @minimap summary: Adds synchronized JSX and non-JSX code tabs to marked docs examples and persists the selected mode in local storage.
+// @minimap tags: docs code-tabs jsx nonjsx storage ui examples
 /**
  * CodeTabsSystem — adds synced JSX/non-JSX tabs for marked code example groups.
  */

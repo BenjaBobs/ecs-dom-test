@@ -1,3 +1,5 @@
+// @minimap summary: Handles docs search input, filters the loaded docs search index, and renders matching result links into the sidebar UI.
+// @minimap tags: docs search input filter results sidebar ecs
 /**
  * SearchSystem — fetches search index, filters results, renders them.
  */

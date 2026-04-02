@@ -1,3 +1,5 @@
+// @minimap summary: Tests that EntityName attaches readable labels to entities and that the labels appear in world snapshots and inspection output.
+// @minimap tags: ecs entity-name tests snapshots inspect labels
 import { describe, expect, it } from 'bun:test';
 import { EntityName, getEntityName } from './entity-name.ts';
 import { World } from './world.ts';

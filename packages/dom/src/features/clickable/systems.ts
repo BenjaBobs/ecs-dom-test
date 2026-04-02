@@ -1,3 +1,5 @@
+// @minimap summary: Attaches and removes DOM click listeners for Clickable entities, calling inline handlers or emitting transient Clicked markers.
+// @minimap tags: dom clickable system click listener clicked flush ecs
 /**
  * Click interaction systems.
  */

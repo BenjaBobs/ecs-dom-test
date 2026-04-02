@@ -1,3 +1,5 @@
+// @minimap summary: Adds and removes the disabled CSS class on DOM elements for entities marked with Disabled.
+// @minimap tags: dom disabled system class styling state
 /**
  * Disabled state systems.
  */

@@ -1,3 +1,5 @@
+// @minimap summary: Re-exports the public @ecs-test/forms-ui surface for ECS form components and the systems that bind them to DOM inputs.
+// @minimap tags: forms-ui index exports api bindings systems
 /**
  * @ecs-test/forms-ui - ECS/DOM bindings for forms
  *

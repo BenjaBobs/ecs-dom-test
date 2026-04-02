@@ -1,3 +1,5 @@
+// @minimap summary: Defines the EntityName component and helper used to attach human-readable labels to entities for debugging and inspection.
+// @minimap tags: ecs entity-name labels debugging snapshots inspect
 /**
  * Entity naming support.
  *

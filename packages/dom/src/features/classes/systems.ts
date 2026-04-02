@@ -1,3 +1,5 @@
+// @minimap summary: Syncs the Classes component to each entity's DOM node by replacing the element className from the ECS-owned list.
+// @minimap tags: dom classes system className styling sync ecs
 /**
  * CSS class systems.
  */

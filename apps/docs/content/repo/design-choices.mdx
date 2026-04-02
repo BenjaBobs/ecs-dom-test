@@ -1,6 +1,7 @@
 ---
 title: Repository Design Choices
 description: Architecture and implementation decisions for this repository.
+minimapTags: docs repo design-choices minimap tooling architecture decisions
 order: 1
 ---
 
@@ -111,7 +112,7 @@ Features should own their components, systems, and styles together (folder per f
 - Bundles can provide default `Classes` while `except={[Classes]}` lets consumers override
 
 ### Hand-Written Minimap Metadata + Generated SQLite Index
-Agent-facing search should prefer high-signal human summaries over raw-code-only lookup. Source files can declare `@minimap summary` / `@minimap tags` metadata, and authored MDX pages can add `minimapSummary` / `minimapTags` in frontmatter. A generated SQLite index under `.minimap/` provides ranked lookup over that curated metadata, plus paths, exports, titles, and fallback text.
+Agent-facing search should prefer high-signal human summaries over raw-code-only lookup. Source files can declare `@minimap summary` / `@minimap tags` metadata, and authored MDX pages can add `minimapSummary` / `minimapTags` in frontmatter. A generated SQLite index under `.minimap/` provides ranked lookup over that curated metadata, plus paths, exports, titles, and optional fallback text search. Generated API docs are excluded from the index by default so search results bias toward authored docs and source files. Rebuilds are written to a temporary SQLite file and swapped into place only after the new index passes an integrity check, so readers do not see a half-written database.
 
 **Why:**
 - keeps the source of truth in the files humans already edit

@@ -1,3 +1,5 @@
+// @minimap summary: Exercises the core DOM renderer behavior including mounting, text rendering, nesting, styling, and debug UI setup in isolated worlds.
+// @minimap tags: dom tests renderer mounting text classes style debug-ui
 /**
  * DOM systems proof-of-concept tests.
  * Demonstrates the withTestWorld pattern for isolated, parallel-safe tests.

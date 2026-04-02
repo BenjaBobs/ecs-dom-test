@@ -1,3 +1,5 @@
+// @minimap summary: Defines ECS form-binding components and markers that connect DOM entities to form instances and validation state.
+// @minimap tags: forms-ui components form-binding inputs errors ecs
 /**
  * Form UI components for ECS.
  */

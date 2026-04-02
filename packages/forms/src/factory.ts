@@ -1,3 +1,5 @@
+// @minimap summary: Implements the type-safe form factory and form instance logic, including accessors, validation, touched state, and subscriptions.
+// @minimap tags: forms factory instance validation accessors subscriptions state
 /**
  * Form factory implementation.
  */

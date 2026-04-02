@@ -1,3 +1,5 @@
+// @minimap summary: Injects prerendered HTML content into docs entities so built MDX pages can be displayed inside the ECS shell.
+// @minimap tags: docs content html render mdx shell ecs
 /**
  * ContentSystem — injects pre-rendered HTML into content area.
  */

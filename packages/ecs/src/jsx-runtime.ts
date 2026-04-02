@@ -1,3 +1,5 @@
+// @minimap summary: Implements the custom JSX runtime that turns Entity syntax, fragments, components, and bundles into declarative ECS trees.
+// @minimap tags: ecs jsx runtime entity fragment factory bundles
 /**
  * JSX Runtime for ECS UI framework.
  *

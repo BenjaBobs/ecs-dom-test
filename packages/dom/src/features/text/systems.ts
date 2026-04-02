@@ -1,3 +1,5 @@
+// @minimap summary: Updates DOM textContent from the TextContent ECS component whenever matching entities enter or update.
+// @minimap tags: dom text system textContent render sync
 /**
  * Text content systems.
  */

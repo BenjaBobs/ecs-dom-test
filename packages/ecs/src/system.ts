@@ -1,3 +1,5 @@
+// @minimap summary: Defines reactive system queries, mutation records, and the ReactiveSystem class that drives onEnter, onUpdate, and onExit behavior.
+// @minimap tags: system reactive query mutation flush lifecycle ecs
 /**
  * Reactive system definitions for responding to component changes.
  * @module

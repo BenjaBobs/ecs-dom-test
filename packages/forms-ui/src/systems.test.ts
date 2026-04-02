@@ -1,3 +1,5 @@
+// @minimap summary: Tests forms-ui binding systems for form initialization, input synchronization, display output, and validation error rendering.
+// @minimap tags: forms-ui tests bindings inputs validation display ecs
 /**
  * Tests for @ecs-test/forms-ui systems.
  */

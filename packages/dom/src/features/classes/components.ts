@@ -1,3 +1,5 @@
+// @minimap summary: Defines the Classes component used as the single source of truth for CSS class lists on DOM-backed entities.
+// @minimap tags: dom classes component css className styling
 /**
  * CSS class components.
  */

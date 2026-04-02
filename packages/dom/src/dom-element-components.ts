@@ -1,3 +1,5 @@
+// @minimap summary: Defines the DOMElement component and DOM runtime storage components used by the DOM renderer to map entities to real elements.
+// @minimap tags: dom element component runtime renderer mapping ecs
 /**
  * DOM element components and runtime state.
  */

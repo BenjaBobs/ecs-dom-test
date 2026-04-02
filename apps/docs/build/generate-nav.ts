@@ -1,3 +1,5 @@
+// @minimap summary: Builds the grouped docs navigation tree and flattened page order from compiled page metadata.
+// @minimap tags: docs navigation nav-tree groups ordering metadata
 import type { CompiledPage } from "./compile-mdx.ts";
 
 export type NavItem = {

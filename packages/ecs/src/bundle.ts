@@ -1,3 +1,5 @@
+// @minimap summary: Defines bundle factories for reusable component groups, including except and only filtering when materializing bundles.
+// @minimap tags: ecs bundle defineBundle reusable components jsx filters
 /**
  * Bundle definitions - reusable groups of components.
  * @module

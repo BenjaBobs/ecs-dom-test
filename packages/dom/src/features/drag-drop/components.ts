@@ -1,3 +1,5 @@
+// @minimap summary: Defines draggable, droppable, drag-over, dropped, and runtime state components for DOM drag-and-drop interactions.
+// @minimap tags: dom drag-drop draggable droppable dropped state components
 /**
  * Drag and drop components.
  */

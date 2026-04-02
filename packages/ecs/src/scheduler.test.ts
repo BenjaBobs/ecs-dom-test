@@ -1,3 +1,5 @@
+// @minimap summary: Tests the synchronous, microtask, and raf-based flush schedulers that control reactive world execution timing.
+// @minimap tags: ecs scheduler tests sync microtask raf flush
 import { describe, expect, it } from 'bun:test';
 import { createMicrotaskScheduler, createRafScheduler, createSyncScheduler } from './scheduler.ts';
 
