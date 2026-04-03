@@ -29,6 +29,57 @@ The starting pain points were:
 - direct DOM <-> form coupling in `forms-ui`
 - unclear design story for composite widgets made from multiple entities
 
+## Concrete Starting Point
+
+The discussion started from patterns like this in docs code:
+
+```tsx
+<Entity>
+  <DOMElement tag="input" />
+  <Classes list={["search-input"]} />
+  <SearchInput />
+  <SearchQuery value="" />
+</Entity>
+```
+
+paired with a feature-specific system:
+
+```ts
+const SearchInputSystem = defineReactiveSystem({
+  name: "SearchInputSystem",
+  query: Entities.with([SearchInput]),
+  onEnter(world, entities) {
+    for (const entity of entities) {
+      const el = getDOMElement(world, entity) as HTMLInputElement | null;
+      if (!el) continue;
+
+      el.type = "search";
+      el.placeholder = "Search docs";
+      el.autocomplete = "off";
+      el.spellcheck = false;
+
+      const query = world.get(entity, SearchQuery);
+      if (query) {
+        el.value = query.value;
+      }
+
+      el.addEventListener("input", () => {
+        world.set(entity, SearchQuery({ value: el.value }));
+        world.flush();
+      });
+    }
+  },
+});
+```
+
+This is workable, but it repeats the same pattern many features will need:
+- configure the element
+- read a DOM property
+- write a component value
+- write the DOM property back later when authoritative state changes
+
+That repetition is what started the `DOMBinding` exploration.
+
 ## What We Agreed On
 
 ### Keep `DOMElement` Clean
@@ -127,6 +178,43 @@ Problem discovered:
 - feature systems would need extra markers just to narrow those queries again
 - domain-specific value components like `SearchQuery` would need awkward adapter systems
 
+Rejected pseudo-code:
+
+```tsx
+<Entity>
+  <DOMElement tag="input" />
+  <Value value="" />
+  <DOMBinding
+    readEvent="input"
+    read={el => (el as HTMLInputElement).value}
+    write={(el, value) => {
+      (el as HTMLInputElement).value = String(value ?? "");
+    }}
+  />
+</Entity>
+```
+
+If the feature still wants a meaningful domain component such as `SearchQuery`, then another system is needed:
+
+```ts
+const SearchQuerySyncSystem = defineReactiveSystem({
+  name: "SearchQuerySyncSystem",
+  query: Entities.with([Value, SearchInput]),
+  onEnter: sync,
+  onUpdate: sync,
+});
+
+function sync(world, entities) {
+  for (const entity of entities) {
+    const value = world.get(entity, Value);
+    if (!value) continue;
+    world.set(entity, SearchQuery({ value: String(value.value ?? "") }));
+  }
+}
+```
+
+That extra sync step is what made the strict `Value`-only approach feel wrong.
+
 ### Step 2: `DOMBinding` Targets an Explicit Value-Shaped Component
 
 We refined the design so `DOMBinding` points at a chosen component with a `{ value: ... }` shape.
@@ -150,6 +238,34 @@ Why this is better than strict `Value`-only:
 - avoids extra adapter systems
 - keeps queries narrow
 - still preserves a generic `Value` as the default catch-all where no domain component exists
+
+Refined example:
+
+```tsx
+<Entity>
+  <DOMElement
+    tag="input"
+    attrs={{
+      type: "search",
+      placeholder: "Search docs",
+      autocomplete: "off",
+      spellcheck: false,
+    }}
+  />
+  <Classes list={["search-input"]} />
+  <SearchQuery value="" />
+  <DOMBinding
+    component={SearchQuery}
+    readEvent="input"
+    read={el => (el as HTMLInputElement).value}
+    write={(el, value) => {
+      (el as HTMLInputElement).value = String(value ?? "");
+    }}
+  />
+</Entity>
+```
+
+This version removes most of the feature-specific plumbing and keeps `SearchQuery` as the feature state.
 
 ### Step 3: Composite Widgets and Root-Owned State Forced a Bigger Rethink
 
@@ -183,6 +299,24 @@ Why this matters:
 - forms are one important case, but not the only one
 - composite widgets and nested widgets need the same pattern
 
+The current `forms-ui` pattern already hints at this shape:
+
+```tsx
+<Entity>
+  <FormData factory={TripForm} />
+
+  <Entity>
+    <DOMElement tag="input" />
+    <TextInput />
+    <FormBinding field={TripForm.fields.name} />
+  </Entity>
+</Entity>
+```
+
+The important architectural fact is not the form package itself. It is:
+- the authoritative state lives on a root/ancestor
+- descendants bind to pieces of that state
+
 ## Root Resolution: What We Rejected and What We Kept
 
 ### Generic `Root` Marker
@@ -211,6 +345,26 @@ Why:
 - outer and inner widgets can coexist cleanly
 - nested scopes shadow each other by component type, which is usually exactly what we want
 
+Conceptually:
+
+```ts
+function findNearestOwner(world, entity, component) {
+  let current = entity;
+  while (current != null) {
+    if (world.has(current, component)) {
+      return current;
+    }
+    current = world.getParent(current);
+  }
+  return undefined;
+}
+```
+
+The important rule is that the current entity counts as the first candidate. So this works for:
+- same-entity state
+- nearest ancestor state
+- nested widget roots
+
 ## The Widget-of-Widgets Story
 
 We explored nested widgets such as:
@@ -235,6 +389,24 @@ So the current direction is:
   - draft text
   - temporary parse state
 
+Illustrative anti-pattern:
+
+```tsx
+<DateRangeState value={{ start: "", end: "" }} />
+```
+
+plus a later sync into `FormState.range`.
+
+Why this is risky:
+- duplicate state
+- extra synchronization logic
+- potential schedule delay
+
+Preferred direction:
+- `FormState.range` is the authoritative value
+- `DateRangeBundle` binds directly to `range.start` and `range.end`
+- local widget state is only added if the widget has extra transient concerns
+
 ## Binding Targets
 
 This is the current promising abstraction.
@@ -255,6 +427,22 @@ Then `DOMBinding` only needs to know:
 - how to read from the DOM
 - how to write to the DOM
 - which binding target it should talk to
+
+Conceptual minimal interface:
+
+```ts
+type BindingTarget<T> = {
+  get(world: World, entity: EntityId): T;
+  set(world: World, entity: EntityId, value: T): void;
+  subscribe(world: World, entity: EntityId, notify: () => void): () => void;
+};
+```
+
+This is intentionally broad. It can represent:
+- same-entity component values
+- nearest-ancestor values
+- form field accessors
+- future adapted state containers
 
 ### Why Binding Targets Are Attractive
 
@@ -285,6 +473,20 @@ Why this is appealing:
 - no hard split between same-entity and ancestor binding APIs
 - feels appropriate for both inline code and bundle internals
 
+Illustrative fluent usage:
+
+```ts
+binding(SearchQuery)
+binding(DateRangeState).field("start")
+binding(TripState).field("range").field("end")
+binding(TripState).field("travellers").at(i).field("name")
+```
+
+Current intuition:
+- `binding(Component)` resolves scope
+- `.field(...)` and `.at(...)` navigate within the authoritative data inside that scope
+- forms should ideally fit into the same fluent shape, even if they need an adapter internally
+
 ## Search Example: Before and After
 
 The docs search input is a useful design test.
@@ -301,6 +503,34 @@ Refined intended direction:
 - move static input configuration into `DOMElement.attrs`
 - bind the input directly to `SearchQuery`
 - leave the feature system responsible only for search-specific behavior
+
+Pseudo-code:
+
+```tsx
+<Entity>
+  <DOMElement
+    tag="input"
+    attrs={{
+      type: "search",
+      placeholder: "Search docs",
+      autocomplete: "off",
+      spellcheck: false,
+    }}
+  />
+  <Classes list={["search-input"]} />
+  <SearchQuery value="" />
+  <DOMBinding
+    bind={binding(SearchQuery)}
+    readEvent="input"
+    read={el => (el as HTMLInputElement).value}
+    write={(el, value) => {
+      (el as HTMLInputElement).value = String(value ?? "");
+    }}
+  />
+</Entity>
+```
+
+Then the search-specific system only handles filtering and result rendering.
 
 Why this matters:
 - it is a good migration test case
@@ -323,6 +553,22 @@ What `forms-ui` should eventually add above the binding foundation:
 - touched state
 - error rendering
 - other form-specific semantics
+
+Conceptually, the future layering is:
+
+```text
+DOMElement + DOMBinding
+        |
+  BindingTarget / binding(...)
+        |
+  root-owned data binding
+        |
+ forms-ui extras:
+ - validation
+ - dirty/touched
+ - errors
+ - form-specific helpers
+```
 
 ## What We Have Rejected So Far
 
@@ -380,6 +626,26 @@ But unanswered questions remain:
 - how should subscriptions behave when array indices shift?
 - how do we recommend stable identity for repeated widget rows?
 
+Pseudo-code direction:
+
+```ts
+binding(TripState).field("travellers").at(i).field("name")
+binding(TripState).field("travellers").at(i).field("age")
+```
+
+Potential future helpers:
+
+```ts
+const travellers = binding(TripState).field("travellers");
+
+travellers.append({ id: crypto.randomUUID(), name: "", age: 0 });
+travellers.removeAt(i);
+```
+
+Unresolved:
+- should those helpers live on the target itself?
+- should repeated widgets rely on stable item ids rather than raw indices?
+
 ### Sets and Maps
 
 We have not designed this yet.
@@ -397,6 +663,25 @@ We need to decide:
 - whether form instances expose or can be adapted to the binding-target model
 - whether fluent `.field(...)` should operate through form accessors directly
 - whether forms become just one adapted component kind in the binding system
+
+Two likely directions:
+
+Plain nested object style:
+
+```ts
+binding(TripState).field("range").field("start")
+```
+
+Adapted form-instance style:
+
+```ts
+binding(FormState, formAdapter).field("range").field("start")
+```
+
+The latter implies a possible adapter concept that teaches the fluent builder how to:
+- get/set authoritative data
+- subscribe to updates
+- descend into nested fields
 
 ### Validation / Errors / Dirty / Touched
 
@@ -418,6 +703,19 @@ This likely includes:
 - async normalization or lookup flows
 - what subscription/update model is needed when authoritative state changes from async sources
 
+Possible pressure cases:
+
+```tsx
+<AutocompleteBundle
+  bind={binding(FormState, formAdapter).field("travellers").at(i).field("country")}
+/>
+```
+
+Questions:
+- where does async option state live?
+- should temporary loading/error state be local widget state?
+- how should async authoritative updates propagate back through `DOMBinding`?
+
 ### Performance
 
 We have identified performance as a design concern, but not finished the strategy.
@@ -438,6 +736,191 @@ If implementation started immediately, the most likely order would be:
 4. Validate the design against the docs search input.
 5. Continue the binding-target design until the root-owned data story is strong enough.
 6. Refactor `forms-ui` onto that foundation rather than extending the current direct-coupling design.
+
+## Worked Examples
+
+### Trip Form with Inline Date Range Entities
+
+This is one of the clearest examples of the intended direction.
+
+```tsx
+<Entity>
+  <FormState form={TripForm.create()} />
+
+  <Entity>
+    <DOMElement tag="label" />
+    <TextContent value="Trip name" />
+  </Entity>
+
+  <Entity>
+    <DOMElement tag="input" attrs={{ type: "text" }} />
+    <DOMBinding
+      bind={binding(FormState, formAdapter).field("tripName")}
+      readEvent="input"
+      read={el => (el as HTMLInputElement).value}
+      write={(el, value) => {
+        (el as HTMLInputElement).value = String(value ?? "");
+      }}
+    />
+  </Entity>
+
+  <Entity>
+    <DOMElement tag="label" />
+    <TextContent value="Start date" />
+  </Entity>
+
+  <Entity>
+    <DOMElement tag="input" attrs={{ type: "date" }} />
+    <DOMBinding
+      bind={binding(FormState, formAdapter).field("range").field("start")}
+      readEvent="input"
+      read={el => (el as HTMLInputElement).value}
+      write={(el, value) => {
+        (el as HTMLInputElement).value = String(value ?? "");
+      }}
+    />
+  </Entity>
+
+  <Entity>
+    <DOMElement tag="label" />
+    <TextContent value="End date" />
+  </Entity>
+
+  <Entity>
+    <DOMElement tag="input" attrs={{ type: "date" }} />
+    <DOMBinding
+      bind={binding(FormState, formAdapter).field("range").field("end")}
+      readEvent="input"
+      read={el => (el as HTMLInputElement).value}
+      write={(el, value) => {
+        (el as HTMLInputElement).value = String(value ?? "");
+      }}
+    />
+  </Entity>
+</Entity>
+```
+
+Important property of this example:
+- `range.start` and `range.end` are bound directly to authoritative form-owned state
+- no copied `DateRangeState.value`
+
+### Trip Form with `DateRangeBundle`
+
+The bundle version should differ only in ergonomics, not in data topology.
+
+```tsx
+<Entity>
+  <FormState form={TripForm.create()} />
+
+  <DateRangeBundle
+    bind={binding(FormState, formAdapter).field("range")}
+  />
+</Entity>
+```
+
+Conceptual bundle implementation:
+
+```tsx
+function DateRangeBundle({ bind }) {
+  return (
+    <Entity>
+      <DateRangeWidget />
+
+      <Entity>
+        <DOMElement tag="label" />
+        <TextContent value="Start date" />
+      </Entity>
+
+      <Entity>
+        <DOMElement tag="input" attrs={{ type: "date" }} />
+        <DOMBinding
+          bind={bind.field("start")}
+          readEvent="input"
+          read={el => (el as HTMLInputElement).value}
+          write={(el, value) => {
+            (el as HTMLInputElement).value = String(value ?? "");
+          }}
+        />
+      </Entity>
+
+      <Entity>
+        <DOMElement tag="label" />
+        <TextContent value="End date" />
+      </Entity>
+
+      <Entity>
+        <DOMElement tag="input" attrs={{ type: "date" }} />
+        <DOMBinding
+          bind={bind.field("end")}
+          readEvent="input"
+          read={el => (el as HTMLInputElement).value}
+          write={(el, value) => {
+            (el as HTMLInputElement).value = String(value ?? "");
+          }}
+        />
+      </Entity>
+    </Entity>
+  );
+}
+```
+
+If the widget needs local transient state, it can add it separately:
+
+```tsx
+<DateRangeUIState value={{ open: false, activeSegment: "start" }} />
+```
+
+That local state should not become the authoritative form value unless there is a compelling reason.
+
+### Travellers Array Example
+
+Nested arrays are explicitly in scope.
+
+```tsx
+function TravellerRow({ bind }) {
+  return (
+    <Entity>
+      <Entity>
+        <DOMElement tag="input" attrs={{ type: "text" }} />
+        <DOMBinding
+          bind={bind.field("name")}
+          readEvent="input"
+          read={el => (el as HTMLInputElement).value}
+          write={(el, value) => {
+            (el as HTMLInputElement).value = String(value ?? "");
+          }}
+        />
+      </Entity>
+
+      <Entity>
+        <DOMElement tag="input" attrs={{ type: "number" }} />
+        <DOMBinding
+          bind={bind.field("age")}
+          readEvent="input"
+          read={el => Number((el as HTMLInputElement).value)}
+          write={(el, value) => {
+            (el as HTMLInputElement).value = String(value ?? 0);
+          }}
+        />
+      </Entity>
+    </Entity>
+  );
+}
+
+<Entity>
+  <FormState form={TripForm.create()} />
+  {travellerIndexes.map(i => (
+    <TravellerRow
+      bind={binding(FormState, formAdapter).field("travellers").at(i)}
+    />
+  ))}
+</Entity>
+```
+
+This example makes the remaining array questions concrete:
+- how should row identity be stabilized?
+- how should subscriptions behave when `removeAt(i)` shifts later items?
+- should array mutation helpers belong on the binding target or elsewhere?
 
 ## Why This Page Exists
 
