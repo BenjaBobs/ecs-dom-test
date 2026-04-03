@@ -1,5 +1,7 @@
 // @minimap summary: Builds and queries the local SQLite minimap index for TypeScript and MDX files using curated metadata by default and optional deep-text search.
 // @minimap tags: minimap search index sqlite metadata docs tooling deep-search
+
+import { execFileSync } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
@@ -9,7 +11,6 @@ import {
   rmSync,
   statSync,
 } from 'node:fs';
-import { execFileSync } from 'node:child_process';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
