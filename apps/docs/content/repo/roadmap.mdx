@@ -12,13 +12,14 @@ This roadmap is for the entire project, not just the docs app.
 Primary strategy:
 - Build the docs product using the framework (dogfooding).
 - Use that work to discover real framework pain points.
-- In parallel, draft a practical UI standard library for building basic apps.
+- Prioritize ergonomics fixes that make day-to-day framework use feel simpler, faster, and more enjoyable before expanding adjacent surface area.
+- Draft the UI standard library in parallel only where it directly helps validate or unlock ergonomics improvements.
 
 ## Current Priority Order
 
 1. `R1` Dogfooded Docs Product + Pain-Point Discovery Loop
-2. `R2` UI Standard Library Draft (`@ecs-test/ui`)
-3. `R3` Framework Ergonomics and Footgun Reduction (driven by R1 findings)
+2. `R3` Framework Ergonomics and Footgun Reduction (driven by R1 findings)
+3. `R2` UI Standard Library Draft (`@ecs-test/ui`)
 4. `R4` Platform Hardening (debug/profiling/testing/perf)
 
 ## Milestones
@@ -33,11 +34,12 @@ Primary strategy:
   - docs shell and interactions implemented as ECS
   - API docs + search + navigation + live-editable feature examples
   - ongoing capture of friction points while developing docs features
+  - defer non-essential docs feature expansion when it does not contribute directly to ergonomics learning
 - Exit criteria:
   - docs experience is stable and usable for contributors
   - a maintained list of concrete friction findings exists and is actionable
 
-### R2. UI Standard Library Draft (Planned)
+### R2. UI Standard Library Draft (Planned, Supporting)
 
 - Status: `planned`
 - Goal:
@@ -50,9 +52,9 @@ Primary strategy:
   - initial usable component set exists in `@ecs-test/ui`
   - building a small app no longer requires repetitive low-level boilerplate
 
-### R3. Framework Ergonomics + Flexibility Improvements (Planned)
+### R3. Framework Ergonomics + Flexibility Improvements (In Progress)
 
-- Status: `planned`
+- Status: `in_progress`
 - Inputs:
   - issues discovered while executing R1/R2
 - Focus areas:
@@ -60,6 +62,7 @@ Primary strategy:
   - inflexible composition points
   - missing primitives/features
   - developer footguns and unsafe defaults
+  - “fun and easy” defaults for common UI/app workflows, especially in non-JSX and DOM-heavy code
 - Exit criteria:
   - high-impact friction items are resolved or intentionally deferred with rationale
   - docs and examples reflect improved patterns
@@ -96,7 +99,7 @@ Record findings in the [Friction Log](/repo/friction-log.html).
 
 ## Out of Immediate Focus
 
-- major new debugging platform initiatives unless they block R1/R2
+- major new debugging platform initiatives unless they block R1/R3
 - speculative optimization work without measured pain
 - release/versioned docs strategy before core dogfooding goals are met
 

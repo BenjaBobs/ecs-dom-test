@@ -31,6 +31,16 @@ apps/
   docs/
 ```
 
+Use the minimap script as the first lookup tool when you need to orient in an unfamiliar area, find the files responsible for a topic, or map a concept across packages/docs before opening files.
+
+Minimap is most useful when:
+- you are starting work in an area you do not know yet
+- you need the most relevant files for a feature, subsystem, or concept
+- you want authored docs and source files to surface together
+- you want to narrow the search space before using `rg` for exact symbols or strings
+
+Prefer minimap search over broad grepping for exploratory lookup. Prefer `rg` once you already know the likely files, or when you need exact text, identifier, or call-site matches.
+
 ## Commands
 
 ```bash
@@ -40,6 +50,26 @@ bun run typecheck
 bun run check:full
 bun run docs:build
 bun run docs:dev
+node --experimental-strip-types scripts/minimap.ts index
+node --experimental-strip-types scripts/minimap.ts search "<query>"
+node --experimental-strip-types scripts/minimap.ts validate
+```
+
+Minimap usage notes:
+- `search` is the default entrypoint. It searches curated metadata first (`summary`, `tags`, exports, titles) and excludes tests unless you opt in.
+- `search` automatically refreshes the SQLite index when indexed files are newer than `.minimap/minimap.sqlite`, so you usually do not need to run `index` manually.
+- Run `index` explicitly after large metadata edits, if you want to prebuild the index, or if you need to inspect/search without waiting for an on-demand refresh.
+- Run `validate` before finishing work that adds new indexed files or changes a file's purpose enough that its minimap metadata should change.
+- Use `--include-text` only when metadata-first search is not enough and you need fallback text search.
+- Use `--include-kind` / `--exclude-kind` to focus the results when you know you want docs, systems, tests, etc.
+- Use `--select` to expose extra fields such as `kind`, `title`, `excerpt`, or `score` when ranking/context matters.
+
+Examples:
+
+```bash
+node --experimental-strip-types scripts/minimap.ts search "form validation"
+node --experimental-strip-types scripts/minimap.ts search "dom events" --include-kind system,source
+node --experimental-strip-types scripts/minimap.ts search "world flush" --include-text --select path,summary,excerpt
 ```
 
 ## Implementation Rules

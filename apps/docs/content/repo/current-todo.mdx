@@ -1,0 +1,449 @@
+---
+title: Current Todo
+description: Detailed design exploration for the current ergonomics and binding-system work.
+minimapSummary: Tracks the current design exploration for DOM bindings, root-owned data binding, composite widgets, and the planned refactor path from forms-ui to a general binding foundation.
+minimapTags: docs repo current-todo bindings widgets forms-ui dom ergonomics design exploration
+order: 5
+---
+
+# Current Todo
+
+This page is the detailed design exploration for the work currently driving `R3` in the [Working Set](/repo/working-set.html). It is intentionally more exploratory than the roadmap or working-set pages.
+
+Use this page for:
+- the current design direction
+- the reasoning behind design decisions
+- alternatives we considered and rejected
+- open questions that still need answers before or during implementation
+
+## Problem Statement
+
+We want the framework to be:
+- flexible enough for complex composite widgets and nested widget trees
+- simple enough that the base model is teachable without a large conceptual tax
+- not overly verbose for common DOM and form-like flows
+
+The starting pain points were:
+- manual `getDOMElement(...)` reads and casts for basic input flows
+- feature-specific DOM sync systems for cases like docs search
+- direct DOM <-> form coupling in `forms-ui`
+- unclear design story for composite widgets made from multiple entities
+
+## What We Agreed On
+
+### Keep `DOMElement` Clean
+
+We considered merging binding behavior into `DOMElement` to improve TypeScript inference, especially for event names. We rejected that.
+
+Why:
+- `DOMElement` should stay a renderer primitive
+- binding and rendering are separate concerns
+- many entities need a `DOMElement` without any value synchronization at all
+- merging binding into `DOMElement` would improve local typing but weaken the architecture
+
+Current direction:
+- `DOMElement` stays separate from binding
+- `DOMElement` may carry static intrinsic `attrs`
+- `attrs` should not absorb behavior, content, or reactive synchronization concerns
+
+### `DOMElement.attrs` Is Useful, but Narrowly Scoped
+
+We want examples like the docs search input to stop needing a small feature-specific system just to set:
+- `type`
+- `placeholder`
+- `autocomplete`
+- `spellcheck`
+
+Current direction:
+- `DOMElement` gets static `attrs`
+- `attrs` is for intrinsic static element configuration only
+
+Intended examples:
+- `type`
+- `placeholder`
+- `autocomplete`
+- `src`
+- `href`
+- `role`
+- `tabIndex`
+- `aria-*`
+- `data-*`
+
+Explicit exclusions:
+- `class`
+- `style`
+- text or HTML content
+- event handlers
+- reactive `value` / `checked` synchronization
+
+Why:
+- `Classes`, `Style`, `TextContent`, and `HtmlContent` already provide better ECS-specific semantics
+- keeping these separate preserves single sources of truth
+
+### `DOMBinding` Should Stay Separate from `DOMElement`
+
+We agreed `DOMBinding` is the right place for DOM <-> state synchronization.
+
+Current direction:
+- `DOMBinding` remains its own component/system
+- `readEvent` is the right name for the DOM-to-state trigger
+- read-side timing controls such as debouncing belong on `DOMBinding`
+- writes back to the DOM should remain immediate by default
+
+Why:
+- keeps the base model explicit
+- preserves room for consumers to build other binding systems if needed
+- avoids forcing a large kitchen-sink API into `DOMElement`
+
+### Avoid `__entity` / `__world` on DOM Nodes by Default
+
+We considered storing ECS references directly on DOM nodes for lookup speed.
+
+Current direction:
+- do not attach `__entity` / `__world` by default
+
+Why:
+- current interaction systems already capture `world` and `entity` in closures
+- the renderer already owns a world-scoped entity -> element map
+- element-attached ECS references would complicate the renderer model
+- revisit only if profiling later proves a real bottleneck
+
+## How the Binding Design Evolved
+
+### Step 1: `Value` + `DOMBinding`
+
+The initial direction was:
+- a generic `Value` component
+- `DOMBinding` only targets `Value`
+- higher-level abstractions like `InputValue` could be built on top
+
+Why it seemed promising:
+- very clear mental model
+- clean layering
+- no direct DOM <-> form coupling
+
+Problem discovered:
+- it makes queries broad when many entities have `Value`
+- feature systems would need extra markers just to narrow those queries again
+- domain-specific value components like `SearchQuery` would need awkward adapter systems
+
+### Step 2: `DOMBinding` Targets an Explicit Value-Shaped Component
+
+We refined the design so `DOMBinding` points at a chosen component with a `{ value: ... }` shape.
+
+Example:
+
+```tsx
+<SearchQuery value="" />
+<DOMBinding
+  component={SearchQuery}
+  readEvent="input"
+  read={el => (el as HTMLInputElement).value}
+  write={(el, value) => {
+    (el as HTMLInputElement).value = String(value ?? "");
+  }}
+/>
+```
+
+Why this is better than strict `Value`-only:
+- keeps domain state meaningful
+- avoids extra adapter systems
+- keeps queries narrow
+- still preserves a generic `Value` as the default catch-all where no domain component exists
+
+### Step 3: Composite Widgets and Root-Owned State Forced a Bigger Rethink
+
+Once we looked at widgets made from multiple entities, especially forms and widget-of-widgets cases, a same-entity-only component target was not enough.
+
+Example pressure case:
+- a date range widget made from label/input/error descendants
+- authoritative value may belong to a form root or widget root, not the input entity itself
+
+This forced the deeper question:
+- should the real abstraction be component-to-component sync, or binding to authoritative state wherever it lives?
+
+## Root-Owned Data Is the Real Underlying Problem
+
+We concluded that `forms-ui` should be treated as a vertical slice proof-of-concept, not the foundational architecture.
+
+What the current `forms-ui` package already proves:
+- descendant entities often need to bind to data owned by an ancestor/root entity
+- root data often has rich concerns layered on top: validation, touched, dirty, errors
+
+What this implies:
+- the reusable foundation is not “forms binding”
+- it is “root-owned data binding”
+
+This suggests the real base problem is:
+- define root-owned data on some entity
+- let descendant entities resolve the nearest relevant owner
+- bind to some nested value in that root-owned data
+
+Why this matters:
+- forms are one important case, but not the only one
+- composite widgets and nested widgets need the same pattern
+
+## Root Resolution: What We Rejected and What We Kept
+
+### Generic `Root` Marker
+
+We considered a generic `Root` marker and a walk-up-to-nearest-root function.
+
+Why it looked attractive:
+- simple
+- reusable
+- establishes clear subtree boundaries
+
+Why we did not choose it as the primary data-binding lookup:
+- a generic `Root` does not tell you what kind of state lives there
+- nested roots would introduce ambiguity
+- for data binding, “nearest root” is usually too broad
+
+### Nearest Ancestor with Specific Component
+
+We preferred:
+- walk up to the nearest ancestor that has the specific component the binding wants
+- include the current entity in the search
+
+Why:
+- more precise than a generic `Root`
+- works naturally for widget-of-widgets
+- outer and inner widgets can coexist cleanly
+- nested scopes shadow each other by component type, which is usually exactly what we want
+
+## The Widget-of-Widgets Story
+
+We explored nested widgets such as:
+- outer `FormState`
+- inner `DateRangeState`
+- descendant input entities for start/end values
+
+Important realization:
+- a widget bundle should not necessarily own copied authoritative value state
+- if the authoritative value already exists in a root-owned data structure, the widget should bind directly to it
+
+Why:
+- copying introduces duplication
+- mirroring through systems can introduce timing/schedule lag
+- widget-heavy UIs may suffer performance and complexity costs from unnecessary sync hops
+
+So the current direction is:
+- authoritative domain value should usually be bound directly
+- local widget state should only exist for transient UI concerns such as:
+  - open/closed state
+  - focus/selection state
+  - draft text
+  - temporary parse state
+
+## Binding Targets
+
+This is the current promising abstraction.
+
+Instead of making `DOMBinding` know whether it is talking to:
+- a local component
+- an ancestor-owned data object
+- a form field
+
+we move that concern into a binding target.
+
+Conceptually, a binding target answers:
+- how to get the current value
+- how to set the next value
+- how to subscribe to authoritative changes
+
+Then `DOMBinding` only needs to know:
+- how to read from the DOM
+- how to write to the DOM
+- which binding target it should talk to
+
+### Why Binding Targets Are Attractive
+
+- they unify local and root-owned state
+- they work equally well for inline entities and bundles
+- they avoid duplicated authoritative state
+- they let forms become one specialization of a more general mechanism
+
+## Fluent Binding Builder Direction
+
+The current most promising user-facing API shape is fluent.
+
+Conceptually:
+
+```ts
+binding(SearchQuery)
+binding(DateRangeState).field("start")
+binding(TripState).field("travellers").at(i).field("name")
+```
+
+The intended semantics:
+- `binding(Component)` means “find the nearest entity with this component, including the current entity”
+- `.field(...)` narrows into nested object data
+- `.at(...)` narrows into array items
+
+Why this is appealing:
+- one mental model
+- no hard split between same-entity and ancestor binding APIs
+- feels appropriate for both inline code and bundle internals
+
+## Search Example: Before and After
+
+The docs search input is a useful design test.
+
+Current implementation:
+- a `SearchInput` marker
+- a feature-specific system that:
+  - gets the DOM node
+  - sets `type`, `placeholder`, and other element properties
+  - attaches the `input` listener
+  - writes to `SearchQuery`
+
+Refined intended direction:
+- move static input configuration into `DOMElement.attrs`
+- bind the input directly to `SearchQuery`
+- leave the feature system responsible only for search-specific behavior
+
+Why this matters:
+- it is a good migration test case
+- if this still feels awkward after the refactor, the base design is probably too rigid
+
+## How This Changes the View of `forms-ui`
+
+Current view:
+- `forms-ui` is a useful proof-of-concept vertical slice
+- it already contains the right idea of descendant binding to root-owned state
+- but it couples DOM directly to form fields
+
+Refactor direction:
+- design a general root-owned data binding foundation first
+- then rebuild or refactor `forms-ui` on top of it
+
+What `forms-ui` should eventually add above the binding foundation:
+- validation
+- dirty tracking
+- touched state
+- error rendering
+- other form-specific semantics
+
+## What We Have Rejected So Far
+
+- making `DOMBinding` world/entity-imperative by default
+  Why rejected:
+  - too verbose for the common case
+  - weakens optimization opportunities
+  - muddies the base mental model
+
+- forcing all binding through a generic `Value` intermediary
+  Why rejected:
+  - broad queries
+  - extra marker/adaptor churn
+  - awkward for existing domain components
+
+- merging binding into `DOMElement`
+  Why rejected:
+  - improves local typing but hurts the architecture
+  - many `DOMElement` entities need no binding at all
+
+- generic `Root` marker as the primary lookup key for data binding
+  Why rejected:
+  - too ambiguous compared with nearest-ancestor-with-specific-component
+
+## What We Have Not Fully Solved Yet
+
+### Binding Target Formal Shape
+
+We still need to decide the exact API for binding targets:
+- plain object interface
+- branded/factory-created object
+- whether subscription is required or optional
+- how nested `.field(...)` / `.at(...)` composition is implemented internally
+
+### Plain Nested Data vs Adapted/Store-Backed Data
+
+We still need to decide how the fluent builder handles:
+- components that literally store nested plain data
+- components that store a form/store instance instead of raw data
+
+This is where a possible `BindingAdapter` concept may be needed.
+
+### Arrays
+
+Arrays are definitely in scope.
+
+We have a promising direction:
+
+```ts
+binding(TripState).field("travellers").at(i).field("name")
+```
+
+But unanswered questions remain:
+- should array targets expose mutation helpers such as `append`, `removeAt`, `insert`?
+- how should subscriptions behave when array indices shift?
+- how do we recommend stable identity for repeated widget rows?
+
+### Sets and Maps
+
+We have not designed this yet.
+
+Open questions:
+- should fluent bindings support `set` / `map` style access at all?
+- if yes, what should the user-facing API be?
+- how do subscriptions narrow correctly for mutations that are not simple path writes?
+
+### Existing `forms` Package Integration
+
+This is still open.
+
+We need to decide:
+- whether form instances expose or can be adapted to the binding-target model
+- whether fluent `.field(...)` should operate through form accessors directly
+- whether forms become just one adapted component kind in the binding system
+
+### Validation / Errors / Dirty / Touched
+
+We intentionally postponed this to keep the base binding design clean.
+
+Still open:
+- what should live in the general root-owned binding layer?
+- what should stay in `forms-ui`?
+- how should error rendering bind to authoritative validation state?
+- how should touched/dirty updates integrate with DOM bindings and widget-level behavior?
+
+### Async
+
+We have not designed async behavior yet.
+
+This likely includes:
+- async validation
+- async option loading / widget data fetching
+- async normalization or lookup flows
+- what subscription/update model is needed when authoritative state changes from async sources
+
+### Performance
+
+We have identified performance as a design concern, but not finished the strategy.
+
+Open questions:
+- how aggressively should binding targets cache owner resolution?
+- should subscription be required for all targets?
+- how do we avoid broad invalidation for nested fields?
+- how much write-skipping and batching should be built into the base systems?
+
+## Current Working Direction
+
+If implementation started immediately, the most likely order would be:
+
+1. Keep `DOMElement` and `DOMBinding` separate.
+2. Add static `DOMElement.attrs`.
+3. Add a first `DOMBinding` implementation for the simple text-input path.
+4. Validate the design against the docs search input.
+5. Continue the binding-target design until the root-owned data story is strong enough.
+6. Refactor `forms-ui` onto that foundation rather than extending the current direct-coupling design.
+
+## Why This Page Exists
+
+This page exists because the current work is no longer just a task list item or a single architecture decision. It is an active design exploration with:
+- multiple competing abstractions
+- real tradeoffs in ergonomics, clarity, and performance
+- partially answered questions that will affect several packages
+
+The [Working Set](/repo/working-set.html) should stay concise and execution-oriented. This page is where the longer-form thinking lives while the design is still moving.

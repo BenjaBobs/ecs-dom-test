@@ -21,10 +21,10 @@ Execution board for both humans and agents.
 
 Primary active milestones:
 - `R1` Dogfooded Docs Product + Discovery Loop
+- `R3` Framework Ergonomics + Flexibility Improvements
 
 Secondary (supporting) milestone:
 - `R2` UI Standard Library Draft
-- `R3` Framework Ergonomics + Flexibility Improvements
 
 ## Active Tasks
 
@@ -32,7 +32,7 @@ Secondary (supporting) milestone:
 | --- | --- | --- | --- | --- | --- |
 | WS-R1-001 | in_progress | P0 | R1 | Keep docs app feature-complete via ECS dogfooding | Stable docs runtime with real ECS usage patterns. |
 | WS-R1-002 | in_progress | P0 | R1 | Add and maintain friction log from docs development | Concrete footguns/verbosity/inflexibility/missing-feature findings. |
-| WS-R1-003 | in_progress | P0 | R1 | Live editor v2 (multi-example support, diagnostics, global mode sync) | Reliable editable examples for JSX/non-JSX with isolated previews. |
+| WS-R1-003 | blocked | P2 | R1 | Live editor v2 follow-up (multi-example support and remaining polish) | Resume only after higher-priority ergonomics work, unless docs dogfooding reveals an urgent gap. |
 | WS-R1-004 | done | P0 | R1 | Build-time internal/API link validation | Broken refs fail the docs build instead of shipping 404s. |
 | WS-R1-005 | todo | P1 | R1 | Move live example sources to `apps/docs/examples` + generated manifest | Docs runtime reads examples from build artifact, not hardcoded system maps. |
 | WS-R1-006 | todo | P1 | R1 | Add page metadata UX (`Edit this page`, `Last updated`) | Better contributor/documentation workflow visibility. |
@@ -44,7 +44,9 @@ Secondary (supporting) milestone:
 | WS-R2-001 | todo | P0 | R2 | Draft initial `@ecs-test/ui` primitive set | First pass of reusable UI bundles/components. |
 | WS-R2-002 | todo | P1 | R2 | Use `@ecs-test/ui` primitives in docs surfaces where sensible | Validate primitives through real usage. |
 | WS-R2-003 | todo | P2 | R2 | Document usage patterns for each primitive | API docs + examples for quick adoption. |
-| WS-R3-001 | in_progress | P1 | R3 | Convert top friction findings into actionable framework tasks | Prioritized implementation queue. |
+| WS-R3-001 | in_progress | P0 | R3 | Convert top friction findings into actionable framework tasks | Prioritized implementation queue focused on high-frequency ergonomics wins. |
+| WS-R3-002 | todo | P0 | R3 | Ship first ergonomics tranche from active friction findings | Reduce common boilerplate around interactions, inputs, and row/widget updates in real docs examples. |
+| WS-R3-003 | todo | P1 | R3 | Codify low-boilerplate recommended patterns in guides/examples | Docs and examples show the easiest current way to build common interactive flows. |
 | WS-R4-001 | todo | P2 | R4 | Add targeted regression tests for discovered pain points | Prevent repeat breakage from resolved issues. |
 | WS-R4-002 | todo | P1 | R4 | Add `docs:check` CI gate (build + link checks + docs assertions) | Prevent stale docs and broken docs routes from landing. |
 
@@ -66,7 +68,91 @@ Use [Friction Log](/repo/friction-log.html) and this shape for each finding:
 
 | ID | Blocked By | Unblock Condition |
 | --- | --- | --- |
+| WS-R1-003 | Ergonomics-first reprioritization | Resume after the first R3 ergonomics tranche lands, or if docs dogfooding exposes a blocking live-editor gap. |
 | WS-R4-001 | Initial friction backlog not curated | Finalize first prioritized R3 queue. |
+
+## Current Plan: Binding System Exploration
+
+Planning notes for `WS-R3-001` / `WS-R3-002`.
+
+Detailed design exploration lives in [Current Todo](/repo/current-todo.html).
+
+Goal:
+- introduce a simple, flexible, low-boilerplate path for DOM <-> ECS value synchronization
+- support composite widgets and root-owned state cleanly
+- keep the default model explicit and teachable
+
+Decisions so far:
+- make `DOMBinding` the base DOM synchronization primitive
+- use `readEvent` terminology rather than `event`
+- support read-side timing controls such as debouncing on `DOMBinding`
+- let `DOMElement` carry static intrinsic `attrs`, while keeping behavior/binding separate
+- treat `forms-ui` as a proof-of-concept vertical slice rather than the final binding architecture
+- explore binding targets and nearest-ancestor-with-specific-component lookup as the likely foundation for root-owned data binding
+- do not add `__entity` / `__world` properties to DOM nodes by default; revisit only if profiling proves a meaningful lookup bottleneck
+
+Phase 1: foundation
+- extend `DOMElement` with static `attrs`
+- add `DOMBinding`
+- validate the simple text-input path first
+- continue binding-target design until the root-owned data story is strong enough
+
+Phase 2: ergonomics
+- add thin helpers such as `InputValue`, `CheckedValue`, and possibly `TextValue`
+- migrate at least one docs flow that currently reads raw DOM input state manually
+- update guides/examples to show the new preferred pattern
+
+Phase 3: forms decoupling
+- refactor `forms-ui` away from direct DOM <-> form-field coupling
+- introduce form/root-owned-data binding on top of the shared binding foundation
+- keep higher-level forms conveniences as thin layers on top of the decoupled model
+
+Existing code to reuse:
+- `packages/dom/src/dom-element-systems.ts` for DOM element lifecycle and lookup
+- `packages/forms-ui/src/systems.ts` for the current read/write/subscribe loop structure
+- docs search and todo examples as early migration targets
+
+Implementation checklist for `packages/dom`:
+- add `packages/dom/src/features/value/components.ts`
+  - define `Value`
+  - keep the initial shape minimal: `{ value: unknown }`
+  - define `DOMBinding`
+  - make `DOMBinding` point at one explicit value-shaped component ref
+  - add minimap metadata
+- add `packages/dom/src/features/value/systems.ts`
+  - implement `DOMBindingSystem`
+  - require `DOMElement + configured value-shaped component + DOMBinding`
+  - attach/remove `readEvent` listeners
+  - support read-side debouncing
+  - apply initial sync according to `readOnBind` / `writeOnBind`
+  - write back only when the element state is actually different
+  - clean up timers/listeners on exit
+- update `packages/dom/src/dom-element-components.ts` and `packages/dom/src/dom-element-systems.ts`
+  - add static `attrs` support to `DOMElement`
+  - apply static intrinsic attrs/properties on mount/update
+  - keep `class`, `style`, content, event handlers, and reactive value/checked sync out of `attrs`
+- add `packages/dom/src/features/value/components.test.ts` or extend `packages/dom/src/dom.test.ts`
+  - read-only binding
+  - write-only binding
+  - bidirectional text input binding
+  - binding against a domain-specific value component (for example `SearchQuery`)
+  - `writeOnBind` and `readOnBind` precedence
+  - debounce behavior
+  - listener cleanup on entity removal
+- update `packages/dom/src/index.ts`
+  - export `Value`, `DOMBinding`, and `DOMBindingSystem`
+  - register `DOMBindingSystem` from `registerDOMSystems(...)`
+- decide file placement for `DOMBinding`
+  - likely colocate `Value` + `DOMBinding` under one new `features/value/` feature
+  - avoid adding binding logic into `DOMElement` files
+- keep v1 intentionally narrow
+  - support text-like element value synchronization first
+  - do not solve checked-state, text-content reflection, or form coupling in the first patch unless the implementation falls out naturally
+
+First migration target:
+- replace the manual search-input DOM event handling in `apps/docs/src/systems/search-system.ts` with `SearchQuery + DOMBinding`
+- move static search input setup (`type`, `placeholder`, etc.) into `DOMElement.attrs`
+- use that migration to validate whether the base API is actually understandable before adding any helper abstractions
 
 ## Recently Completed
 

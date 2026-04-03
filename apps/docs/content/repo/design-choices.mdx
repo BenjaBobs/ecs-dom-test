@@ -49,35 +49,53 @@ Removed `class` from `DOMElement`. All CSS classes go through `Classes` componen
 **Why:** Two systems writing to `el.className` will fight. One source of truth eliminates the conflict.
 
 ### Value-Centric Data Binding
-Data flows through a single `Value` component on an entity. External systems (DOM, forms, etc.) bind to `Value` rather than to each other. This is a design direction; not fully implemented yet.
+Bindability should center on components with a `{ value: ... }` shape. A generic `Value` component remains useful as the default catch-all, but DOM and forms should not be forced through it when a domain-specific value component already exists. This is the preferred direction for future input/binding ergonomics, but is not fully implemented yet.
 
 **Why:**
 - Avoids tight coupling between DOM input state and form state
 - Enables non-DOM entities to participate in data flows (e.g., pure data entities, future renderers)
-- Supports multi-step transformations across boundaries (DOM ↔ Value ↔ Form) without mixing concerns
+- Preserves meaningful domain components such as `SearchQuery` instead of forcing adapter systems around a generic intermediary
+- Supports multi-step transformations across boundaries (DOM ↔ value-shaped component ↔ Form) without mixing concerns
 
 **Implementation direction:**
 - `DOMElement` stays a renderer primitive (no binding logic)
-- DOM bindings live in separate components/systems (e.g., `DOMBinding`, `DOMTrigger`)
-- Form bindings translate between form fields and `Value`, optionally with transforms when types differ
-- Bundles can hide extra components for ergonomics while keeping the model explicit
+- `DOMElement` can carry static `attrs` for intrinsic element configuration, but not behavior or reactive binding logic
+- `Value` is an optional generic state carrier for bindable values; domain-specific components remain valid when they express real domain meaning
+- `DOMBinding` is the base DOM bridge and targets one explicit value-shaped component, not forms or arbitrary world mutations
+- `DOMBinding` should separate read and write concerns explicitly:
+  - `readEvent` drives DOM -> component value
+  - `read` extracts a value from the element
+  - `write` applies the current component value to the element
+- Read-side controls such as debouncing belong on `DOMBinding`; write-side updates should remain immediate by default
+- Form bindings should sync form fields to/from a value-shaped component, rather than binding DOM elements directly to forms
+- Thin ergonomic bundles such as `InputValue` or `CheckedValue` can sit on top of `DOMElement` + `Value` + `DOMBinding`, but are not required for the base design to work
+- More imperative/custom bridges can exist separately when needed, but should not complicate the default `DOMBinding` path
+- Avoid attaching `__entity` / `__world` properties to DOM nodes by default; current interaction systems already capture `world` and `entity` in listener closures, and world-owned element maps keep the renderer model cleaner. Revisit only if profiling shows lookup overhead is material.
+- `DOMElement.attrs` should include static intrinsic element attributes/properties such as `type`, `placeholder`, `autocomplete`, `src`, `href`, `role`, `aria-*`, and `data-*`
+- `DOMElement.attrs` should not absorb concerns already modeled elsewhere: `class`, `style`, text/HTML content, event handlers, or reactive value/checked synchronization
 
 **Example (conceptual):**
 <div data-code-tabs>
 
 ```tsx
 <Entity>
-  <DOMElement tag="input" />
-  <Value value={0} />
+  <DOMElement
+    tag="input"
+    attrs={{ type: "number", placeholder: "Age" }}
+  />
+  <Age value={0} />
   <DOMBinding
-    trigger="input"
-    toValue={(el) => parseFloat((el as HTMLInputElement).value)}
-    fromValue={(v) => String(v)}
+    component={Age}
+    readEvent="input"
+    read={(el) => parseFloat((el as HTMLInputElement).value)}
+    write={(el, value) => {
+      (el as HTMLInputElement).value = String(value);
+    }}
   />
   <FormBinding
     field={f.age}
-    toValue={(formValue) => formValue}
-    fromValue={(value) => value}
+    read={(formValue) => formValue}
+    write={(value) => value}
   />
 </Entity>
 ```
@@ -86,22 +104,95 @@ Non-JSX alternative (conceptual):
 
 ```ts
 world.createEntity(undefined, [
-  DOMElement({ tag: "input" }),
-  Value({ value: 0 }),
+  DOMElement({
+    tag: "input",
+    attrs: { type: "number", placeholder: "Age" },
+  }),
+  Age({ value: 0 }),
   DOMBinding({
-    trigger: "input",
-    toValue: (el) => parseFloat((el as HTMLInputElement).value),
-    fromValue: (v) => String(v),
+    component: Age,
+    readEvent: "input",
+    read: (el) => parseFloat((el as HTMLInputElement).value),
+    write: (el, value) => {
+      (el as HTMLInputElement).value = String(value);
+    },
   }),
   FormBinding({
     field: f.age,
-    toValue: (formValue) => formValue,
-    fromValue: (value) => value,
+    read: (formValue) => formValue,
+    write: (value) => value,
   }),
 ]);
 ```
 
 </div>
+
+**Proposed v1 API:**
+
+Base components:
+
+```ts
+const Value = defineComponent<{ value: unknown }>("Value");
+
+const DOMElement = defineComponent<{
+  tag: keyof HTMLElementTagNameMap;
+  attrs?: Record<string, string | number | boolean | null | undefined>;
+}>("DOMElement");
+
+const DOMBinding = defineComponent<{
+  component: ComponentRef<{ value: unknown }>;
+  readEvent?: keyof GlobalEventHandlersEventMap;
+  read?: (el: Element) => unknown;
+  write?: (el: Element, value: unknown) => void;
+  readOnBind?: boolean;
+  writeOnBind?: boolean;
+  debounceMs?: number;
+}>("DOMBinding");
+```
+
+Expected defaults:
+- `writeOnBind: true`
+- `readOnBind: false`
+- `debounceMs: 0`
+- if `readEvent` is omitted, the binding is write-only
+- if `write` is omitted, the binding is read-only
+
+v1 behavior:
+- `DOMBinding` requires `DOMElement` and the configured value-shaped component on the same entity
+- the DOM system remains responsible only for creating/removing elements
+- the binding system is responsible for:
+  - attaching the `readEvent` listener when configured
+  - reading from the element and updating the configured component's `value`
+  - writing the configured component's `value` changes back to the element
+  - skipping DOM writes when the DOM already reflects the current value
+  - cleaning up listeners/timers when the entity exits
+- debounce only affects DOM -> component reads; component -> DOM writes stay immediate
+- v1 should support the common text-input path first; more specialized helpers can be layered on later
+
+Non-goals for v1:
+- cross-component TypeScript inference from `DOMElement.tag` into `DOMBinding.readEvent`
+- arbitrary world/entity-imperative bridge callbacks in the base binding API
+- solving all DOM property/attribute/class synchronization cases in one primitive
+
+Planned ergonomic helpers:
+
+```ts
+InputValue()
+CheckedValue()
+TextValue()
+```
+
+These should be thin bundles over `DOMElement` + `Value` + `DOMBinding`, with stronger defaults and less user-supplied boilerplate.
+
+**Migration / reuse plan:**
+- Reuse `getDOMElement(...)` and the world-owned entity -> element map from `@ecs-test/dom`
+- Reuse the listener + subscribe loop shape already present in `@ecs-test/forms-ui`
+- First migration targets:
+  - docs search input
+  - todo-guide / live-example input field
+- Later refactor:
+  - move `@ecs-test/forms-ui` from direct DOM <-> form-field binding to form-field <-> value-shaped component binding
+  - keep any higher-level form helpers as convenience layers over the decoupled primitives
 
 ### Feature-First Structure (Including Styles)
 Features should own their components, systems, and styles together (folder per feature). Styles are applied via `Classes` and are kept in feature-scoped CSS files imported by that feature's entry module.
