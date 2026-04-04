@@ -9,6 +9,7 @@ import { DOMElement, DOMElements } from './dom-element-components.ts';
 
 type AppliedAttrsState = {
   attrsByEntity: Map<EntityId, Set<string>>;
+  propertyDefaultsByEntity: Map<EntityId, Map<string, unknown>>;
 };
 
 const DOM_ATTRS_STATE = Symbol('DOMElementAttrsState');
@@ -41,14 +42,17 @@ export function getDOMElement(world: World, entity: EntityId): Element | undefin
 
 function getAppliedAttrsState(world: World): AppliedAttrsState {
   const runtimeEntity = world as World & {
-    [DOM_ATTRS_STATE]?: Map<EntityId, Set<string>>;
+    [DOM_ATTRS_STATE]?: AppliedAttrsState;
   };
 
   if (!runtimeEntity[DOM_ATTRS_STATE]) {
-    runtimeEntity[DOM_ATTRS_STATE] = new Map<EntityId, Set<string>>();
+    runtimeEntity[DOM_ATTRS_STATE] = {
+      attrsByEntity: new Map<EntityId, Set<string>>(),
+      propertyDefaultsByEntity: new Map<EntityId, Map<string, unknown>>(),
+    };
   }
 
-  return { attrsByEntity: runtimeEntity[DOM_ATTRS_STATE] as Map<EntityId, Set<string>> };
+  return runtimeEntity[DOM_ATTRS_STATE];
 }
 
 function applyDOMElementAttrs(
@@ -64,12 +68,12 @@ function applyDOMElementAttrs(
 
   for (const key of previouslyApplied) {
     if (!nextKeys.has(key)) {
-      clearAttr(world, el, spec.tag, key);
+      clearAttr(state, entity, el, key);
     }
   }
 
   for (const [key, value] of Object.entries(nextAttrs)) {
-    setAttr(el, key, value);
+    setAttr(state, entity, el, key, value);
   }
 
   if (nextKeys.size > 0) {
@@ -79,7 +83,22 @@ function applyDOMElementAttrs(
   }
 }
 
-function setAttr(el: Element, key: string, value: unknown): void {
+function getPropertyDefaults(state: AppliedAttrsState, entity: EntityId): Map<string, unknown> {
+  let defaults = state.propertyDefaultsByEntity.get(entity);
+  if (!defaults) {
+    defaults = new Map<string, unknown>();
+    state.propertyDefaultsByEntity.set(entity, defaults);
+  }
+  return defaults;
+}
+
+function setAttr(
+  state: AppliedAttrsState,
+  entity: EntityId,
+  el: Element,
+  key: string,
+  value: unknown,
+): void {
   if (key === 'class' || key === 'style') {
     throw new Error(
       `DOMElement.attrs does not support "${key}". Use the dedicated ECS feature instead.`,
@@ -98,7 +117,7 @@ function setAttr(el: Element, key: string, value: unknown): void {
   }
 
   if (value === undefined || value === null) {
-    clearAttr(undefined, el, el.tagName.toLowerCase(), key);
+    clearAttr(state, entity, el, key);
     return;
   }
 
@@ -113,6 +132,10 @@ function setAttr(el: Element, key: string, value: unknown): void {
   }
 
   const target = el as Element & Record<string, unknown>;
+  const defaults = getPropertyDefaults(state, entity);
+  if (!defaults.has(key) && key in target) {
+    defaults.set(key, target[key]);
+  }
   target[key] = value;
 
   if (typeof value === 'boolean') {
@@ -127,7 +150,7 @@ function setAttr(el: Element, key: string, value: unknown): void {
   el.setAttribute(key, String(value));
 }
 
-function clearAttr(world: World | undefined, el: Element, tag: string, key: string): void {
+function clearAttr(state: AppliedAttrsState, entity: EntityId, el: Element, key: string): void {
   el.removeAttribute(key);
 
   const target = el as Element & Record<string, unknown>;
@@ -135,13 +158,8 @@ function clearAttr(world: World | undefined, el: Element, tag: string, key: stri
     return;
   }
 
-  if (!world) {
-    target[key] = undefined;
-    return;
-  }
-
-  const defaults = getCreateElement(world)(tag) as Element & Record<string, unknown>;
-  target[key] = defaults[key];
+  const defaults = state.propertyDefaultsByEntity.get(entity);
+  target[key] = defaults?.get(key);
 }
 
 /**
@@ -199,6 +217,7 @@ export const DOMElementSystem = defineReactiveSystem({
         domElements.delete(entity);
       }
       attrsState.attrsByEntity.delete(entity);
+      attrsState.propertyDefaultsByEntity.delete(entity);
     }
   },
 });

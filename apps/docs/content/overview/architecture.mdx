@@ -14,7 +14,7 @@ This page describes the architecture of the project at a high level.
 ```text
 packages/
   ecs/        Core ECS runtime
-  dom/        DOM rendering + interaction systems
+  dom/        DOM rendering, interaction systems, and binding targets
   forms/      Type-safe form state primitives
   forms-ui/   ECS bindings for forms
   ui/         Reusable UI primitives (in progress)
@@ -36,6 +36,7 @@ Key runtime characteristics:
 - query-based system lifecycle (`onEnter`, `onUpdate`, `onExit`)
 - world-scoped externals for environment bindings
 - DOM behavior implemented in layered systems (`@ecs-test/dom`)
+- DOM input/value synchronization built on binding targets + `DOMBinding`
 
 ## Docs App Architecture
 

@@ -652,7 +652,7 @@ This is intentionally strict so stale widgets and incorrect setup fail loudly in
 - plain component-backed binding targets use mutation semantics, not immutable replacement, as the core model
 - the preferred ECS primitive for this is a safe `world.mutate(...)`
 - binding-target writes should use `world.mutate(...)` by default
-- lower-level manual mutable access may remain available for advanced/manual cases, but not as the default binding path
+- lower-level manual mutable access remains available for advanced/manual cases via `getMutable(...)` + `markMutated(...)` + `flush()`, but not as the default binding path
 
 This matches the existing ECS design choice that components are mutable and avoids introducing a second write model just for bindings.
 

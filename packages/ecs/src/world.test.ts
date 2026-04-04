@@ -285,14 +285,16 @@ describe('World', () => {
     const world = new World({ autoFlush: false });
     const entity = world.createEntity(undefined, [Health({ value: 1 })]);
     const seen: number[] = [];
+    const types: string[] = [];
 
     world.onMutation(event => {
       if (
         event.entity === entity &&
         event.componentTag === Health._tag &&
-        event.type === 'replaced'
+        event.type === 'mutated'
       ) {
         seen.push((event.data as { value: number }).value);
+        types.push(event.type);
       }
     });
 
@@ -301,6 +303,55 @@ describe('World', () => {
     });
 
     expect(seen).toEqual([3]);
+    expect(types).toEqual(['mutated']);
+  });
+
+  it('getMutable requires explicit markMutated to notify systems and subscribers', () => {
+    const world = new World({ autoFlush: false });
+    const entity = world.createEntity(undefined, [Health({ value: 1 })]);
+    const updates: number[] = [];
+    const mutationTypes: string[] = [];
+
+    world.registerSystem(
+      defineReactiveSystem({
+        query: Entities.with([Health]),
+        onUpdate(world, entities) {
+          for (const id of entities) {
+            const health = world.get(id, Health);
+            if (health) {
+              updates.push(health.value);
+            }
+          }
+        },
+      }),
+    );
+
+    world.onMutation(event => {
+      if (event.entity === entity && event.componentTag === Health._tag) {
+        mutationTypes.push(event.type);
+      }
+    });
+
+    world.flush();
+    updates.length = 0;
+    mutationTypes.length = 0;
+
+    const health = world.getMutable(entity, Health);
+    if (!health) {
+      throw new Error('Expected mutable component');
+    }
+
+    health.value = 5;
+    world.flush();
+
+    expect(updates).toEqual([]);
+    expect(mutationTypes).toEqual([]);
+
+    world.markMutated(entity, Health);
+    world.flush();
+
+    expect(updates).toEqual([5]);
+    expect(mutationTypes).toEqual(['mutated']);
   });
 
   it('schedules async flushes and can await completion', async () => {

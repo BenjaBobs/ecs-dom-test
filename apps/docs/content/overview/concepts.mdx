@@ -60,6 +60,22 @@ Common built-in components:
 - `world.add(entity, ComponentInstance)` — initial setup, throws if component already exists
 - `world.set(entity, ComponentInstance)` — upsert, creates or updates
 
+### Mutable Component Updates
+
+Component data is mutable. Use the update primitive that matches the amount of control you need:
+
+- `world.set(...)` when you are replacing the whole component value
+- `world.mutate(entity, Component, data => { ... })` for the safe in-place update path
+- `world.getMutable(...)` + `world.markMutated(...)` + `world.flush()` when you intentionally want full manual control
+
+Example:
+
+```ts
+world.mutate(entity, SearchQuery, query => {
+  query.value = "ecs";
+});
+```
+
 ## Systems
 
 Systems are reactive functions that run when entities enter, exit, or change within a query. They contain all the logic.
@@ -115,6 +131,43 @@ world.emit(toggleButton, TodoToggle, { todoId: 42 });
 ```
 
 Event propagation walks from `sourceEntity` up through parents. A handler stops propagation by default, and can continue upward only by calling `event.bubble()`.
+
+## Binding Targets
+
+For DOM input/value synchronization, bindings target components with a `{ value: ... }` shape.
+
+Typical binding paths look like:
+
+```ts
+binding(SearchQuery)
+binding(ProfileState).fieldMaybe("nickname")
+binding(TripState).field("travellers").by("id", travellerId).field("name")
+binding(StepsState).field("steps").at(0)
+```
+
+Core rules:
+- owner resolution is nearest matching component, including the current entity
+- `.field(...)` descends into object data
+- `.fieldMaybe(...)` allows legitimate optional leaf values
+- `.at(i)` is positional array access
+- `.by(key, value)` is semantic array-item lookup for repeated widgets
+
+`DOMBinding` then connects a binding target to an actual DOM element:
+
+```tsx
+<Entity>
+  <DOMElement tag="input" attrs={{ type: "search", placeholder: "Search docs" }} />
+  <SearchQuery value="" />
+  <DOMBinding
+    bind={binding(SearchQuery)}
+    readEvent="input"
+    read={(el) => (el as HTMLInputElement).value}
+    write={(el, value) => {
+      (el as HTMLInputElement).value = String(value ?? "");
+    }}
+  />
+</Entity>
+```
 
 ## Bundles
 
@@ -186,3 +239,8 @@ Manual flush flow:
 5. DOM updates applied by DOM systems
 
 This batching prevents cascading re-renders and keeps execution predictable.
+
+Mutable update note:
+- prefer `world.mutate(entity, Component, data => { ... })` for in-place updates that should participate in reactivity
+- when you need full manual control, use `world.getMutable(...)`, mutate the returned object, call `world.markMutated(entity, Component)`, then `world.flush()` when appropriate
+- `world.batch(...)` remains the safer way to group multiple updates without having to manage per-mutation flush timing manually

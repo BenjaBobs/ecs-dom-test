@@ -12,7 +12,7 @@ import type { EntityId, World } from './world.ts';
 /**
  * Types of mutations recorded during a flush.
  */
-export type MutationType = 'added' | 'removed' | 'replaced';
+export type MutationType = 'added' | 'removed' | 'replaced' | 'mutated';
 
 /**
  * A recorded mutation event for reactive processing.

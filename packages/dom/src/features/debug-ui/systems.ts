@@ -217,7 +217,7 @@ const pauseButtonStyle: Partial<CSSStyleDeclaration> = {
 
 function getDebugUIRuntime(world: World): DebugUIRuntimeData {
   const runtimeId = world.getRuntimeEntity();
-  let state = world.getMutableAndHandleFlushYourself(runtimeId, DebugUIRuntime);
+  let state = world.getMutable(runtimeId, DebugUIRuntime);
   if (!state) {
     state = {
       headerHandlers: new Map(),

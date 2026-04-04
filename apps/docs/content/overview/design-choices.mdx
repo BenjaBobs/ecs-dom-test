@@ -47,6 +47,22 @@ When materializing JSX, components/bundles are processed before child entities.
 
 **Why:** Adding `Clickable` to an existing entity should work. Creation-time-only wiring is a bug, not a feature.
 
+### Binding Targets Over DOM-Specific Sync Systems
+
+DOM value synchronization is built around binding targets rooted in `{ value: ... }` components, not feature-specific `getDOMElement(...)` wiring per input.
+
+**Why:**
+- keeps `DOMElement` focused on rendering
+- lets the same binding model work for same-entity and ancestor-owned state
+- avoids bespoke input sync systems for common flows
+- keeps higher-level sugar optional instead of forcing a large default API
+
+Current core shape:
+- `binding(Component)` resolves the nearest matching owner, including self
+- `.field(...)`, `.fieldMaybe(...)`, `.at(i)`, and `.by(key, value)` navigate the bound value
+- `DOMBinding` is the DOM bridge that performs read/write synchronization
+- collection rendering and conditional rendering remain higher-level concerns, not part of the core binding primitive
+
 ### Classes as Single Source of Truth
 
 Removed `class` from `DOMElement`. All CSS classes go through `Classes` component.
@@ -127,6 +143,20 @@ No `requestAnimationFrame` loop running systems continuously.
 Components are mutable. No copy-on-write or persistent data structures.
 
 **Why not:** Added complexity for time-travel debugging we don't need yet. Mutable is simpler and faster for our scale.
+
+### Explicit Mutable Update Primitives
+
+Mutable component updates are explicit rather than proxy-observed.
+
+**Why:**
+- keeps the runtime predictable
+- preserves low-level control for hot paths and batching
+- avoids hidden mutation tracking machinery
+
+Preferred update paths:
+- `world.set(...)` for replacing a component instance
+- `world.mutate(...)` for the safe in-place mutation path
+- `world.getMutable(...)` + `world.markMutated(...)` + `world.flush()` for fully manual mutation control
 
 ### No Built-in Async Scheduling
 

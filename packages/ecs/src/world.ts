@@ -66,10 +66,13 @@ export type MutationEvent = {
   /** Tag of the component that changed */
   componentTag: string;
   /** Type of mutation */
-  type: 'added' | 'removed' | 'replaced';
+  type: 'added' | 'removed' | 'replaced' | 'mutated';
   /** Component data after mutation (undefined for 'removed') */
   data: unknown | undefined;
-  /** Component data before mutation (undefined for 'added') */
+  /**
+   * Component data before mutation (undefined for 'added').
+   * For `mutated`, this is not guaranteed to be a pre-mutation snapshot.
+   */
   previousData: unknown | undefined;
 };
 
@@ -439,12 +442,11 @@ export class World {
     componentType: ComponentType<T>,
     mutate: (data: T) => void,
   ): T | undefined {
-    const instance = this.components.get(entity)?.get(componentType._tag);
-    const data = instance?.data as T | undefined;
+    const data = this.getMutable(entity, componentType);
     if (data === undefined) return undefined;
 
     mutate(data);
-    this.recordMutableReplacement(entity, componentType, data);
+    this.markMutated(entity, componentType);
 
     if (this.autoFlush && this.batchDepth === 0) {
       this.flush();
@@ -506,30 +508,47 @@ export class World {
   }
 
   /**
-   * Get a component's data from an entity, but mutable.
-   * This also automatically marks the component as replaced so it gets processed on next flush.
-   * You will have to do the flush yourself though.
+   * Get a component's data from an entity as mutable state.
+   * This does not record a mutation or flush automatically.
+   *
+   * If you mutate the returned object, you are responsible for calling
+   * `markMutated(entity, componentType)` so reactive systems and mutation
+   * subscribers can observe the change.
+   *
+   * Prefer `mutate(...)` for safer single-component updates, or `batch(...)`
+   * when you want lower-footgun grouping of multiple mutations. If you want
+   * full manual control, the required sequence is:
+   * 1. `getMutable(...)`
+   * 2. mutate the returned object
+   * 3. `markMutated(...)`
+   * 4. `flush()` when appropriate
    *
    * @typeParam T - The component's data type
    * @param entity - The entity to get the component from
    * @param componentType - The component type to retrieve
    * @returns The component data, or undefined if not present
    */
-  getMutableAndHandleFlushYourself<T>(
-    entity: EntityId,
-    componentType: ComponentType<T>,
-  ): T | undefined {
+  getMutable<T>(entity: EntityId, componentType: ComponentType<T>): T | undefined {
     const instance = this.components.get(entity)?.get(componentType._tag);
-
-    if (instance != null) {
-      this.mutations.push({
-        componentTag: getTag(componentType),
-        entity,
-        type: 'replaced',
-      });
-    }
-
     return instance?.data as T | undefined;
+  }
+
+  /**
+   * Mark an existing component as mutated in place.
+   * This records a `mutated` event but does not flush automatically.
+   *
+   * @param entity - The entity whose component was mutated
+   * @param component - The mutated component type
+   */
+  markMutated(entity: EntityId, component: ComponentRef): void {
+    const entityComponents = this.components.get(entity);
+    if (!entityComponents) return;
+
+    const componentTag = getTag(component);
+    const instance = entityComponents.get(componentTag);
+    if (!instance) return;
+
+    this.recordMutated(entity, componentTag, instance.data);
   }
 
   /**
@@ -787,7 +806,7 @@ export class World {
   private notifyMutationSubscribers(
     entity: EntityId,
     componentTag: string,
-    type: 'added' | 'removed' | 'replaced',
+    type: 'added' | 'removed' | 'replaced' | 'mutated',
     data: unknown | undefined,
     previousData: unknown | undefined,
   ): void {
@@ -850,18 +869,13 @@ export class World {
    * The current data object is used as both previous and next data because the
    * mutation happens after we hand the reference to the caller.
    */
-  private recordMutableReplacement<T>(
-    entity: EntityId,
-    componentType: ComponentType<T>,
-    data: T,
-  ): void {
-    const componentTag = getTag(componentType);
+  private recordMutated(entity: EntityId, componentTag: string, data: unknown): void {
     this.mutations.push({
       componentTag,
       entity,
-      type: 'replaced',
+      type: 'mutated',
     });
-    this.notifyMutationSubscribers(entity, componentTag, 'replaced', data, data);
+    this.notifyMutationSubscribers(entity, componentTag, 'mutated', data, data);
   }
 
   /**

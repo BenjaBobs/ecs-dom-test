@@ -122,7 +122,7 @@ Existing code to reuse:
 Implementation checklist for the foundation:
 - update `packages/ecs/src/world.ts`
   - add a safe `world.mutate(...)` helper built for mutation-based reactive writes
-  - keep the existing manual mutable escape hatch available for advanced/manual cases
+  - expose the lower-level manual path as `getMutable(...)` + `markMutated(...)` for advanced/manual cases
   - ensure docs/API exports stay current
 - update `packages/dom/src/dom-element-components.ts` and `packages/dom/src/dom-element-systems.ts`
   - add static `attrs` support to `DOMElement`
@@ -168,6 +168,7 @@ First migration target:
 
 ## Recently Completed
 
+- [x] 2026-04-04 Removed legacy `getMutableAndHandleFlushYourself(...)`; manual mutable updates now use the explicit `getMutable(...)` + `markMutated(...)` + `flush()` path.
 - [x] 2026-02-14 ECS docs shell, API generation, and playground hydration baseline.
 - [x] 2026-02-14 Repository docs section established (`Design Choices`, `Roadmap`, `Working Set`, `Friction Log`).
 - [x] 2026-02-14 Synchronized JSX/non-JSX code tabs added for docs examples.
