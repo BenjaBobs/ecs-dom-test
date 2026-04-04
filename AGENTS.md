@@ -79,6 +79,9 @@ node --experimental-strip-types scripts/minimap.ts search "world flush" --includ
 - Use `world.add()` for initial setup (throws on duplicate).
 - Use `world.set()` for updates (upsert behavior).
 - Start async work in systems and call `world.flush()` in callbacks after mutations.
+- Treat linter findings as design feedback, not just syntax errors to silence.
+- When a tool such as Biome flags an issue, fix the underlying control-flow, API-shape, or architecture problem it is pointing at rather than adding placeholder branches, dummy fallbacks, or other mechanical “make it pass” edits.
+- If you intentionally diverge from a lint rule, the reason must be concrete and defensible in the code, not just convenient.
 
 ## Planning And Tracking (Required)
 
