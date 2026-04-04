@@ -595,93 +595,161 @@ DOMElement + DOMBinding
 
 ## What We Have Not Fully Solved Yet
 
-### Binding Target Formal Shape
+### Locked Core Decisions
 
-We still need to decide the exact API for binding targets:
-- plain object interface
-- branded/factory-created object
-- whether subscription is required or optional
-- how nested `.field(...)` / `.at(...)` composition is implemented internally
+The current binding-target foundation is now narrowed to the following rules.
 
-### Plain Nested Data vs Adapted/Store-Backed Data
+#### 1. Binding Targets Are Descriptors Resolved at Runtime
 
-We still need to decide how the fluent builder handles:
-- components that literally store nested plain data
-- components that store a form/store instance instead of raw data
+- `binding(...)` creates a pure descriptor
+- runtime systems resolve that descriptor for a specific `world` + binding entity
+- the resolved target owns `get`, `set`, and `subscribe`
 
-This is where a possible `BindingAdapter` concept may be needed.
+This keeps author-facing target construction separate from runtime owner lookup, subscriptions, and cleanup.
 
-### Arrays
+#### 2. Bindable Component Roots Use `{ value: ... }`
 
-Arrays are definitely in scope.
+- bindable components expose their authoritative bindable root through a `value` field
+- this should be TypeScript-enforced by the binding APIs
+- component-backed bindings start from `component.value`
+- derived bindings are then relative to the current target value
 
-We have a promising direction:
+Why:
+- one uniform mental model
+- easier type inference
+- simpler path composition for same-entity and ancestor-owned data
+
+#### 3. Owner Resolution Is Nearest Matching Component, Including Self
+
+- `binding(Component)` means “walk upward to the nearest entity with this component, including the current entity”
+- resolved owners are cached
+- cached owners must be re-resolved when scope-defining structure changes
+
+Scope-defining changes include:
+- ancestry changes
+- add/remove of the target component on the binding entity or an ancestor in the active scope
+
+#### 4. Subscription Is Required, and Broad Is Acceptable
+
+- every resolved target must implement `subscribe`
+- `subscribe` means “notify whenever the bound value may have changed”
+- targets may over-notify
+- plain component/path bindings subscribe at the owner-component level by default
+- exact-path subscription remains an optimization, not a foundational requirement
+
+This is a likely hot path. Revisit performance after the rest of the design is implemented.
+
+#### 5. Missing Structure Is Strict by Default
+
+- path traversal is represented as ordered, type-safe path steps
+- missing structural intermediates throw descriptive errors by default on both `get()` and `set()`
+- bindings do not implicitly create missing structure
+
+This is intentionally strict so stale widgets and incorrect setup fail loudly instead of silently masking bugs.
+
+#### 6. Plain Component Writes Use Mutation Semantics
+
+- plain component-backed binding targets use mutation semantics, not immutable replacement, as the core model
+- the preferred ECS primitive for this is a safe `world.mutate(...)`
+- binding-target writes should use `world.mutate(...)` by default
+- lower-level manual mutable access may remain available for advanced/manual cases, but not as the default binding path
+
+This matches the existing ECS design choice that components are mutable and avoids introducing a second write model just for bindings.
+
+#### 7. Arrays Support Two Explicit Addressing Modes
+
+Arrays are in scope, but the identity model is explicit:
 
 ```ts
-binding(TripState).field("travellers").at(i).field("name")
+binding(TripState).field("travellers").at(i)
+binding(TripState).field("travellers").by("id", travellerId)
 ```
 
-But unanswered questions remain:
-- should array targets expose mutation helpers such as `append`, `removeAt`, `insert`?
-- how should subscriptions behave when array indices shift?
-- how do we recommend stable identity for repeated widget rows?
+Rules:
+- `.at(i)` is strictly positional
+- `.by(key, value)` is semantic identity lookup within an array of records
+- repeated widgets should generally prefer `.by(...)` when item identity matters
+- normal JS array mutation such as `push`, `splice`, `sort`, and direct index assignment remains valid inside `world.mutate(...)`
 
-Pseudo-code direction:
+We explicitly rejected:
+- public `byRef(...)`
+- content-hash identity
+- implicit ref-or-index heuristics
+
+Reference equality may still be used internally as an optimization, but it is not part of the public binding contract.
+
+#### 8. No First-Class `Set` or `Map` Support in Core Bindings
+
+- no first-class `Set` support in binding targets
+- no first-class `Map` support in binding targets
+- systems may still use `Set` and `Map` freely inside ECS/component state
+- if consumers want ergonomic bindable collection semantics, prefer arrays, keyed arrays, or plain object fields
+
+This keeps the core API smaller and avoids multiple competing collection mental models.
+
+#### 9. Optional Values Are Explicit via `...Maybe()`
+
+- strict bindings remain the default
+- legitimate optional values are expressed explicitly with `...Maybe()` variants
+- `Maybe` means the target value may be `undefined`
+- `Maybe` does not imply silent creation of missing structure
+- `Maybe` is for optional values, not for stale-widget recovery or structural absence that should change what gets rendered
+
+Examples:
 
 ```ts
-binding(TripState).field("travellers").at(i).field("name")
-binding(TripState).field("travellers").at(i).field("age")
+binding(ProfileState).fieldMaybe("nickname")
+binding(ProfileState).field("profile").fieldMaybe("nickname")
 ```
 
-Potential future helpers:
+Counter-example:
+- `binding(EditorState).field("draft").field("title")` should still fail if `draft` is absent; the widget/binding likely should not exist in that state
 
-```ts
-const travellers = binding(TripState).field("travellers");
+#### 10. Core Bindings Stop at Addressing and Synchronization
 
-travellers.append({ id: crypto.randomUUID(), name: "", age: 0 });
-travellers.removeAt(i);
-```
+The core layer is limited to:
+- target description
+- owner resolution
+- path navigation
+- read/write
+- subscription
 
-Unresolved:
-- should those helpers live on the target itself?
-- should repeated widgets rely on stable item ids rather than raw indices?
+This means the core layer does not include:
+- collection rendering helpers such as `.map(...)`
+- conditional rendering helpers such as “if present render X else Y”
 
-### Sets and Maps
+Those should be built afterward as higher-level sugar on top of the core target model.
 
-We have not designed this yet.
+### Remaining Design / Implementation Work
 
-Open questions:
-- should fluent bindings support `set` / `map` style access at all?
-- if yes, what should the user-facing API be?
-- how do subscriptions narrow correctly for mutations that are not simple path writes?
+The foundation direction is now clear, but several follow-on tasks remain.
+
+### Runtime Shape And ECS Support
+
+We still need to define:
+- the exact TypeScript shape of binding descriptors and resolved targets
+- the exact `world.mutate(...)` API
+- whether owner invalidation should build directly on current ECS mutation/event facilities or require a new primitive
+- how resolved targets cache owner lookup and subscription cleanup
+
+### Type-Safe Path Builder Details
+
+We still need to define the exact typing/story for:
+- `.field(...)`
+- `.fieldMaybe(...)`
+- `.at(...)`
+- `.by(...)`
+
+The goal remains strong TypeScript guidance and failure at compile time where possible.
 
 ### Existing `forms` Package Integration
 
-This is still open.
+This is still open, but intentionally not part of the core decision set yet.
 
-We need to decide:
+We still need to decide:
 - whether form instances expose or can be adapted to the binding-target model
-- whether fluent `.field(...)` should operate through form accessors directly
-- whether forms become just one adapted component kind in the binding system
-
-Two likely directions:
-
-Plain nested object style:
-
-```ts
-binding(TripState).field("range").field("start")
-```
-
-Adapted form-instance style:
-
-```ts
-binding(FormState, formAdapter).field("range").field("start")
-```
-
-The latter implies a possible adapter concept that teaches the fluent builder how to:
-- get/set authoritative data
-- subscribe to updates
-- descend into nested fields
+- whether forms become one adapted component kind in the general binding system
+- how much of touched/dirty/errors belongs above the shared foundation versus inside `forms-ui`
 
 ### Validation / Errors / Dirty / Touched
 
@@ -703,11 +771,11 @@ This likely includes:
 - async normalization or lookup flows
 - what subscription/update model is needed when authoritative state changes from async sources
 
-Possible pressure cases:
+Possible pressure case:
 
 ```tsx
 <AutocompleteBundle
-  bind={binding(FormState, formAdapter).field("travellers").at(i).field("country")}
+  bind={binding(FormState).field("travellers").by("id", travellerId).field("country")}
 />
 ```
 
@@ -722,20 +790,21 @@ We have identified performance as a design concern, but not finished the strateg
 
 Open questions:
 - how aggressively should binding targets cache owner resolution?
-- should subscription be required for all targets?
-- how do we avoid broad invalidation for nested fields?
+- how granular should owner invalidation be?
+- how much broad invalidation is acceptable for owner-level subscriptions?
 - how much write-skipping and batching should be built into the base systems?
+- what subscription/notification hot paths need optimization once the design is implemented?
 
 ## Current Working Direction
 
 If implementation started immediately, the most likely order would be:
 
 1. Keep `DOMElement` and `DOMBinding` separate.
-2. Add static `DOMElement.attrs`.
-3. Add a first `DOMBinding` implementation for the simple text-input path.
-4. Validate the design against the docs search input.
-5. Continue the binding-target design until the root-owned data story is strong enough.
-6. Refactor `forms-ui` onto that foundation rather than extending the current direct-coupling design.
+2. Finalize the exact runtime/type shapes for binding descriptors, resolved targets, and `world.mutate(...)`.
+3. Add static `DOMElement.attrs`.
+4. Implement the first binding-target-based `DOMBinding` path against `{ value: ... }` components.
+5. Validate the design against the docs search input.
+6. Only after that, design higher-level sugar and refactor `forms-ui` onto the shared foundation rather than extending the current direct-coupling design.
 
 ## Worked Examples
 
