@@ -9,39 +9,11 @@ import { defineReactiveSystem, Entities, type EntityId, type World } from '@ecs-
 import {
   type SearchEntry,
   SearchIndex,
-  SearchInput,
   SearchQuery,
   SearchResultItem,
   SearchResults,
 } from '../components.ts';
 import { pathToRoot } from '../site-root.ts';
-
-/** Handles input events on the search field */
-export const SearchInputSystem = defineReactiveSystem({
-  name: 'SearchInputSystem',
-  query: Entities.with([SearchInput]),
-  onEnter(world, entities) {
-    for (const entity of entities) {
-      const el = getDOMElement(world, entity) as HTMLInputElement | null;
-      if (!el) continue;
-
-      el.type = 'search';
-      el.placeholder = 'Search docs';
-      el.autocomplete = 'off';
-      el.spellcheck = false;
-
-      const query = world.get(entity, SearchQuery);
-      if (query) {
-        el.value = query.value;
-      }
-
-      el.addEventListener('input', () => {
-        world.set(entity, SearchQuery({ value: el.value }));
-        world.flush();
-      });
-    }
-  },
-});
 
 /** Filters search index when query changes, creates/removes result entities */
 export const SearchFilterSystem = defineReactiveSystem({

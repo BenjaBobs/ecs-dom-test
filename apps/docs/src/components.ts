@@ -52,6 +52,3 @@ export const BottomNavData = defineComponent<{
   prev?: { title: string; slug: string };
   next?: { title: string; slug: string };
 }>('BottomNavData');
-
-/** Marks the search input element */
-export const SearchInput = defineMarker('SearchInput');

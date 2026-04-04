@@ -88,14 +88,20 @@ Decisions so far:
 - support read-side timing controls such as debouncing on `DOMBinding`
 - let `DOMElement` carry static intrinsic `attrs`, while keeping behavior/binding separate
 - treat `forms-ui` as a proof-of-concept vertical slice rather than the final binding architecture
-- explore binding targets and nearest-ancestor-with-specific-component lookup as the likely foundation for root-owned data binding
+- use binding targets plus nearest-ancestor-with-specific-component lookup as the foundation for root-owned data binding
+- keep bindable component roots uniform via `{ value: ... }`
+- prefer mutation-based writes through a safe `world.mutate(...)` helper
+- keep arrays explicit via `.at(i)` and `.by(key, value)`
+- keep strict bindings by default and reserve `...Maybe()` for legitimate optional values
+- leave collection/conditional rendering sugar out of the core binding layer
 - do not add `__entity` / `__world` properties to DOM nodes by default; revisit only if profiling proves a meaningful lookup bottleneck
 
 Phase 1: foundation
+- add/normalize the ECS mutation helper surface the binding runtime should rely on
 - extend `DOMElement` with static `attrs`
-- add `DOMBinding`
-- validate the simple text-input path first
-- continue binding-target design until the root-owned data story is strong enough
+- add binding-target-based `DOMBinding`
+- validate the simple text-input path first against the docs search input
+- keep the first implementation focused on plain object/array paths under `{ value: ... }`
 
 Phase 2: ergonomics
 - add thin helpers such as `InputValue`, `CheckedValue`, and possibly `TextValue`
@@ -110,44 +116,50 @@ Phase 3: forms decoupling
 Existing code to reuse:
 - `packages/dom/src/dom-element-systems.ts` for DOM element lifecycle and lookup
 - `packages/forms-ui/src/systems.ts` for the current read/write/subscribe loop structure
+- `packages/ecs/src/world.ts` for mutation tracking and `onMutation(...)`
 - docs search and todo examples as early migration targets
 
-Implementation checklist for `packages/dom`:
-- add `packages/dom/src/features/value/components.ts`
-  - define `Value`
-  - keep the initial shape minimal: `{ value: unknown }`
-  - define `DOMBinding`
-  - make `DOMBinding` point at one explicit value-shaped component ref
-  - add minimap metadata
-- add `packages/dom/src/features/value/systems.ts`
-  - implement `DOMBindingSystem`
-  - require `DOMElement + configured value-shaped component + DOMBinding`
-  - attach/remove `readEvent` listeners
-  - support read-side debouncing
-  - apply initial sync according to `readOnBind` / `writeOnBind`
-  - write back only when the element state is actually different
-  - clean up timers/listeners on exit
+Implementation checklist for the foundation:
+- update `packages/ecs/src/world.ts`
+  - add a safe `world.mutate(...)` helper built for mutation-based reactive writes
+  - keep the existing manual mutable escape hatch available for advanced/manual cases
+  - ensure docs/API exports stay current
 - update `packages/dom/src/dom-element-components.ts` and `packages/dom/src/dom-element-systems.ts`
   - add static `attrs` support to `DOMElement`
   - apply static intrinsic attrs/properties on mount/update
   - keep `class`, `style`, content, event handlers, and reactive value/checked sync out of `attrs`
-- add `packages/dom/src/features/value/components.test.ts` or extend `packages/dom/src/dom.test.ts`
-  - read-only binding
-  - write-only binding
+- add `packages/dom/src/features/binding/components.ts`
+  - define the binding descriptor types and `binding(...)` builder entrypoint
+  - define `DOMBinding`
+  - keep bindable component roots aligned with `{ value: ... }`
+  - add minimap metadata
+- add `packages/dom/src/features/binding/systems.ts`
+  - implement `DOMBindingSystem`
+  - resolve binding descriptors at runtime against nearest matching owners
+  - subscribe through owner-level mutation notifications by default
+  - support array `.at(i)` and `.by(key, value)` steps
+  - support `...Maybe()` optional leaf reads
+  - attach/remove `readEvent` listeners
+  - support read-side debouncing
+  - apply initial sync according to `readOnBind` / `writeOnBind`
+  - write back only when the element state is actually different
+  - clean up listeners/subscriptions/timers on exit
+- add tests in `packages/dom/src/dom.test.ts` or new binding-focused tests
+  - nearest-owner resolution including self
+  - stale owner re-resolution behavior
   - bidirectional text input binding
-  - binding against a domain-specific value component (for example `SearchQuery`)
-  - `writeOnBind` and `readOnBind` precedence
+  - array `.at(i)` behavior
+  - array `.by(key, value)` behavior
+  - strict missing-path errors and `...Maybe()` behavior
   - debounce behavior
-  - listener cleanup on entity removal
+  - listener/subscription cleanup on entity removal
 - update `packages/dom/src/index.ts`
-  - export `Value`, `DOMBinding`, and `DOMBindingSystem`
+  - export the binding builder, descriptor types, `DOMBinding`, and `DOMBindingSystem`
   - register `DOMBindingSystem` from `registerDOMSystems(...)`
-- decide file placement for `DOMBinding`
-  - likely colocate `Value` + `DOMBinding` under one new `features/value/` feature
-  - avoid adding binding logic into `DOMElement` files
 - keep v1 intentionally narrow
   - support text-like element value synchronization first
-  - do not solve checked-state, text-content reflection, or form coupling in the first patch unless the implementation falls out naturally
+  - focus on plain object/array traversal under `{ value: ... }`
+  - do not solve checked-state, collection rendering sugar, form coupling, or `Set` / `Map` bindings in the first patch unless the implementation falls out naturally
 
 First migration target:
 - replace the manual search-input DOM event handling in `apps/docs/src/systems/search-system.ts` with `SearchQuery + DOMBinding`

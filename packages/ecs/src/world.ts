@@ -424,6 +424,36 @@ export class World {
   }
 
   /**
+   * Mutate an existing component's data in place and record it as replaced.
+   * This is the preferred mutable update path when you want ECS reactivity
+   * without replacing the entire component instance.
+   *
+   * @typeParam T - The component's data type
+   * @param entity - The entity whose component should be mutated
+   * @param componentType - The component type to mutate
+   * @param mutate - Callback that performs in-place mutation on the component data
+   * @returns The mutated component data, or undefined if the component does not exist
+   */
+  mutate<T>(
+    entity: EntityId,
+    componentType: ComponentType<T>,
+    mutate: (data: T) => void,
+  ): T | undefined {
+    const instance = this.components.get(entity)?.get(componentType._tag);
+    const data = instance?.data as T | undefined;
+    if (data === undefined) return undefined;
+
+    mutate(data);
+    this.recordMutableReplacement(entity, componentType, data);
+
+    if (this.autoFlush && this.batchDepth === 0) {
+      this.flush();
+    }
+
+    return data;
+  }
+
+  /**
    * Remove a component from an entity.
    * Does nothing if the entity doesn't exist or doesn't have the component.
    *
@@ -491,12 +521,13 @@ export class World {
   ): T | undefined {
     const instance = this.components.get(entity)?.get(componentType._tag);
 
-    if (instance != null)
+    if (instance != null) {
       this.mutations.push({
         componentTag: getTag(componentType),
-        entity: entity,
+        entity,
         type: 'replaced',
       });
+    }
 
     return instance?.data as T | undefined;
   }
@@ -812,6 +843,25 @@ export class World {
       current = this.parents.get(current);
     }
     return false;
+  }
+
+  /**
+   * Record that a mutable component reference is about to be changed in place.
+   * The current data object is used as both previous and next data because the
+   * mutation happens after we hand the reference to the caller.
+   */
+  private recordMutableReplacement<T>(
+    entity: EntityId,
+    componentType: ComponentType<T>,
+    data: T,
+  ): void {
+    const componentTag = getTag(componentType);
+    this.mutations.push({
+      componentTag,
+      entity,
+      type: 'replaced',
+    });
+    this.notifyMutationSubscribers(entity, componentTag, 'replaced', data, data);
   }
 
   /**

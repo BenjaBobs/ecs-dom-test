@@ -254,6 +254,55 @@ describe('World', () => {
     expect(executions).toBe(2);
   });
 
+  it('mutate updates component data and triggers reactive updates', () => {
+    const world = new World();
+    const entity = world.createEntity(undefined, [Health({ value: 1 })]);
+    const seen: number[] = [];
+
+    world.registerSystem(
+      defineReactiveSystem({
+        query: Entities.with([Health]),
+        onUpdate(world, entities) {
+          for (const id of entities) {
+            const health = world.get(id, Health);
+            if (health) {
+              seen.push(health.value);
+            }
+          }
+        },
+      }),
+    );
+
+    world.mutate(entity, Health, health => {
+      health.value = 2;
+    });
+
+    expect(world.get(entity, Health)?.value).toBe(2);
+    expect(seen).toEqual([2]);
+  });
+
+  it('mutate notifies mutation subscribers with post-mutation data', () => {
+    const world = new World({ autoFlush: false });
+    const entity = world.createEntity(undefined, [Health({ value: 1 })]);
+    const seen: number[] = [];
+
+    world.onMutation(event => {
+      if (
+        event.entity === entity &&
+        event.componentTag === Health._tag &&
+        event.type === 'replaced'
+      ) {
+        seen.push((event.data as { value: number }).value);
+      }
+    });
+
+    world.mutate(entity, Health, health => {
+      health.value = 3;
+    });
+
+    expect(seen).toEqual([3]);
+  });
+
   it('schedules async flushes and can await completion', async () => {
     const world = new World({
       scheduler: createMicrotaskScheduler(callback => Promise.resolve().then(callback)),

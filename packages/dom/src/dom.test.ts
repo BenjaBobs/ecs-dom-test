@@ -7,10 +7,13 @@
  */
 
 import { describe, expect, it } from 'bun:test';
+import { defineComponent } from '@ecs-test/ecs';
 import { Window } from 'happy-dom';
 import {
+  binding,
   Classes,
   createDebugUI,
+  DOMBinding,
   DOMElement,
   getDOMElement,
   registerDebugUISystems,
@@ -18,6 +21,14 @@ import {
   TextContent,
 } from './index.ts';
 import { withTestWorld } from './test-utils/index.ts';
+
+const SearchQuery = defineComponent<{ value: string }>('BindingTestSearchQuery');
+const FormState = defineComponent<{
+  value: {
+    nickname?: string;
+    travellers: { id: string; name: string }[];
+  };
+}>('BindingTestFormState');
 
 describe('DOM systems', () => {
   it('creates and auto-mounts DOM elements', () => {
@@ -75,6 +86,138 @@ describe('DOM systems', () => {
       world.remove(entity, Style);
 
       expect(div?.getAttribute('style')).toBeNull();
+    });
+  });
+
+  it('applies and reconciles DOMElement attrs', () => {
+    withTestWorld(new Window(), ({ world, container }) => {
+      const entity = world.createEntity(null, [
+        DOMElement({
+          tag: 'input',
+          attrs: {
+            placeholder: 'Search docs',
+            spellcheck: false,
+          },
+        }),
+      ]);
+
+      const input = container.querySelector('input') as HTMLInputElement | null;
+      expect(input?.placeholder).toBe('Search docs');
+      expect(input?.spellcheck).toBe(false);
+
+      world.set(
+        entity,
+        DOMElement({
+          tag: 'input',
+          attrs: {
+            autocomplete: 'off',
+          },
+        }),
+      );
+
+      expect(input?.placeholder).toBe('');
+      expect(input?.autocomplete).toBe('off');
+    });
+  });
+
+  it('binds a text input to a same-entity value component', () => {
+    withTestWorld(new Window(), ({ world, container }) => {
+      const entity = world.createEntity(null, [
+        DOMElement({ tag: 'input' }),
+        SearchQuery({ value: 'alpha' }),
+        DOMBinding({
+          bind: binding(SearchQuery),
+          readEvent: 'input',
+          read: el => (el as HTMLInputElement).value,
+          write: (el, value) => {
+            (el as HTMLInputElement).value = String(value ?? '');
+          },
+        }),
+      ]);
+
+      const input = container.querySelector('input') as HTMLInputElement | null;
+      expect(input?.value).toBe('alpha');
+
+      if (!input) {
+        throw new Error('Expected input element');
+      }
+
+      input.value = 'beta';
+      input.dispatchEvent(new input.ownerDocument.defaultView!.Event('input', { bubbles: true }));
+
+      expect(world.get(entity, SearchQuery)?.value).toBe('beta');
+
+      world.set(entity, SearchQuery({ value: 'gamma' }));
+
+      expect(input.value).toBe('gamma');
+    });
+  });
+
+  it('binds to nearest ancestor-owned array items through .by(key, value)', () => {
+    withTestWorld(new Window(), ({ world, container }) => {
+      const parent = world.createEntity(null, [
+        DOMElement({ tag: 'div' }),
+        FormState({
+          value: {
+            travellers: [{ id: 'a', name: 'Alice' }],
+          },
+        }),
+      ]);
+
+      world.createEntity(parent, [
+        DOMElement({ tag: 'input' }),
+        DOMBinding({
+          bind: binding(FormState).field('travellers').by('id', 'a').field('name'),
+          readEvent: 'input',
+          read: el => (el as HTMLInputElement).value,
+          write: (el, value) => {
+            (el as HTMLInputElement).value = String(value ?? '');
+          },
+        }),
+      ]);
+
+      const input = container.querySelector('input') as HTMLInputElement | null;
+      expect(input?.value).toBe('Alice');
+
+      world.mutate(parent, FormState, state => {
+        state.value.travellers[0]!.name = 'Alicia';
+      });
+
+      expect(input?.value).toBe('Alicia');
+    });
+  });
+
+  it('supports optional leaf reads through fieldMaybe', () => {
+    withTestWorld(new Window(), ({ world, container }) => {
+      const parent = world.createEntity(null, [
+        DOMElement({ tag: 'div' }),
+        FormState({
+          value: {
+            travellers: [],
+          },
+        }),
+      ]);
+
+      world.createEntity(parent, [
+        DOMElement({ tag: 'input' }),
+        DOMBinding({
+          bind: binding(FormState).fieldMaybe('nickname'),
+          readEvent: 'input',
+          read: el => (el as HTMLInputElement).value,
+          write: (el, value) => {
+            (el as HTMLInputElement).value = String(value ?? '');
+          },
+        }),
+      ]);
+
+      const input = container.querySelector('input') as HTMLInputElement | null;
+      expect(input?.value).toBe('');
+
+      world.mutate(parent, FormState, state => {
+        state.value.nickname = 'Bobby';
+      });
+
+      expect(input?.value).toBe('Bobby');
     });
   });
 

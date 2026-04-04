@@ -8,6 +8,7 @@
 
 import type { World } from '@ecs-test/ecs';
 import { DOMElementSystem } from './dom-element-systems.ts';
+import { DOMBindingSystem } from './features/binding/systems.ts';
 import { ClassesSystem } from './features/classes/systems.ts';
 import { ClickableSystem } from './features/clickable/systems.ts';
 import { DisabledSystem } from './features/disabled/systems.ts';
@@ -20,6 +21,17 @@ export {
   DOMElementSystem,
   getDOMElement,
 } from './dom-element-systems.ts';
+export {
+  type BindingDescriptor,
+  type BindingKeyedStep,
+  type BindingStep,
+  BindingTarget,
+  binding,
+  DOMBinding,
+  type DOMBindingConfig,
+  type ValueComponent,
+} from './features/binding/components.ts';
+export { DOMBindingSystem } from './features/binding/systems.ts';
 export { Classes } from './features/classes/components.ts';
 // Systems
 export { ClassesSystem } from './features/classes/systems.ts';
@@ -59,6 +71,7 @@ export { TextContentSystem } from './features/text/systems.ts';
  */
 export function registerDOMSystems(world: World): void {
   world.registerSystem(DOMElementSystem);
+  world.registerSystem(DOMBindingSystem);
   world.registerSystem(ClickableSystem);
   world.registerSystem(DisabledSystem);
   world.registerSystem(TextContentSystem);

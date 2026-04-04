@@ -1,9 +1,11 @@
 // @minimap summary: Boots the docs ECS app, materializes the shell, wires theme and navigation systems, and loads the generated docs search index.
 // @minimap tags: docs app bootstrap search navigation theme ecs
 import {
+  binding,
   Classes,
   Clickable,
   createDebugUI,
+  DOMBinding,
   DOMElement,
   registerDebugUISystems,
   registerDOMSystems,
@@ -17,7 +19,6 @@ import {
   NavItemData,
   type SearchEntry,
   SearchIndex,
-  SearchInput,
   SearchQuery,
   SearchResults,
   ThemeState,
@@ -28,11 +29,7 @@ import { BottomNavSystem } from './systems/bottom-nav-system.ts';
 import { CodeTabsSystem } from './systems/code-tabs-system.ts';
 import { ContentSystem } from './systems/content-system.ts';
 import { LiveEditorSystem } from './systems/live-editor-system.ts';
-import {
-  SearchFilterSystem,
-  SearchInputSystem,
-  SearchResultRenderSystem,
-} from './systems/search-system.ts';
+import { SearchFilterSystem, SearchResultRenderSystem } from './systems/search-system.ts';
 import { SidebarSystem } from './systems/sidebar-system.ts';
 import { ThemeApplySystem, toggleTheme } from './systems/theme-system.ts';
 
@@ -162,7 +159,6 @@ export async function startDocsApp({ doc }: DocsDeps): Promise<void> {
   world.registerSystem(SidebarSystem);
   world.registerSystem(BottomNavSystem);
   world.registerSystem(ThemeApplySystem);
-  world.registerSystem(SearchInputSystem);
   world.registerSystem(SearchFilterSystem);
   world.registerSystem(SearchResultRenderSystem);
 
@@ -215,10 +211,25 @@ export async function startDocsApp({ doc }: DocsDeps): Promise<void> {
             <Classes list={['topbar-controls']} />
 
             <Entity>
-              <DOMElement tag="input" />
+              <DOMElement
+                tag="input"
+                attrs={{
+                  type: 'search',
+                  placeholder: 'Search docs',
+                  autocomplete: 'off',
+                  spellcheck: false,
+                }}
+              />
               <Classes list={['search-input']} />
-              <SearchInput />
               <SearchQuery value="" />
+              <DOMBinding
+                bind={binding(SearchQuery)}
+                readEvent="input"
+                read={el => (el as HTMLInputElement).value}
+                write={(el, value) => {
+                  (el as HTMLInputElement).value = String(value ?? '');
+                }}
+              />
             </Entity>
 
             <Entity>
